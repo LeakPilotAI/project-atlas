@@ -265,7 +265,7 @@ def test_failed_operational_source_admission_latches_uncertain(monkeypatch):
                         qd_instrument={"symbol":"MSFT"})
     source._revoke = True
     with pytest.raises(ValueError, match="SIMULATED_ISSUER_REVOKED"):
-        r.admit_resting({"kind":"RESTING_ORDER"})
+        r.admit_resting({"kind":"RESTING_ORDER"}, lane="HYPERLIQUID")
     assert r.uncertain and r.entry_closed.is_set()
     assert not any(v.calls for v in r.lanes.values())
 
@@ -419,7 +419,97 @@ def test_perp_resting_admission_uses_only_perp_source(monkeypatch):
     )
     source.unavailable.add("HYPERLIQUID")
     with pytest.raises(src.PaperSourceUnavailable, match="HYPERLIQUID"):
-        r.admit_resting({"kind": "RESTING_ORDER"})
+        r.admit_resting({"kind": "RESTING_ORDER"}, lane="HYPERLIQUID")
     assert r.uncertain is False
     assert not r.entry_closed.is_set()
     assert not any(port.calls for port in r.lanes.values())
+
+
+def test_stop_first_refuses_stock_lane_resting_before_any_perp_writer(monkeypatch):
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    r.resume_stop_first(stop_owner=stop, issuer=source,
+                        source_lane="HYPERLIQUID")
+    prior_calls = source.calls
+    resting = {"kind": "RESTING_ORDER",
+               "operation_id": "STOCK_CANNOT_RESERVE_PERP_PENDING_EXPOSURE"}
+    for lane in ("QUALITY_DIPS", "KALSHI", "", None):
+        with pytest.raises(ValueError, match="UNIFIED_RESTING_EXPLICIT_PERP_LANE"):
+            r.admit_resting(resting, lane=lane)
+    assert source.calls == prior_calls
+    assert r.state == "RUNNING"
+    assert not r.entry_closed.is_set()
+    assert not r.uncertain
+    assert not any(port.calls for port in r.lanes.values())
+
+
+def test_resting_stock_cancel_cannot_mutate_perp_pending_exposure(monkeypatch):
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    r.resume_stop_first(stop_owner=stop, issuer=source,
+                        source_lane="HYPERLIQUID")
+    for lane in ("QUALITY_DIPS", "KALSHI"):
+        with pytest.raises(ValueError, match="UNIFIED_RESTING_EXPLICIT_PERP_LANE"):
+            r.cancel_resting(
+                {"kind": "CANCEL_RESTING_ORDER", "operation_id": "CROSS_LANE"},
+                lane=lane,
+            )
+    assert r.uncertain is False and not r.entry_closed.is_set()
+
+
+def test_explicit_perp_resting_is_guarded_by_perp_source_issuer(monkeypatch):
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    r.resume_stop_first(stop_owner=stop, issuer=source,
+                        source_lane="HYPERLIQUID")
+    calls = []
+    def simulated_pending_port(proposal, *, cancel):
+        assert not cancel
+        calls.append(proposal["operation_id"])
+        return {"state": "ACKNOWLEDGED", "operation_id": proposal["operation_id"]}
+    monkeypatch.setattr(r, "_resting_bound", simulated_pending_port)
+    result = r.admit_resting(
+        {"kind": "RESTING_ORDER", "operation_id": "PERP_SOURCE_BOUND"},
+        lane="HYPERLIQUID",
+    )
+    assert result["state"] == "ACKNOWLEDGED"
+    assert calls == ["PERP_SOURCE_BOUND"]
+    source.unavailable.add("HYPERLIQUID")
+    import scripts.observation_runtime.personal_selected_paper_operation_issuer as src
+    with pytest.raises(src.PaperSourceUnavailable, match="HYPERLIQUID"):
+        r.admit_resting(
+            {"kind": "RESTING_ORDER", "operation_id": "STALE_BOOK_BLOCKED"},
+            lane="HYPERLIQUID",
+        )
+    assert calls == ["PERP_SOURCE_BOUND"]
+    assert r.uncertain is False and not r.entry_closed.is_set()
+
+
+@pytest.mark.asyncio
+async def test_supervisor_does_not_relabel_stock_resting_proposal_as_perp(monkeypatch):
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.lanes["QUALITY_DIPS"].closed = False
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    r.resume_stop_first(stop_owner=stop, issuer=source,
+                        source_lane="HYPERLIQUID")
+    wrong = {"kind": "RESTING_ORDER", "operation_id": "STOCK_FORGED_PERP_RESTING"}
+    async def stock_resting(_observation):
+        return wrong
+    r.lanes["QUALITY_DIPS"].next_proposal = stock_resting
+    pending_effects = []
+    def unexpected_resting_effect(*args, **kwargs):
+        pending_effects.append((args, kwargs))
+        pytest.fail("QUALITY_DIPS_PLANNER_MUST_NOT_REACH_PERP_RESTING_WRITER")
+    monkeypatch.setattr(r, "_resting_bound", unexpected_resting_effect)
+    await r.run(seconds=0.12, interval=.06)
+    assert pending_effects == []
+    assert not any(port.calls for port in r.lanes.values())
+    assert r.uncertain is False

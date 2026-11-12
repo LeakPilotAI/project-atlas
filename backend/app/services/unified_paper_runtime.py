@@ -565,9 +565,9 @@ class UnifiedPaperRuntime:
                         if proposal is not None:
                             try:
                                 if proposal.get('kind') == 'RESTING_ORDER':
-                                    self.admit_resting(proposal)
+                                    self.admit_resting(proposal, lane=lane)
                                 elif proposal.get('kind') == 'CANCEL_RESTING_ORDER':
-                                    self.cancel_resting(proposal)
+                                    self.cancel_resting(proposal, lane=lane)
                                 else:
                                     self.dispatch(lane, proposal)
                             except ControlCapacityReached:
@@ -587,13 +587,22 @@ class UnifiedPaperRuntime:
     def dispatch(self, lane, proposal):
         return self._dispatch(lane, proposal, shutdown=False)
 
-    def admit_resting(self, proposal):
-        return self._resting(proposal, cancel=False)
+    def admit_resting(self, proposal, *, lane=None):
+        return self._resting(proposal, cancel=False, lane=lane)
 
-    def cancel_resting(self, proposal):
-        return self._resting(proposal, cancel=True)
+    def cancel_resting(self, proposal, *, lane=None):
+        return self._resting(proposal, cancel=True, lane=lane)
 
-    def _resting(self, proposal, *, cancel):
+    def _resting(self, proposal, *, cancel, lane):
+        # Only the perp account possesses native pending-order custody.
+        # A stock-lane planner must never drive this financial writer.
+        # Historical direct callers omit lane; a real Stop-first active
+        # entry must supply explicit Hyperliquid provenance. Cancel is
+        # risk-reducing and may retain the legacy omitted-lane Stop port.
+        if (lane not in (None, 'HYPERLIQUID')
+                or (self._stop_first_state == 'RELEASED'
+                    and not cancel and lane != 'HYPERLIQUID')):
+            raise ValueError('UNIFIED_RESTING_EXPLICIT_PERP_LANE_REQUIRED')
         """Reserve pending exposure before control publication; never a fill."""
         if self._stop_first_state == 'RELEASED' and not cancel:
             from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
