@@ -123,38 +123,32 @@ def test_local_workspace_origin_refuses_before_selector_store(monkeypatch):
 
 
 def test_current_selected_reference_is_proven_without_financial_grant():
-    # The existing R16 native selector is already independently readable.
-    # This pure shape check is NOT an issuer and does not claim the WORKSPACE
-    # source is installed, nor permit account publication.
-    from scripts.observation_runtime.atlas_r16_selected_code_readback import (
-        ARTIFACT_DIGEST,
-        selected_code,
-    )
-    from scripts.observation_runtime.atlas_r16_selected_code_readback import (
-        RELEASE as SELECTED_RELEASE,
-    )
+    # Read the current native selection, not a historical hardcoded R16
+    # selector. A pure path proof does NOT grant financial writer authority.
     from scripts.observation_runtime.personal_version_safe_release_clock import (
         SELECTOR_NATIVE,
     )
     from scripts.release_selection_store import NativeSelectionStore
 
-    assert selected_code()["selected_revision"] == 15
     store = NativeSelectionStore(
         root=r"D:\AtlasRuntime\selection", native_root=list(SELECTOR_NATIVE))
     try:
         with store.locked():
-            spec = store.records()[-1]["selected"]
-        selection = validate_spec(spec, "WINDOWS_LOCAL")
+            rows = store.records()
+        assert len(rows) in (15, 16)
+        assert rows[-1]["revision"] == len(rows)
+        selection = validate_spec(rows[-1]["selected"], "WINDOWS_LOCAL")
     finally:
         store.close()
-    assert selection["release"] == SELECTED_RELEASE.name
-    assert selection["artifact_digest"] == ARTIFACT_DIGEST
+    selected_release = Path(selection["root"])
+    assert selection["release"] == selected_release.name
     report = origin.validate_origin(
-        module_path=SELECTED_RELEASE / "scripts/observation_runtime/personal_activation_commission.py",
-        executable=SELECTED_RELEASE / "python/python.exe",
+        module_path=selected_release / "scripts/observation_runtime/personal_activation_commission.py",
+        executable=selected_release / "python/python.exe",
         selected=deepcopy(selection),
-        release_digest=ARTIFACT_DIGEST,
+        release_digest=selection["artifact_digest"],
     )
+    assert report["selected_code_release"] == selection["release"]
     assert report["selected_artifact_digest_bound"]
     assert not report["financial_writer_lease_issued"]
 
@@ -189,3 +183,35 @@ def test_direct_activation_publisher_refuses_workspace_origin_before_native_file
             release_digest=ARTIFACT, accounts={"QUALITY_DIPS": "b"*64},
             clock=FakeLocalWindowsClock(), runtime_id="synthetic-readonly",
         )
+
+
+def test_origin_helper_resolves_exact_native_activation_sibling_not_itself():
+    helper = ROOT / "scripts/observation_runtime/personal_native_financial_release_origin.py"
+    assert origin.resolve_installed_activation_module(helper) == MODULE
+    assert origin.resolve_installed_activation_module(helper) != helper
+    # The wrong helper-as-activation path was previously passed to this
+    # validator and rejected even when R17 was genuinely selected.
+    with pytest.raises(ValueError, match="EXACT_NATIVE_CODE_ORIGIN"):
+        origin.validate_origin(module_path=helper, executable=EXECUTABLE,
+                               selected=specimen(), release_digest=ARTIFACT)
+    report = origin.validate_origin(
+        module_path=origin.resolve_installed_activation_module(helper),
+        executable=EXECUTABLE,
+        selected=specimen(),
+        release_digest=ARTIFACT,
+    )
+    assert report["selected_code_release"] == RELEASE
+    assert report["financial_writer_lease_issued"] is False
+
+
+@pytest.mark.parametrize("helper", [
+    MODULE,
+    Path("D:/Work/Project Atlas/scripts/observation_runtime/not_origin.py"),
+    Path("D:/AtlasRuntime/releases/" + "c"*40 + "/scripts/foreign/personal_native_financial_release_origin.py"),
+    Path("D:/AtlasRuntime/releases/" + "c"*40 + "/foreign/personal_native_financial_release_origin.py"),
+    Path("relative/personal_native_financial_release_origin.py"),
+    "D:/AtlasRuntime/releases/" + "c"*40 + "/scripts/observation_runtime/personal_native_financial_release_origin.py",
+])
+def test_activation_helper_never_accepts_unexpected_module_identity(helper):
+    with pytest.raises(ValueError, match="EXACT_ORIGIN_HELPER_REQUIRED"):
+        origin.resolve_installed_activation_module(helper)

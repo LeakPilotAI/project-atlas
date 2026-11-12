@@ -22,6 +22,23 @@ from scripts.observation_runtime.personal_version_safe_release_clock import (
 SCHEMA = "ATLAS_NATIVE_SELECTED_FINANCIAL_ACTIVATION_SOURCE_BINDING_V1"
 
 
+def resolve_installed_activation_module(helper_module):
+    """Bind a selected native helper to its exact installed activation sibling.
+
+    Never present the origin-helper .py as the activation entrypoint. Both
+    paths are checked against original installed Windows handles later.
+    """
+    if (not isinstance(helper_module, Path) or not helper_module.is_absolute()
+            or helper_module.name != "personal_native_financial_release_origin.py"
+            or helper_module.parent.name != "observation_runtime"
+            or helper_module.parent.parent.name != "scripts"):
+        raise ValueError("FINANCIAL_ACTIVATION_EXACT_ORIGIN_HELPER_REQUIRED")
+    module = helper_module.with_name("personal_activation_commission.py")
+    if module.parent != helper_module.parent:
+        raise ValueError("FINANCIAL_ACTIVATION_ORIGIN_SIBLING_CHANGED")
+    return module
+
+
 def validate_origin(*, module_path, executable, selected, release_digest):
     """Pure fail-closed consistency check AFTER actual original-handle readback."""
     from scripts.release_selection import validate_spec
@@ -68,9 +85,12 @@ def require_selected_native_origin(*, release_digest):
     """
     if os.name != "nt":
         raise ValueError("FINANCIAL_ACTIVATION_NATIVE_WINDOWS_REQUIRED")
-    module = Path(__file__).absolute()
-    release = module.parents[2]
+    helper = Path(__file__).absolute()
+    module = resolve_installed_activation_module(helper)
+    release = helper.parents[2]
     if (release.parent != RELEASE_PARENT
+            or not helper.is_file() or helper.is_symlink()
+            or helper.is_junction()
             or not module.is_file() or module.is_symlink()
             or module.is_junction()
             or not (release / CLOCK_RELATIVE).is_file()):
