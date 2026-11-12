@@ -223,11 +223,14 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
         # A DIFFERENT post-inception operator activation handles PAPER later.
         phase = getattr(owned_job, '_phase', None)
         if phase == 'PREINCEPTION':
-            if (type(actions) is not list or not actions
-                    or len(actions) != len(set(actions))
-                    or 'INITIALIZE_SIMULATED_ACCOUNTS' not in actions
-                    or set(actions) - {'READ_ONLY', 'INITIALIZE_SIMULATED_ACCOUNTS'}):
-                raise ValueError('ACTIVATION_FUTURE_PREINCEPTION_INIT_ONLY_ACTIONS_REQUIRED')
+            # NativePersonalTechnicalChecks always obtains a native READ_ONLY
+            # lease before a once-only simulated account opening. A record
+            # granting INITIALIZE alone would pass this guard but fail during
+            # actual technical/financial readback. Admit exactly both actions.
+            if (type(actions) is not list
+                    or len(actions) != 2
+                    or set(actions) != {'READ_ONLY', 'INITIALIZE_SIMULATED_ACCOUNTS'}):
+                raise ValueError('ACTIVATION_FUTURE_PREINCEPTION_INIT_AND_READ_REQUIRED')
             origin = getattr(owned_job, 'origin', None)
             if (type(origin) is not dict
                     or origin.get('selected_artifact_digest_bound') is not True

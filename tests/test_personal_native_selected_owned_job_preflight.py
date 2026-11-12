@@ -545,7 +545,7 @@ def test_original_job_can_guard_first_inception_only_operator_activation(monkeyp
 
 
 @pytest.mark.parametrize("actions", [
-    None, [], ["READ_ONLY"], ["AUTO_PAPER"],
+    None, [], ["READ_ONLY"], ["INITIALIZE_SIMULATED_ACCOUNTS"], ["AUTO_PAPER"],
     ["SHUTDOWN_FLATTEN", "INITIALIZE_SIMULATED_ACCOUNTS"],
     ["CONNECT_APPROVED_DATA", "INITIALIZE_SIMULATED_ACCOUNTS"],
     ["INITIALIZE_SIMULATED_ACCOUNTS", "INITIALIZE_SIMULATED_ACCOUNTS"],
@@ -557,7 +557,7 @@ def test_original_job_can_guard_first_inception_only_operator_activation(monkeyp
 def test_preinception_activation_never_grants_trading_or_unscoped_actions(
         monkeypatch, actions):
     owner, calls = _synthetic_preinception_activation_owner(monkeypatch)
-    with (pytest.raises(ValueError, match="PREINCEPTION_INIT_ONLY_ACTIONS"),
+    with (pytest.raises(ValueError, match="PREINCEPTION_INIT_AND_READ_REQUIRED"),
           activation.retain_activation_writer_guard(
               qd={}, perp={}, release_digest=owner.release_digest,
               owned_job=owner, actions=actions)):
@@ -593,7 +593,7 @@ def test_preinception_operator_guard_refuses_untrusted_source_or_owner(
     with pytest.raises(ValueError), activation.retain_activation_writer_guard(
         qd={}, perp={}, release_digest=release,
         owned_job=owner,
-        actions=["INITIALIZE_SIMULATED_ACCOUNTS"],
+        actions=["READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"],
     ):
         pytest.fail("UNACCEPTED_SELECTED_INCEPTION_OWNER")
     assert calls == []
@@ -604,7 +604,7 @@ def test_preinception_native_job_revocation_on_exit_refuses_activation(monkeypat
     with (pytest.raises(ValueError, match="SYNTHETIC_OWNER_REVOKED"),
           activation.retain_activation_writer_guard(
               qd={}, perp={}, release_digest=owner.release_digest,
-              owned_job=owner, actions=["INITIALIZE_SIMULATED_ACCOUNTS"])):
+              owned_job=owner, actions=["READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"])):
         owner.revoked = True
     assert len(calls) == 2
 
@@ -614,7 +614,7 @@ def test_preinception_owner_phase_drift_on_exit_refuses_activation(monkeypatch):
     with (pytest.raises(ValueError, match="PREINCEPTION_OWNER_PHASE_CHANGED"),
           activation.retain_activation_writer_guard(
               qd={}, perp={}, release_digest=owner.release_digest,
-              owned_job=owner, actions=["INITIALIZE_SIMULATED_ACCOUNTS"])):
+              owned_job=owner, actions=["READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"])):
         owner._phase = "INITIAL_READBACK_ONLY"
     assert len(calls) == 2
 
