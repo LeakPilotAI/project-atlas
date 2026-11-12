@@ -500,3 +500,142 @@ def test_postinception_phase_drift_blocks_guard_exit(monkeypatch):
               owned_job=fake)):
         fake._phase = "INITIAL_READBACK_PENDING"
     assert len(calls) == 2
+
+
+def _synthetic_preinception_activation_owner(monkeypatch):
+    """Pure pytest fake; cannot become original Windows Job or finance issuer."""
+    from scripts.observation_runtime import (
+        personal_native_selected_owned_job_preflight as native,
+    )
+    calls = []
+
+    class FakeOwner:
+        release_digest = "f" * 64
+        _phase = "PREINCEPTION"
+        origin: ClassVar[dict] = {
+            "selected_artifact_digest_bound": True,
+            "financial_writer_lease_issued": False,
+            "financial_activation_published": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
+
+        def require_exact_roster(self, *, qd, perp):
+            calls.append((qd, perp))
+            if getattr(self, "revoked", False):
+                raise ValueError("SYNTHETIC_OWNER_REVOKED")
+            return True
+
+    monkeypatch.setattr(native, "RetainedSelectedNativeOwnerPreflight", FakeOwner)
+    return FakeOwner(), calls
+
+
+def test_original_job_can_guard_first_inception_only_operator_activation(monkeypatch):
+    owner, calls = _synthetic_preinception_activation_owner(monkeypatch)
+    with activation.retain_activation_writer_guard(
+        qd={"lane": "QD"}, perp={"lane": "HL"},
+        release_digest=owner.release_digest, owned_job=owner,
+        actions=["READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"],
+    ) as held:
+        assert held is owner
+        assert not hasattr(held, "lease")
+        assert len(calls) == 1
+    assert len(calls) == 2
+    assert calls == [({"lane": "QD"}, {"lane": "HL"})] * 2
+
+
+@pytest.mark.parametrize("actions", [
+    None, [], ["READ_ONLY"], ["AUTO_PAPER"],
+    ["SHUTDOWN_FLATTEN", "INITIALIZE_SIMULATED_ACCOUNTS"],
+    ["CONNECT_APPROVED_DATA", "INITIALIZE_SIMULATED_ACCOUNTS"],
+    ["INITIALIZE_SIMULATED_ACCOUNTS", "INITIALIZE_SIMULATED_ACCOUNTS"],
+    ["INITIALIZE_SIMULATED_ACCOUNTS", "AUTO_PAPER"],
+    ["INITIALIZE_SIMULATED_ACCOUNTS", "EMERGENCY_STOP"],
+    ["INITIALIZE_SIMULATED_ACCOUNTS", "LIVE_ORDERS"],
+    "INITIALIZE_SIMULATED_ACCOUNTS",
+])
+def test_preinception_activation_never_grants_trading_or_unscoped_actions(
+        monkeypatch, actions):
+    owner, calls = _synthetic_preinception_activation_owner(monkeypatch)
+    with (pytest.raises(ValueError, match="PREINCEPTION_INIT_ONLY_ACTIONS"),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=owner.release_digest,
+              owned_job=owner, actions=actions)):
+        pytest.fail("UNAPPROVED_FIRST_INCEPTION_ACTIVATION")
+    assert calls == []
+
+
+@pytest.mark.parametrize("mutation", [
+    "foreign_release", "selected_unbound", "financial_lease",
+    "already_activated", "paper_enabled", "live_enabled",
+    "not_real_owner", "already_initializing",
+])
+def test_preinception_operator_guard_refuses_untrusted_source_or_owner(
+        monkeypatch, mutation):
+    owner, calls = _synthetic_preinception_activation_owner(monkeypatch)
+    release = owner.release_digest
+    if mutation == "foreign_release":
+        release = "e" * 64
+    elif mutation == "selected_unbound":
+        owner.origin["selected_artifact_digest_bound"] = False
+    elif mutation == "financial_lease":
+        owner.origin["financial_writer_lease_issued"] = True
+    elif mutation == "already_activated":
+        owner.origin["financial_activation_published"] = True
+    elif mutation == "paper_enabled":
+        owner.origin["paper_start_authorized"] = True
+    elif mutation == "live_enabled":
+        owner.origin["live_trading_authorized"] = True
+    elif mutation == "not_real_owner":
+        owner = object()
+    elif mutation == "already_initializing":
+        owner._phase = "INITIAL_READBACK_PENDING"
+    with pytest.raises(ValueError), activation.retain_activation_writer_guard(
+        qd={}, perp={}, release_digest=release,
+        owned_job=owner,
+        actions=["INITIALIZE_SIMULATED_ACCOUNTS"],
+    ):
+        pytest.fail("UNACCEPTED_SELECTED_INCEPTION_OWNER")
+    assert calls == []
+
+
+def test_preinception_native_job_revocation_on_exit_refuses_activation(monkeypatch):
+    owner, calls = _synthetic_preinception_activation_owner(monkeypatch)
+    with (pytest.raises(ValueError, match="SYNTHETIC_OWNER_REVOKED"),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=owner.release_digest,
+              owned_job=owner, actions=["INITIALIZE_SIMULATED_ACCOUNTS"])):
+        owner.revoked = True
+    assert len(calls) == 2
+
+
+def test_preinception_owner_phase_drift_on_exit_refuses_activation(monkeypatch):
+    owner, calls = _synthetic_preinception_activation_owner(monkeypatch)
+    with (pytest.raises(ValueError, match="PREINCEPTION_OWNER_PHASE_CHANGED"),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=owner.release_digest,
+              owned_job=owner, actions=["INITIALIZE_SIMULATED_ACCOUNTS"])):
+        owner._phase = "INITIAL_READBACK_ONLY"
+    assert len(calls) == 2
+
+
+@pytest.mark.parametrize("actions", [
+    ["INITIALIZE_SIMULATED_ACCOUNTS"],
+    ["AUTO_PAPER", "INITIALIZE_SIMULATED_ACCOUNTS"],
+    ["INITIALIZE_SIMULATED_ACCOUNTS", "READ_ONLY"],
+])
+def test_postinception_operator_activation_must_not_reuse_initializer(
+        monkeypatch, actions):
+    owner, calls = synthetic_postinception_activation_owner(monkeypatch)
+    with (pytest.raises(ValueError, match="POSTINCEPTION_INIT_REUSE_REFUSED"),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=owner.release_digest,
+              owned_job=owner, actions=actions)):
+        pytest.fail("POSTINCEPTION_ACCOUNT_INITIALIZATION_REPLAY")
+    assert calls == []
+
+
+def test_commission_function_passes_actual_operator_record_action_to_native_guard():
+    source = inspect.getsource(activation.commission)
+    assert "actions=record['actions']" in source
+    assert "publish_personal_activation(" in source

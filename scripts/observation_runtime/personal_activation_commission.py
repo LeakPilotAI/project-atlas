@@ -177,7 +177,8 @@ def retain_r16_nonfinancial_original_job(*, qd, perp, owned_job):
 
 
 @contextmanager
-def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
+def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
+                                   actions=None):
     """Use the original R15 Job+PROCESS HANDLE; never reopen its PID.
 
     R15 ownership is necessarily *in-process*, holding the exact child
@@ -215,11 +216,44 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
         if (type(owned_job) is not RetainedSelectedNativeOwnerPreflight
                 or owned_job.release_digest != release_digest):
             raise ValueError('ACTIVATION_FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING')
-        # This is ONLY a post-inception, non-trading activation RECORD
-        # publication guard. It is not the separate PAPER financial-operation
-        # issuer, and cannot be used to bootstrap either native account.
-        # Require the original Job to have observed TWO genuine, distinct,
-        # ACKNOWLEDGED FS1/FS3 inception publications before entering.
+        # The original Job-backed activation RECORD is needed BEFORE the first
+        # once-only native PAPER account publisher can run. Allow a narrowly
+        # scoped initialization-only activation while all twelve original
+        # account roots remain EMPTY; never AUTO_PAPER or external orders.
+        # A DIFFERENT post-inception operator activation handles PAPER later.
+        phase = getattr(owned_job, '_phase', None)
+        if phase == 'PREINCEPTION':
+            if (type(actions) is not list or not actions
+                    or len(actions) != len(set(actions))
+                    or 'INITIALIZE_SIMULATED_ACCOUNTS' not in actions
+                    or set(actions) - {'READ_ONLY', 'INITIALIZE_SIMULATED_ACCOUNTS'}):
+                raise ValueError('ACTIVATION_FUTURE_PREINCEPTION_INIT_ONLY_ACTIONS_REQUIRED')
+            origin = getattr(owned_job, 'origin', None)
+            if (type(origin) is not dict
+                    or origin.get('selected_artifact_digest_bound') is not True
+                    or any(origin.get(flag) is not False for flag in (
+                        'financial_writer_lease_issued',
+                        'financial_activation_published',
+                        'paper_start_authorized',
+                        'live_trading_authorized'))):
+                raise ValueError('ACTIVATION_FUTURE_PREINCEPTION_SELECTED_ORIGIN_REQUIRED')
+            owned_job.require_exact_roster(qd=qd, perp=perp)
+            try:
+                yield owned_job  # Activation RECORD only; no publisher run here.
+            finally:
+                owned_job.require_exact_roster(qd=qd, perp=perp)
+                if getattr(owned_job, '_phase', None) != 'PREINCEPTION':
+                    raise ValueError('ACTIVATION_FUTURE_PREINCEPTION_OWNER_PHASE_CHANGED')
+            return
+        # Any other successor activation requires two ACKNOWLEDGED native
+        # FS1/FS3 inceptions. No partial or unknown account may proceed.
+        # If a scoped operator record is provided, it MUST NOT grant another
+        # account initializer once financial entry can later be admitted.
+        if (actions is not None
+                and (type(actions) is not list
+                     or len(actions) != len(set(actions))
+                     or 'INITIALIZE_SIMULATED_ACCOUNTS' in actions)):
+            raise ValueError('ACTIVATION_FUTURE_POSTINCEPTION_INIT_REUSE_REFUSED')
         if (getattr(owned_job, '_phase', None) != 'INITIAL_READBACK_ONLY'
                 or type(getattr(owned_job, '_initial_cuts', None)) is not tuple
                 or len(owned_job._initial_cuts) != 2
@@ -357,7 +391,8 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
         ARTIFACT as R15_ARTIFACT,
     )
     with retain_activation_writer_guard(qd=qd, perp=perp,
-            release_digest=release_digest, owned_job=owned_job) as writers:
+            release_digest=release_digest, owned_job=owned_job,
+            actions=record['actions']) as writers:
         writers.verify_still_running()
         if clock_profile == V7_NTP_PROFILE:
             clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
