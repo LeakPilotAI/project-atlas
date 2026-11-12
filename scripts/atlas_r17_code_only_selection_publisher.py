@@ -32,7 +32,7 @@ from scripts.release_selection_store import NativeSelectionStore
 
 ROOT = Path("D:/Work/Project Atlas")
 APPROVAL = ROOT / "logs/diagnostics/atlas-r17-code-only-selection-one-shot-approval.json"
-APPROVAL_SHA256 = None  # R17 distinct nonfinancial native selection; no prior operator permission reused.
+APPROVAL_SHA256 = "6a88cecfa28b3f1c9e4c5424478fcc4415bf5a71ac66548b08efe9a5b349eda4"  # R17 distinct nonfinancial native selection; no prior operator permission reused.
 SCOPE = "SELECT_EXACT_INSTALLED_R17_CODE_ONLY_NO_FINANCIAL_START"
 OPERATION = "APPROVE_ONE_R17_NATIVE_CODE_ONLY_SELECTION"
 CLOCK_IDENTITY = "atlas-r17-code-only-native-selection"
