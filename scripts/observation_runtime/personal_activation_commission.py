@@ -215,14 +215,41 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
         if (type(owned_job) is not RetainedSelectedNativeOwnerPreflight
                 or owned_job.release_digest != release_digest):
             raise ValueError('ACTIVATION_FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING')
-        # Future native successor structural custody now has its own exact
-        # original-handle check. It is STILL not a financial issuer, nor does
-        # this context yield to the financial activation publisher.
+        # This is ONLY a post-inception, non-trading activation RECORD
+        # publication guard. It is not the separate PAPER financial-operation
+        # issuer, and cannot be used to bootstrap either native account.
+        # Require the original Job to have observed TWO genuine, distinct,
+        # ACKNOWLEDGED FS1/FS3 inception publications before entering.
+        if (getattr(owned_job, '_phase', None) != 'INITIAL_READBACK_ONLY'
+                or type(getattr(owned_job, '_initial_cuts', None)) is not tuple
+                or len(owned_job._initial_cuts) != 2
+                or type(getattr(owned_job, '_initial_bootstraps', None)) is not tuple
+                or len(owned_job._initial_bootstraps) != 2):
+            raise ValueError('ACTIVATION_FUTURE_TWO_GENUINE_INITIAL_ACCOUNTS_REQUIRED')
+        origin = getattr(owned_job, 'origin', None)
+        if (type(origin) is not dict
+                or origin.get('selected_artifact_digest_bound') is not True
+                or origin.get('financial_writer_lease_issued') is not False
+                or origin.get('financial_activation_published') is not False
+                or origin.get('paper_start_authorized') is not False
+                or origin.get('live_trading_authorized') is not False):
+            raise ValueError('ACTIVATION_FUTURE_ORIGINAL_SELECTED_SOURCE_PROOF_REQUIRED')
+        owned_job.require_exact_roster(qd=qd, perp=perp)
         try:
-            owned_job.require_exact_roster(qd=qd, perp=perp)
-            raise ValueError('ACTIVATION_FUTURE_INDEPENDENT_FINANCIAL_LEASE_NOT_ACCEPTED')
+            # The activation publisher separately validates the native
+            # installed release, approved LOCAL_OPERATOR input record,
+            # independent clock and create-only activation output. This
+            # borrowed original owner handle does NOT issue a PAPER lease.
+            yield owned_job
         finally:
+            # Even on publisher exceptions, a disappearing process, changed
+            # account root or revoked initial ACK is terminal, never success.
             owned_job.require_exact_roster(qd=qd, perp=perp)
+            if getattr(owned_job, '_phase', None) != 'INITIAL_READBACK_ONLY':
+                raise ValueError('ACTIVATION_FUTURE_INITIAL_OWNER_PHASE_CHANGED')
+        # A verified successor activation-only context is complete. Never
+        # fall through to an obsolete R15 or PID-only legacy writer adapter.
+        return
     if release_digest == R15_ARTIFACT:
         from scripts.observation_runtime.personal_r15_owned_job_activation import (
             RetainedSelectedR15OwnerJob,

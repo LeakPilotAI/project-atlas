@@ -63,11 +63,22 @@ def test_bare_unowned_process_api_cannot_be_adopted():
 @pytest.mark.skipif(sys.platform!="win32",reason="Actual installed R15 Windows process required")
 def test_actual_alive_r15_executable_without_atlas_owned_job_refused_before_clock_and_publication(
         tmp_path,monkeypatch):
-    from scripts.observation_runtime.atlas_r16_selected_code_readback import (
-        selected_code,
+    from scripts.observation_runtime.personal_version_safe_release_clock import (
+        SELECTOR_NATIVE,
     )
-    if selected_code()["selected_revision"] == 15:
-        pytest.skip("Historical R15 native test; current selected release is R16")
+    from scripts.release_selection_store import NativeSelectionStore
+
+    # This is a historical R15-only native experiment. A strictly pinned R16
+    # readback must NOT be used after a valid R17 revision-16 code selection.
+    store = NativeSelectionStore(
+        root=r"D:\AtlasRuntime\selection", native_root=list(SELECTOR_NATIVE))
+    try:
+        with store.locked():
+            current = store.records()[-1]["selected"]["release"]
+    finally:
+        store.close()
+    if current != RELEASE.name:
+        pytest.skip("Historical R15 native experiment; a different release is selected")
     child=subprocess.Popen(
         [IMAGE,"-I","-B","-S","-c","import time; time.sleep(10)"],
         cwd=str(RELEASE),stdin=subprocess.DEVNULL,

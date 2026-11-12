@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import copy
 import inspect
+from typing import ClassVar
 
 import pytest
 from test_personal_r16_owned_job_activation import rosters
@@ -147,7 +148,7 @@ def test_future_install_guard_requires_real_owner_before_legacy_writer_port(monk
         pytest.fail("UNOWNED_FUTURE_RELEASE_ENTERED_FINANCE")
 
 
-def test_structural_owner_may_be_verified_twice_but_never_publish_activation(
+def test_preinception_structural_owner_cannot_publish_activation(
         monkeypatch):
     observed = []
     original_class = candidate.RetainedSelectedNativeOwnerPreflight
@@ -166,12 +167,12 @@ def test_structural_owner_may_be_verified_twice_but_never_publish_activation(
     fake = SyntheticOriginal()
     try:
         with (pytest.raises(ValueError,
-                            match="ACTIVATION_FUTURE_INDEPENDENT_FINANCIAL_LEASE_NOT_ACCEPTED"),
+                            match="ACTIVATION_FUTURE_TWO_GENUINE_INITIAL_ACCOUNTS_REQUIRED"),
               activation.retain_activation_writer_guard(
                   qd={"account": "QD"}, perp={"account": "HL"},
                   release_digest=fake.release_digest, owned_job=fake)):
             pytest.fail("FINANCIAL_GUARD_YIELDED")
-        assert len(observed) == 2
+        assert len(observed) == 0
     finally:
         monkeypatch.setattr(candidate, "RetainedSelectedNativeOwnerPreflight",
                             original_class)
@@ -181,6 +182,16 @@ def test_structural_owner_exit_must_recheck_and_refuse_revoked_owner(monkeypatch
     seen = []
     class SyntheticOriginal:
         release_digest = "f"*64
+        _phase = "INITIAL_READBACK_ONLY"
+        _initial_cuts = ({}, {})
+        _initial_bootstraps = (object(), object())
+        origin: ClassVar[dict] = {
+            "selected_artifact_digest_bound": True,
+            "financial_writer_lease_issued": False,
+            "financial_activation_published": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
         def require_exact_roster(self, *, qd, perp):
             seen.append((qd, perp))
             if len(seen) == 2:
@@ -191,7 +202,8 @@ def test_structural_owner_exit_must_recheck_and_refuse_revoked_owner(monkeypatch
     with (pytest.raises(ValueError, match="STRUCTURAL_OWNER_EXIT_REVOKED"),
           activation.retain_activation_writer_guard(
               qd={}, perp={}, release_digest="f"*64, owned_job=SyntheticOriginal())):
-        pytest.fail("NEVER_FINANCIAL")
+        # This is an activation-only context, NOT a financial operation lease.
+        pass
     assert len(seen) == 2
 
 
@@ -366,3 +378,125 @@ def test_durable_initial_publication_rollback_revokes_owner(monkeypatch):
     with pytest.raises(ValueError, match="PERSONAL_INITIAL_READBACK_REFUSED"):
         owner.verify_still_running()
     assert owner._initial_cuts[0][1] == {"authenticated_initial": True}
+
+
+def synthetic_postinception_activation_owner(monkeypatch):
+    """Pytest-only replacement; NEVER a genuine Job, accounts, or finance issuer."""
+    calls = []
+
+    class SyntheticOriginal:
+        release_digest = "f" * 64
+        _phase = "INITIAL_READBACK_ONLY"
+        _initial_cuts = ({}, {})
+        _initial_bootstraps = (object(), object())
+        origin: ClassVar[dict] = {
+            "selected_artifact_digest_bound": True,
+            "financial_writer_lease_issued": False,
+            "financial_activation_published": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
+
+        def require_exact_roster(self, *, qd, perp):
+            calls.append((qd, perp))
+            if getattr(self, "revoked", False):
+                raise ValueError("SYNTHETIC_ORIGINAL_JOB_REVOKED")
+            return True
+
+        def verify_still_running(self):
+            return not getattr(self, "revoked", False)
+
+    monkeypatch.setattr(candidate, "RetainedSelectedNativeOwnerPreflight",
+                        SyntheticOriginal)
+    return SyntheticOriginal(), calls
+
+
+def test_postinception_selected_original_owner_can_guard_activation_only(monkeypatch):
+    fake, calls = synthetic_postinception_activation_owner(monkeypatch)
+    from scripts.observation_runtime import personal_activation_publisher as publisher
+    monkeypatch.setattr(publisher, "publish_personal_activation",
+                        lambda **kwargs: pytest.fail("NO_NATIVE_ACTIVATION_OUTPUT_IN_TEST"))
+    with activation.retain_activation_writer_guard(
+        qd={"account": "QD"}, perp={"account": "HL"},
+        release_digest=fake.release_digest, owned_job=fake,
+    ) as held:
+        assert held is fake
+        assert not hasattr(held, "lease")
+        assert not hasattr(held, "place_order")
+        assert len(calls) == 1
+    assert len(calls) == 2
+    assert calls == [({"account": "QD"}, {"account": "HL"})] * 2
+
+
+@pytest.mark.parametrize("damage", [
+    "no_qd_or_hl_ack", "phase_preinception", "pending_partial_inception",
+    "missing_cuts", "missing_bootstraps", "only_one_inception",
+    "unverified_origin", "writer_lease_claimed", "activation_claimed",
+    "paper_start_claimed", "live_order_claimed", "not_exact_release",
+])
+def test_postinception_activation_guard_refuses_missing_original_proof(
+        monkeypatch, damage):
+    fake, calls = synthetic_postinception_activation_owner(monkeypatch)
+    required_release = fake.release_digest
+    if damage == "no_qd_or_hl_ack":
+        fake._initial_cuts = None
+        fake._initial_bootstraps = None
+    elif damage == "phase_preinception":
+        fake._phase = "PREINCEPTION"
+    elif damage == "pending_partial_inception":
+        fake._phase = "INITIAL_READBACK_PENDING"
+    elif damage == "missing_cuts":
+        fake._initial_cuts = None
+    elif damage == "missing_bootstraps":
+        fake._initial_bootstraps = None
+    elif damage == "only_one_inception":
+        fake._initial_bootstraps = (object(),)
+    elif damage == "unverified_origin":
+        fake.origin["selected_artifact_digest_bound"] = False
+    elif damage == "writer_lease_claimed":
+        fake.origin["financial_writer_lease_issued"] = True
+    elif damage == "activation_claimed":
+        fake.origin["financial_activation_published"] = True
+    elif damage == "paper_start_claimed":
+        fake.origin["paper_start_authorized"] = True
+    elif damage == "live_order_claimed":
+        fake.origin["live_trading_authorized"] = True
+    elif damage == "not_exact_release":
+        required_release = "e" * 64
+    with (pytest.raises(ValueError),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=required_release,
+              owned_job=fake)):
+        pytest.fail("INCOMPLETE_OR_UNKNOWN_NATIVE_ACCOUNT_ACTIVATION_ACCEPTED")
+    assert calls == []
+
+
+def test_postinception_original_job_revocation_blocks_guard_entry(monkeypatch):
+    fake, calls = synthetic_postinception_activation_owner(monkeypatch)
+    fake.revoked = True
+    with (pytest.raises(ValueError, match="SYNTHETIC_ORIGINAL_JOB_REVOKED"),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=fake.release_digest,
+              owned_job=fake)):
+        pytest.fail("REVOKED_ORIGINAL_JOB_ACCEPTED")
+    assert len(calls) == 1
+
+
+def test_postinception_original_job_revocation_blocks_guard_exit(monkeypatch):
+    fake, calls = synthetic_postinception_activation_owner(monkeypatch)
+    with (pytest.raises(ValueError, match="SYNTHETIC_ORIGINAL_JOB_REVOKED"),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=fake.release_digest,
+              owned_job=fake)):
+        fake.revoked = True
+    assert len(calls) == 2
+
+
+def test_postinception_phase_drift_blocks_guard_exit(monkeypatch):
+    fake, calls = synthetic_postinception_activation_owner(monkeypatch)
+    with (pytest.raises(ValueError, match="INITIAL_OWNER_PHASE_CHANGED"),
+          activation.retain_activation_writer_guard(
+              qd={}, perp={}, release_digest=fake.release_digest,
+              owned_job=fake)):
+        fake._phase = "INITIAL_READBACK_PENDING"
+    assert len(calls) == 2
