@@ -4,7 +4,6 @@ Only disposable local JSON files; no installed activation record created,
 native account roots touched, provider connection, or financial clock acquired.
 """
 import json
-import os
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -139,7 +138,9 @@ def test_empty_account_docs_cannot_advance_to_activation_clock(
                         lambda **kwargs: pytest.fail("MUST_NOT_START_FINANCIAL_CLOCK"))
     monkeypatch.setattr(act, "publish_personal_activation",
                         lambda **kwargs: pytest.fail("MUST_NOT_CREATE_ACTIVATION"))
-    with pytest.raises(ValueError, match="ACTIVATION_STRICT_JSON_INPUT_REFUSED:record"):
+    # Workspace source cannot become an installed financial issuer.
+    # Strict JSON validation remains separately tested via the bounded reader.
+    with pytest.raises(ValueError, match="FINANCIAL_ACTIVATION_SOURCE_MUST_BE_INSTALLED"):
         act.commission(
             root=root, record_path=record, policy_path=policy,
             release_digest="a" * 64, accounts_path=accounts,

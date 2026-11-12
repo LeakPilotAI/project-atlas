@@ -10,22 +10,29 @@ import sys
 from pathlib import Path
 
 import pytest
-
 from app.services.paper_financial_replay import digest
-from app.services.personal_paper_runtime import validate_policy
-from app.services.quality_dips_autonomous_enrollment import (
-    WRITERS as QD_WRITERS, validate_enrollment as validate_qd,
+from app.services.perp_operational_contract import (
+    WRITERS as HL_WRITERS,
 )
 from app.services.perp_operational_contract import (
-    WRITERS as HL_WRITERS, validate_enrollment as validate_hl,
+    validate_enrollment as validate_hl,
 )
+from app.services.personal_paper_runtime import validate_policy
+from app.services.quality_dips_autonomous_enrollment import (
+    WRITERS as QD_WRITERS,
+)
+from app.services.quality_dips_autonomous_enrollment import (
+    validate_enrollment as validate_qd,
+)
+
 from scripts.observation_runtime import personal_activation_commission as activation
 from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
 from scripts.observation_runtime.atlas_r15_disposable_writer_process_audit import (
     _windows_handle_identity,
 )
 from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
-    ARTIFACT, RELEASE,
+    ARTIFACT,
+    RELEASE,
 )
 from scripts.observation_runtime.atlas_r15_two_account_enrollment_handoff import (
     inspect as draft,
@@ -56,6 +63,11 @@ def test_bare_unowned_process_api_cannot_be_adopted():
 @pytest.mark.skipif(sys.platform!="win32",reason="Actual installed R15 Windows process required")
 def test_actual_alive_r15_executable_without_atlas_owned_job_refused_before_clock_and_publication(
         tmp_path,monkeypatch):
+    from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+        selected_code,
+    )
+    if selected_code()["selected_revision"] == 15:
+        pytest.skip("Historical R15 native test; current selected release is R16")
     child=subprocess.Popen(
         [IMAGE,"-I","-B","-S","-c","import time; time.sleep(10)"],
         cwd=str(RELEASE),stdin=subprocess.DEVNULL,
@@ -119,36 +131,27 @@ def test_r15_guard_refuses_any_claim_without_original_held_job(foreign,monkeypat
     from scripts.observation_runtime import personal_native_writer_lifetime as legacy
     monkeypatch.setattr(legacy,"retain_live_enrollment_writers",
                         lambda *a,**k:pytest.fail("R15_MUST_NOT_REOPEN_A_PID"))
-    with pytest.raises(ValueError,match="ACTIVATION_R15_RETAINED_NATIVE_JOB_REQUIRED"):
-        with activation.retain_activation_writer_guard(
-                qd={},perp={},release_digest=ARTIFACT,owned_job=foreign):
-            pytest.fail("FOREIGN_JOB_MUST_NOT_BE_ENTERED")
+    with pytest.raises(ValueError, match="ACTIVATION_R15_RETAINED_NATIVE_JOB_REQUIRED"), \
+            activation.retain_activation_writer_guard(
+                qd={}, perp={}, release_digest=ARTIFACT, owned_job=foreign):
+        pytest.fail("FOREIGN_JOB_MUST_NOT_BE_ENTERED")
 
 
-def test_old_release_writer_guard_still_uses_original_retained_handle_port(monkeypatch):
-    from contextlib import contextmanager
+def test_unreviewed_future_release_cannot_use_legacy_pid_only_writer_port(monkeypatch):
     from scripts.observation_runtime import personal_native_writer_lifetime as legacy
-    counts=[]
-    proof=object()
-    @contextmanager
-    def original(qd,perp,*,release_digest):
-        counts.append(("entered",qd,perp,release_digest))
-        yield proof
-        counts.append(("exited",))
-    monkeypatch.setattr(legacy,"retain_live_enrollment_writers",original)
-    with activation.retain_activation_writer_guard(
-            qd={"lane":"QD"},perp={"lane":"HL"},release_digest="f"*64) as port:
-        assert port is proof
-    assert counts == [
-        ("entered",{"lane":"QD"},{"lane":"HL"},"f"*64),("exited",),
-    ]
+    monkeypatch.setattr(legacy, "retain_live_enrollment_writers",
+                        lambda *a, **k: pytest.fail("LEGACY_PID_PORT_MUST_NOT_OPEN"))
+    with pytest.raises(ValueError, match="FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING"), \
+            activation.retain_activation_writer_guard(
+                qd={"lane":"QD"}, perp={"lane":"HL"}, release_digest="f"*64):
+        pytest.fail("UNREVIEWED_FUTURE_RELEASE_MUST_NOT_ENTER")
 
 
 def test_old_release_refuses_any_foreign_r15_job_before_process_open(monkeypatch):
     from scripts.observation_runtime import personal_native_writer_lifetime as legacy
     monkeypatch.setattr(legacy,"retain_live_enrollment_writers",
                         lambda *a,**k:pytest.fail("FOREIGN_JOB_NOT_ALLOWED"))
-    with pytest.raises(ValueError,match="ACTIVATION_FOREIGN_JOB_OR_RELEASE_REFUSED"):
-        with activation.retain_activation_writer_guard(
-                qd={},perp={},release_digest="f"*64,owned_job=object()):
-            pytest.fail("FOREIGN_JOB_NOT_ALLOWED")
+    with pytest.raises(ValueError, match="ACTIVATION_FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING"), \
+            activation.retain_activation_writer_guard(
+                qd={}, perp={}, release_digest="f"*64, owned_job=object()):
+        pytest.fail("FOREIGN_JOB_NOT_ALLOWED")

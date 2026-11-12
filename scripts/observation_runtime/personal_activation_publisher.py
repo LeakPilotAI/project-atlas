@@ -88,22 +88,33 @@ def publish_personal_activation(
     # Caller-supplied identity/time never authorize native publication.
     # V7 requires its own exact selected native release and two-peer NTP port.
     # Existing Windows-time path retains its original default.
-    from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
-    from scripts.observation_runtime.personal_v7_operator_clock import (
-        NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
-    )
+    from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
     from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import (
         V7_ARTIFACT,
     )
+    from scripts.observation_runtime.personal_v7_operator_clock import (
+        PROFILE as V7_NTP_PROFILE,
+    )
+    from scripts.observation_runtime.personal_v7_operator_clock import (
+        NativeV7PaperOperatorClock,
+    )
     from scripts.observation_runtime.personal_v8_operator_clock import (
-        NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
         ARTIFACT as V8_ARTIFACT,
     )
+    from scripts.observation_runtime.personal_v8_operator_clock import (
+        PROFILE as V8_NTP_PROFILE,
+    )
+    from scripts.observation_runtime.personal_v8_operator_clock import (
+        NativeV8PaperOperatorClock,
+    )
     from scripts.observation_runtime.personal_version_safe_release_clock import (
-        NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+        PROFILE as VERSION_SAFE_NTP_PROFILE,
+    )
+    from scripts.observation_runtime.personal_version_safe_release_clock import (
+        NativeVersionSafePaperOperatorClock,
         require_version_safe_release_digest,
     )
-    from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
+    from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
     from scripts.volume_inspector.windows_output import current_sid
 
     if operator_id != current_sid():
@@ -191,6 +202,19 @@ def publish_personal_activation(
         raise PersonalActivationPublicationRefused(
             "Activation record exceeds native output bound"
         )
+
+    # A direct caller cannot bypass the activation command's installed
+    # process/source/selector check and publish from a workspace or an old
+    # release. This must run BEFORE create_root consumes its one-shot path.
+    from scripts.observation_runtime.personal_native_financial_release_origin import (
+        require_selected_native_origin,
+    )
+    try:
+        require_selected_native_origin(release_digest=release_digest)
+    except (ValueError, OSError, TypeError) as exc:
+        raise PersonalActivationPublicationRefused(
+            "Selected installed native activation origin required"
+        ) from exc
 
     native = _native_store()
     with native.w.WindowsOutput.create_root(root) as output:

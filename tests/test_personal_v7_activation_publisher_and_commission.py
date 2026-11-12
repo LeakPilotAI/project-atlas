@@ -1,10 +1,11 @@
 """V7 independent NTP activation admission — synthetic, never native financial effects."""
 import json
+from typing import ClassVar
 
 import pytest
-
 from app.services.paper_financial_replay import digest
 from app.services.personal_paper_runtime import validate_policy
+
 from scripts.observation_runtime import personal_activation_commission as commission
 from scripts.observation_runtime import personal_activation_publisher as publisher
 from scripts.observation_runtime import personal_v7_operator_clock as v7
@@ -14,7 +15,7 @@ from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import V7_ARTI
 
 class FakeNativeV7:
     """Only used as an exact monkeypatched class in disposable unit tests."""
-    created = []
+    created: ClassVar[list] = []
     def __init__(self, *, runtime_id):
         self.runtime_id = runtime_id
         self.revoked = False
@@ -46,6 +47,14 @@ def publisher_inputs(monkeypatch):
     monkeypatch.setattr(windows_output, "current_sid", lambda: "SYNTHETIC_OPERATOR")
     monkeypatch.setattr("backend.app.services.personal_paper_runtime.validate_activation_record",
                         lambda *a, **kw: True)
+    # Fixture-only: replace installed-source admission so this old synthetic
+    # clock/reader test can still exercise post-admission publisher behavior.
+    # Production always calls genuine native selected-origin verification.
+    from scripts.observation_runtime import (
+        personal_native_financial_release_origin as native_origin,
+    )
+    monkeypatch.setattr(native_origin, "require_selected_native_origin",
+                        lambda **_kw: {"fixture_only_not_financial_issuer": True})
     monkeypatch.setattr(publisher, "_native_store",
                         lambda: (_ for _ in ()).throw(RuntimeError("WOULD_ENTER_NATIVE_CUSTODY")))
     return {
@@ -110,12 +119,12 @@ def test_v7_oversized_record_never_consumes_native_activation_root(monkeypatch):
 
 def test_commission_requires_exact_v7_release_and_ntp_before_reading_file(monkeypatch):
     fake_path = "missing"
-    args = dict(root="D:\\AtlasCustody\\PersonalPaper\\synthetic",
-                record_path=fake_path,policy_path=fake_path,
-                release_digest=V7_ARTIFACT,accounts_path=fake_path,
-                expected_clock_source=SOURCE,runtime_id="TEST_V7",
-                qd_enrollment_path=fake_path,perp_enrollment_path=fake_path,
-                clock_profile=v7.PROFILE)
+    args = {"root": "D:\\AtlasCustody\\PersonalPaper\\synthetic",
+                "record_path": fake_path,"policy_path": fake_path,
+                "release_digest": V7_ARTIFACT,"accounts_path": fake_path,
+                "expected_clock_source": SOURCE,"runtime_id": "TEST_V7",
+                "qd_enrollment_path": fake_path,"perp_enrollment_path": fake_path,
+                "clock_profile": v7.PROFILE}
     for changes, message in (
         ({"release_digest": "f"*64}, "EXACT_V7_NATIVE_RELEASE_AND_NTP_SOURCE_REQUIRED"),
         ({"expected_clock_source": "time.google.com,0x8"},
@@ -131,8 +140,8 @@ def test_commission_requires_exact_v7_release_and_ntp_before_reading_file(monkey
 def test_v7_commission_validated_enrollments_then_only_invokes_bound_publisher(
     monkeypatch,tmp_path
 ):
-    from app.services import quality_dips_autonomous_enrollment as qe
     from app.services import perp_operational_contract as he
+    from app.services import quality_dips_autonomous_enrollment as qe
     FakeNativeV7.created = []
     source = {"account_id": "QD_DISPOSABLE", "release_digest": V7_ARTIFACT}
     other = {"account_id": "HL_DISPOSABLE", "release_digest": V7_ARTIFACT}
@@ -158,9 +167,15 @@ def test_v7_commission_validated_enrollments_then_only_invokes_bound_publisher(
     monkeypatch.setattr(he, "validate_enrollment", lambda o: audit.append("perp") or o)
     monkeypatch.setattr(commission, "verify_enrollment_native_roots",
                         lambda o:audit.append("native:"+o["account_id"]))
+    from scripts.observation_runtime import (
+        personal_native_financial_release_origin as native_origin,
+    )
+    monkeypatch.setattr(native_origin, "require_selected_native_origin",
+                        lambda **_kw: {"synthetic_fixture_only": True})
     # This pre-existing synthetic integration test deliberately bypasses only
     # the newly installed real HANDLE preflight; production never does.
     from contextlib import nullcontext
+
     from scripts.observation_runtime import personal_native_writer_lifetime as live
     class SyntheticRetention:
         def verify_still_running(self): return True

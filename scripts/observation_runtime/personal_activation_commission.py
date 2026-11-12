@@ -7,29 +7,41 @@ is inferred from commissioning scope or diagnostic data.
 import argparse
 import json
 import math
-from contextlib import contextmanager
 import ntpath
 import os
 import stat
+from contextlib import contextmanager
 from pathlib import Path
 
-from scripts.observation_runtime.personal_activation_publisher import publish_personal_activation
-from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
-from scripts.observation_runtime.personal_v7_operator_clock import (
-    NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
-)
+from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
 from scripts.observation_runtime.atlas_v7_commissioning_ntp_probe import V7_ARTIFACT
+from scripts.observation_runtime.personal_activation_publisher import (
+    publish_personal_activation,
+)
+from scripts.observation_runtime.personal_v7_operator_clock import (
+    PROFILE as V7_NTP_PROFILE,
+)
+from scripts.observation_runtime.personal_v7_operator_clock import (
+    NativeV7PaperOperatorClock,
+)
 from scripts.observation_runtime.personal_v8_operator_clock import (
-    NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
     ARTIFACT as V8_ARTIFACT,
 )
+from scripts.observation_runtime.personal_v8_operator_clock import (
+    PROFILE as V8_NTP_PROFILE,
+)
+from scripts.observation_runtime.personal_v8_operator_clock import (
+    NativeV8PaperOperatorClock,
+)
 from scripts.observation_runtime.personal_version_safe_release_clock import (
-    NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+    PROFILE as VERSION_SAFE_NTP_PROFILE,
+)
+from scripts.observation_runtime.personal_version_safe_release_clock import (
+    NativeVersionSafePaperOperatorClock,
     require_version_safe_release_digest,
 )
-from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
+from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 from scripts.volume_inspector.windows_output import current_sid
-
 
 # File bounds apply before JSON parsing, native process retention, NTP sampling
 # or create-only operator activation. These are untrusted *input* files, never
@@ -193,6 +205,11 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None):
         with retain_r16_nonfinancial_original_job(
                 qd=qd, perp=perp, owned_job=owned_job):
             raise ValueError('ACTIVATION_R16_INDEPENDENT_FINANCIAL_LEASE_NOT_ACCEPTED')
+    # A later selected release must implement a separately audited native
+    # Job-backed financial writer issuer. Do NOT route an unknown successor
+    # into the old PID-only historical adapter by default.
+    if release_digest not in (R15_ARTIFACT, V7_ARTIFACT, V8_ARTIFACT):
+        raise ValueError('ACTIVATION_FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING')
     if release_digest == R15_ARTIFACT:
         from scripts.observation_runtime.personal_r15_owned_job_activation import (
             RetainedSelectedR15OwnerJob,
@@ -241,6 +258,14 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             raise ValueError('EXACT_VERSION_SAFE_NATIVE_NTP_SOURCE_REQUIRED')
     elif clock_profile != "WINDOWS_TIME_OPERATOR_CLOCK_V4":
         raise ValueError('UNREVIEWED_ACTIVATION_CLOCK_PROFILE')
+    # Native issuer candidate MUST originate from the exact selected and
+    # original-handle verified installed release and its own Python process.
+    # Workspace copies, stale release digests and historical native code must
+    # fail before reading untrusted operator JSON or opening any native root.
+    from scripts.observation_runtime.personal_native_financial_release_origin import (
+        require_selected_native_origin,
+    )
+    require_selected_native_origin(release_digest=release_digest)
     record = read_bounded_activation_input(record_path, role='record')
     policy = read_bounded_activation_input(policy_path, role='policy')
     accounts = read_bounded_activation_input(accounts_path, role='accounts')
@@ -254,9 +279,13 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
         raise ValueError('ACTIVATION_ACCOUNTS_OR_RELEASE_MISMATCH')
     # Enrollment JSON alone is not native proof. Require exact structural and
     # digest binding if independently supplied; never mint account digests here.
-    from app.services.quality_dips_autonomous_enrollment import validate_enrollment as qd_validate
-    from app.services.perp_operational_contract import validate_enrollment as perp_validate
     from app.services.paper_financial_replay import digest as enrollment_digest
+    from app.services.perp_operational_contract import (
+        validate_enrollment as perp_validate,
+    )
+    from app.services.quality_dips_autonomous_enrollment import (
+        validate_enrollment as qd_validate,
+    )
     qd = qd_validate(read_bounded_activation_input(
         qd_enrollment_path, role='quality_dips_enrollment'))
     perp = perp_validate(read_bounded_activation_input(
@@ -271,8 +300,8 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
     verify_enrollment_native_roots(perp)
     # Check the full static activation contract before acquiring a short-lived
     # trusted-clock capability or entering native create-only custody.
-    from app.services.personal_paper_runtime import validate_policy
     from app.services.paper_financial_replay import digest
+    from app.services.personal_paper_runtime import validate_policy
     validated_policy = validate_policy(policy)
     if (record.get('policy_digest') != digest(validated_policy)
             or record.get('origin') != 'LOCAL_OPERATOR'

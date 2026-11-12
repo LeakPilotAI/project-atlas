@@ -224,6 +224,9 @@ class TestNativePublicationBehavior(unittest.TestCase):
         ), patch(
             "scripts.observation_runtime.personal_paper_activation.NativePersonalActivationReader",
             FakeReader,
+        ), patch(
+            "scripts.observation_runtime.personal_native_financial_release_origin.require_selected_native_origin",
+            return_value={"synthetic_fixture_only": True},
         ), patch.object(
             publisher,
             "_native_store",

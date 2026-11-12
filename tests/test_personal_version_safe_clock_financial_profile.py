@@ -4,20 +4,25 @@ from contextlib import nullcontext
 from pathlib import Path
 
 import pytest
-
 from app.services.paper_financial_replay import digest
 from app.services.personal_paper_runtime import validate_policy
-from scripts.observation_runtime import personal_version_safe_release_clock as v
+from test_personal_v7_activation_publisher_and_commission import (
+    FakeNativeV7,
+    publisher_inputs,
+)
+from test_personal_v7_installed_composition_clock import synthetic_call
+
 from scripts.observation_runtime import personal_activation_commission as commission
 from scripts.observation_runtime import personal_activation_publisher as publisher
-from scripts.observation_runtime import personal_source_install_authority as source
 from scripts.observation_runtime import personal_installation_technical as technical
 from scripts.observation_runtime import personal_local_authority as authority
 from scripts.observation_runtime import personal_paper_activation as assembly
-from scripts.observation_runtime.personal_paper_activation import NativePersonalActivationReader
+from scripts.observation_runtime import personal_source_install_authority as source
+from scripts.observation_runtime import personal_version_safe_release_clock as v
 from scripts.observation_runtime.atlas_independent_ntp_clock import SOURCE
-from test_personal_v7_activation_publisher_and_commission import publisher_inputs, FakeNativeV7
-from test_personal_v7_installed_composition_clock import synthetic_call
+from scripts.observation_runtime.personal_paper_activation import (
+    NativePersonalActivationReader,
+)
 
 FUTURE_ARTIFACT = 'd' * 64
 
@@ -109,10 +114,10 @@ def test_new_source_install_port_still_needs_exact_native_reader(monkeypatch):
     monkeypatch.setattr(source, 'require_version_safe_release_digest',
                         lambda **args: args['clock'] is clock
                         and args['release_digest'] == FUTURE_ARTIFACT)
-    kw = dict(reader=object.__new__(NativePersonalActivationReader),policy={},
-        release_digest=FUTURE_ARTIFACT,accounts={'QUALITY_DIPS':'a'*64},
-        clock=clock,runtime_id='SYNTHETIC',enrollment_digest='b'*64,
-        root_id=[1,2,3],initial_image=b'no-native-writes')
+    kw = {'reader': object.__new__(NativePersonalActivationReader),'policy': {},
+        'release_digest': FUTURE_ARTIFACT,'accounts': {'QUALITY_DIPS':'a'*64},
+        'clock': clock,'runtime_id': 'SYNTHETIC','enrollment_digest': 'b'*64,
+        'root_id': [1,2,3],'initial_image': b'no-native-writes'}
     obj = source.NativePersonalSourceInstallAuthority(**kw, clock_profile=v.PROFILE)
     assert obj.clock is clock and obj.used is False
     with pytest.raises(ValueError, match='SOURCE_INSTALL_NATIVE_ACTIVATION_AND_CLOCK_REQUIRED'):
@@ -120,21 +125,21 @@ def test_new_source_install_port_still_needs_exact_native_reader(monkeypatch):
 
 
 def test_commission_new_profile_rejects_bad_source_before_inputs():
-    kw = dict(root=r'D:\AtlasCustody\PersonalPaper\synthetic',
-              record_path='nonexistent', policy_path='nonexistent',
-              accounts_path='nonexistent', release_digest=FUTURE_ARTIFACT,
-              expected_clock_source='WRONG', runtime_id='SYNTHETIC',
-              qd_enrollment_path='nonexistent', perp_enrollment_path='nonexistent',
-              clock_profile=v.PROFILE)
+    kw = {'root': r'D:\AtlasCustody\PersonalPaper\synthetic',
+              'record_path': 'nonexistent', 'policy_path': 'nonexistent',
+              'accounts_path': 'nonexistent', 'release_digest': FUTURE_ARTIFACT,
+              'expected_clock_source': 'WRONG', 'runtime_id': 'SYNTHETIC',
+              'qd_enrollment_path': 'nonexistent', 'perp_enrollment_path': 'nonexistent',
+              'clock_profile': v.PROFILE}
     with pytest.raises(ValueError, match='EXACT_VERSION_SAFE_NATIVE_NTP_SOURCE_REQUIRED'):
         commission.commission(**kw)
-    with pytest.raises(FileNotFoundError):
+    with pytest.raises(ValueError, match='FINANCIAL_ACTIVATION_SOURCE_MUST_BE_INSTALLED'):
         commission.commission(**{**kw, 'expected_clock_source': SOURCE})
 
 
 def test_commission_never_publishes_without_selected_digest(monkeypatch, tmp_path):
-    from app.services import quality_dips_autonomous_enrollment as qe
     from app.services import perp_operational_contract as he
+    from app.services import quality_dips_autonomous_enrollment as qe
     qd={'account_id':'SYNTH_QD','release_digest':FUTURE_ARTIFACT}
     hl={'account_id':'SYNTH_HL','release_digest':FUTURE_ARTIFACT}
     accounts={'QUALITY_DIPS':digest(qd),'HYPERLIQUID':digest(hl)}
@@ -156,11 +161,22 @@ def test_commission_never_publishes_without_selected_digest(monkeypatch, tmp_pat
     # The synthetic clock/release test has no genuine installed Windows writer;
     # intercept only the new live-retained writer dependency in this test.
     from contextlib import nullcontext
+
     from scripts.observation_runtime import personal_native_writer_lifetime as live
     class SyntheticRetention:
         def verify_still_running(self): return True
     monkeypatch.setattr(live,'retain_live_enrollment_writers',
                         lambda *a,**kw:nullcontext(SyntheticRetention()))
+    # Synthetic legacy digest-check fixture only: explicitly replace the
+    # current installed-origin/Job issuer preconditions. The real production
+    # path cannot do either, and never adopts this test's fake authority.
+    from scripts.observation_runtime import (
+        personal_native_financial_release_origin as origin,
+    )
+    monkeypatch.setattr(origin, 'require_selected_native_origin',
+                        lambda **_kw: {'synthetic_fixture_only': True})
+    monkeypatch.setattr(commission, 'retain_activation_writer_guard',
+                        lambda **_kw: nullcontext(SyntheticRetention()))
     observed=[]
     monkeypatch.setattr(commission,'require_version_safe_release_digest',
                         lambda **kw: observed.append(kw) or (_ for _ in ()).throw(ValueError('SELECTED_ARTIFACT_REFUSED')))
