@@ -193,3 +193,32 @@ def test_structural_owner_exit_must_recheck_and_refuse_revoked_owner(monkeypatch
               qd={}, perp={}, release_digest="f"*64, owned_job=SyntheticOriginal())):
         pytest.fail("NEVER_FINANCIAL")
     assert len(seen) == 2
+
+
+def test_owner_native_selector_head_drift_refused_before_windows_handle_or_network(
+        monkeypatch):
+    # Inert Python object cannot launch a process; test confirms a changed
+    # native selected head blocks before touching any Win32 handle.
+    from scripts.observation_runtime import (
+        personal_native_selected_owned_job_preflight as owner_module,
+    )
+
+    fake_child = ContainedChild(api=object(), job=321, process=654)
+    fake_owner = object.__new__(owner_module.RetainedSelectedNativeOwnerPreflight)
+    fake_owner.child = fake_child
+    fake_owner.api = fake_child.api
+    fake_owner.job = fake_child.job
+    fake_owner.process = fake_child.process
+    fake_owner._selected_head = "EXPECTED_NATIVE_HEAD"
+    monkeypatch.setattr(owner_module, "require_native_version_safe_clock_source",
+                        lambda *, deep: "FOREIGN_NATIVE_HEAD" if deep is False
+                        else pytest.fail("NO_DEEP_FILE_SWEEP_ON_FAST_RECHECK"))
+    with pytest.raises(ValueError, match="ORIGINAL_JOB_OR_SELECTION_CHANGED"):
+        fake_owner.verify_still_running()
+
+
+def test_owner_initial_deep_installed_verification_not_repeated_during_each_recheck():
+    source = inspect.getsource(candidate.RetainedSelectedNativeOwnerPreflight)
+    assert source.count("require_selected_native_origin(") == 1
+    assert "require_native_version_safe_clock_source(deep=False)" in source
+    assert "return self.verify_still_running()" in source

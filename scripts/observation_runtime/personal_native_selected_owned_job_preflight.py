@@ -50,6 +50,9 @@ from scripts.observation_runtime.personal_native_writer_lifetime import _identit
 from scripts.observation_runtime.personal_r15_owned_job_activation import (
     require_exact_r15_preinception_roots,
 )
+from scripts.observation_runtime.personal_version_safe_release_clock import (
+    require_native_version_safe_clock_source,
+)
 
 SCHEMA = "ATLAS_SELECTED_NATIVE_SUCCESSOR_ORIGINAL_JOB_FINANCIAL_OWNER_PREFLIGHT_V1"
 WAIT_TIMEOUT = 258
@@ -128,6 +131,10 @@ class RetainedSelectedNativeOwnerPreflight:
         self.process = child.process
         self.release_digest = release_digest
         self.origin = deepcopy(origin)
+        # Deep installed-original-file readback occurs once at admission.
+        # Every subsequent fast owner check still validates the live native
+        # selector chain/head, held Job/process handles and all 12 native roots.
+        self._selected_head = require_native_version_safe_clock_source(deep=False)
         self.image = expected_image
         self._identity = self._original_process_identity()
         roles, qd, perp = validate_selected_two_lane_rosters(
@@ -164,8 +171,8 @@ class RetainedSelectedNativeOwnerPreflight:
     def verify_still_running(self):
         if (self.child.closed or self.child.api is not self.api
                 or self.child.job != self.job or self.child.process != self.process
-                or require_selected_native_origin(
-                    release_digest=self.release_digest) != self.origin):
+                or require_native_version_safe_clock_source(deep=False)
+                   != self._selected_head):
             raise ValueError("SELECTED_OWNER_ORIGINAL_JOB_OR_SELECTION_CHANGED")
         k = self.api.kernel32
         k.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
