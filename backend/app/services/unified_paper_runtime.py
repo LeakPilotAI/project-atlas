@@ -291,8 +291,14 @@ class UnifiedPaperRuntime:
         self.stop_context = None
         self.run_lock = asyncio.Lock()
         self.entry_closed = Event()
+        self._stop_requested = Event()
         self.observations = dict.fromkeys(LANES)
         self.uncertain = False
+        # Explicit opt-in financial Stop-first commissioning path. Existing
+        # disposable/test-only .start() behavior remains unchanged.
+        self._stop_first_state = 'UNUSED'
+        self._stop_first_issuer = None
+        self._stop_first_instrument = None
 
     def _lease(self):
         # Reuse installed component-lease semantics, not a caller approval file.
@@ -305,6 +311,13 @@ class UnifiedPaperRuntime:
             raise ValueError("UNIFIED_SESSION_OR_COMPONENTS_UNVERIFIED")
 
     def start(self, grant):
+        from app.services.personal_paper_runtime import PersonalOperatorInstallation
+
+        # The old one-step Start is retained for disposable/historical test
+        # contexts, NEVER for a genuine non-test personal financial session.
+        if (type(self.installation) is PersonalOperatorInstallation
+                and (type(grant) is not dict or grant.get('test_only') is not True)):
+            raise ValueError('UNIFIED_PERSONAL_STOP_FIRST_START_MANDATORY')
         with self.gate:
             if self.state != "STOPPED" or self.grant is not None or self.uncertain:
                 raise ValueError("UNIFIED_NEW_SESSION_REQUIRED")
@@ -319,6 +332,95 @@ class UnifiedPaperRuntime:
             except BaseException:
                 self.grant = None
                 raise
+
+    def arm_stop_first(self, grant):
+        """Arm an already commissioned personal session, but block ALL entries.
+
+        Requires the existing authenticated PersonalOperatorInstallation and
+        two separate account bindings. The native Stop owner must be bound
+        and source/Job/clock requirements verified before financial RUNNING.
+        This does not create a financial account, issuer or trading grant.
+        """
+        from app.services.personal_paper_runtime import PersonalOperatorInstallation
+
+        if (type(self.installation) is not PersonalOperatorInstallation
+                or set(self.installation.accounts) != {'QUALITY_DIPS', 'HYPERLIQUID'}
+                or type(grant) is not dict
+                or grant.get('test_only') is True
+                or type(grant.get('session_id')) is not str
+                or not 0 < len(grant['session_id']) <= 128):
+            raise ValueError('UNIFIED_STOP_FIRST_REAL_INSTALLED_SESSION_REQUIRED')
+        with self.stop_gate, self.gate:
+            if (self.state != 'STOPPED' or self.grant is not None
+                    or self.uncertain or self._stop_first_state != 'UNUSED'):
+                raise ValueError('UNIFIED_STOP_FIRST_NEW_SESSION_ONLY')
+            # Latch BEFORE any custody restart verification, including failures.
+            self.entry_closed.set()
+            self._stop_first_state = 'ARMING'
+            try:
+                self.grant = strict(body(grant))
+                with self._lease() as lease:
+                    self._verify(lease)
+                    if self.portfolio.verify_restart(self.grant) is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_UNRESOLVED_RESTART')
+                    self._verify(lease)
+                self.state = 'PAUSED'
+                self._stop_first_state = 'ARMED'
+            except BaseException:
+                # The restart check might have partly touched custody. An
+                # unknown result never licenses a second automatic attempt.
+                self.state = 'STOP_INCOMPLETE'
+                self.uncertain = True
+                self._stop_first_state = 'REFUSED'
+                raise
+        return {'state': 'PAUSED', 'entry_closed': True,
+                'native_stop_binding_required': True,
+                'paper_entry_authorized': False,
+                'live_trading_authorized': False}
+
+    def resume_stop_first(self, *, stop_owner, issuer, qd_instrument):
+        """Only a genuine current Stop+source issuer can release the entry latch.
+
+        Source/owner verification runs outside gate, because the authentic
+        Stop owner checks a read-only snapshot via the same runtime gate. The
+        stop_gate serializes the final latch with financial Stop dispatch.
+        """
+        import time
+
+        from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+            NativeSelectedPaperOperationIssuer,
+        )
+
+        from app.services.personal_installed_stop_owner import PersonalInstalledPaperStopOwner
+
+        if (type(stop_owner) is not PersonalInstalledPaperStopOwner
+                or type(issuer) is not NativeSelectedPaperOperationIssuer
+                or issuer.stop_owner is not stop_owner
+                or stop_owner._runtime is not self):
+            raise ValueError('UNIFIED_STOP_FIRST_EXACT_INSTALLED_STOP_AND_ISSUER_REQUIRED')
+        verified_at = issuer.verify_prepared_for_start(qd_instrument=qd_instrument)
+        with self.stop_gate, self.gate:
+            if (self._stop_first_state != 'ARMED' or self.state != 'PAUSED'
+                    or not self.entry_closed.is_set() or self.uncertain
+                    or self._stop_requested.is_set()
+                    or self.grant is None or self.grant.get('test_only') is True
+                    or stop_owner._used or stop_owner._runtime is not self
+                    or stop_owner.session_id != self.grant.get('session_id')
+                    or issuer.stop_owner is not stop_owner or issuer._revoke
+                    or issuer._session != self.grant['session_id']
+                    or time.monotonic() < verified_at
+                    or time.monotonic() - verified_at > 1):
+                raise ValueError('UNIFIED_STOP_FIRST_UNRELEASED_OR_EXPIRED')
+            # The entire transition is serialized against shutdown; a Stop
+            # already in flight holds stop_gate and cannot be overwritten.
+            self._stop_first_issuer = issuer
+            self._stop_first_instrument = strict(body(qd_instrument))
+            self._stop_first_state = 'RELEASED'
+            self.state = 'RUNNING'
+            self.entry_closed.clear()
+        return {'state': 'RUNNING', 'native_stop_bound': True,
+                'issuer_operational_recheck_required_for_each_entry': True,
+                'external_live_orders_authorized': False}
 
     async def poll(self, *, timeout=2):
         """Observe both lanes independently, including when stocks are closed.
@@ -489,11 +591,37 @@ class UnifiedPaperRuntime:
 
     def _resting(self, proposal, *, cancel):
         """Reserve pending exposure before control publication; never a fill."""
+        if self._stop_first_state == 'RELEASED' and not cancel:
+            from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+                NativeSelectedPaperOperationIssuer,
+            )
+
+            issuer = self._stop_first_issuer
+            try:
+                if type(issuer) is not NativeSelectedPaperOperationIssuer:
+                    raise ValueError('UNIFIED_STOP_FIRST_OPERATION_ISSUER_MISSING')
+                with issuer.lease(qd_instrument=self._stop_first_instrument) as authority:
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_OPERATION_AUTHORITY_REVOKED')
+                    result = self._resting_bound(proposal, cancel=cancel)
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_RESTING_EFFECT_UNCERTAIN')
+                    return result
+            except BaseException:
+                self.uncertain = True
+                self.entry_closed.set()
+                raise
+        return self._resting_bound(proposal, cancel=cancel)
+
+    def _resting_bound(self, proposal, *, cancel):
+        """Existing account custodian, now guarded by source issuer."""
         proposal = strict(body(proposal))
         if proposal.get('kind') != ('CANCEL_RESTING_ORDER' if cancel else 'RESTING_ORDER'):
             raise ValueError('UNIFIED_EXACT_RESTING_ACTION_REQUIRED')
         with self.gate, self._lease() as installation:
             self._verify(installation)
+            if self._stop_first_state == 'ARMED':
+                raise ValueError('UNIFIED_STOP_FIRST_ALL_FINANCIAL_ADMISSIONS_CLOSED')
             expired = (cancel and self.state in ('RUNNING', 'PAUSED')
                        and type(proposal.get('order', {}).get('expires_at')) is int
                        and self.clock() >= proposal['order']['expires_at'])
@@ -557,6 +685,29 @@ class UnifiedPaperRuntime:
         return self._dispatch(lane, proposal, shutdown=True)
 
     def _dispatch(self, lane, proposal, *, shutdown):
+        if self._stop_first_state == 'RELEASED' and not shutdown:
+            from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+                NativeSelectedPaperOperationIssuer,
+            )
+
+            issuer = self._stop_first_issuer
+            try:
+                if type(issuer) is not NativeSelectedPaperOperationIssuer:
+                    raise ValueError('UNIFIED_STOP_FIRST_OPERATION_ISSUER_MISSING')
+                with issuer.lease(qd_instrument=self._stop_first_instrument) as authority:
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_OPERATION_AUTHORITY_REVOKED')
+                    result = self._dispatch_bound(lane, proposal, shutdown=shutdown)
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_FINANCIAL_EFFECT_UNCERTAIN')
+                    return result
+            except BaseException:
+                self.uncertain = True
+                self.entry_closed.set()
+                raise
+        return self._dispatch_bound(lane, proposal, shutdown=shutdown)
+
+    def _dispatch_bound(self, lane, proposal, *, shutdown):
         """Serialize source-bound admission and delegate to the existing engine.
 
         The custody lease MUST durably reserve before dispatch, authenticate the
@@ -574,6 +725,8 @@ class UnifiedPaperRuntime:
             raise ValueError("UNIFIED_SHUTDOWN_REDUCING_EXIT_ONLY")
         with self.gate, self._lease() as installation:
             self._verify(installation)
+            if self._stop_first_state == 'ARMED' and not shutdown:
+                raise ValueError('UNIFIED_STOP_FIRST_ALL_FINANCIAL_ADMISSIONS_CLOSED')
             admitted_state = (self.state == "STOPPING" and self.entry_closed.is_set()) if shutdown else self.state in ("RUNNING", "PAUSED")
             if (self.uncertain or not admitted_state
                     or (self.state == "PAUSED" or self.entry_closed.is_set()) and proposal["kind"] == "ENTRY"):
@@ -654,6 +807,7 @@ class UnifiedPaperRuntime:
                 self.state = "PAUSED"
 
     def stop(self, *, emergency=False, reason="UNKNOWN"):
+        self._stop_requested.set()
         self.entry_closed.set()  # Immediate new-entry closure before waiting for an accepted drain.
         with self.stop_gate:
             if self.stop_result is not None:

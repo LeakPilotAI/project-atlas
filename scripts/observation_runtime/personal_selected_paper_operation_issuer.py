@@ -83,7 +83,7 @@ class NativeSelectedPaperOperationIssuer:
     def revoke(self):
         self._revoke = True
 
-    def _verify_base(self):
+    def _verify_base(self, *, allow_armed=False):
         if (self._revoke
                 or any(a is not b for a, b in zip(
                     (self.owner, self.operator, self.clock,
@@ -95,7 +95,12 @@ class NativeSelectedPaperOperationIssuer:
                 or self.owner.release_digest != self.perp["release_digest"]
                 or self.stop_owner.session_id != self._session
                 or self.stop_owner._used
-                or self.stop_owner._runtime.entry_closed.is_set()
+                or (self.stop_owner._runtime.entry_closed.is_set()
+                    and not allow_armed)
+                or (allow_armed and (
+                    self.stop_owner._runtime._stop_first_state != 'ARMED'
+                    or not self.stop_owner._runtime.entry_closed.is_set()
+                    or self.stop_owner._runtime.state != 'PAUSED'))
                 or self.stop_owner._runtime.uncertain
                 or self.stop_owner._runtime.grant.get("test_only") is True
                 or self.stop_owner._runtime.state not in ("RUNNING", "PAUSED")):
@@ -122,8 +127,8 @@ class NativeSelectedPaperOperationIssuer:
         self.hl_source._verify()
         return True
 
-    def _verify_sources(self, *, qd_instrument):
-        self._verify_base()
+    def _verify_sources(self, *, qd_instrument, allow_armed=False):
+        self._verify_base(allow_armed=allow_armed)
         instrument = strict(body(qd_instrument))
         if (type(qd_instrument) is not dict
                 or not {"symbol", "instrument_id", "asset_class", "currency"} <=
@@ -147,8 +152,24 @@ class NativeSelectedPaperOperationIssuer:
         if (type(cut) is not dict
                 or self.hl_source.execution_domain != "OPERATIONAL"):
             raise ValueError("SELECTED_PAPER_GENUINE_FRESH_HL_OPERATIONAL_CUT_REQUIRED")
-        self._verify_base()
+        self._verify_base(allow_armed=allow_armed)
         return instrument, quote, cut
+
+    def verify_prepared_for_start(self, *, qd_instrument):
+        """Original native owner/source/Stop proof while entry remains CLOSED.
+
+        Never starts a session, releases entry, or produces reusable finance
+        authorization. The runtime controls the eventual atomic release.
+        """
+        runtime = self.stop_owner._runtime
+        if (runtime._stop_first_state != 'ARMED'
+                or not runtime.entry_closed.is_set()
+                or runtime.state != 'PAUSED'
+                or runtime._stop_first_issuer is not None
+                or self.stop_owner._used):
+            raise ValueError('SELECTED_PAPER_STOP_FIRST_NOT_SAFELY_ARMED')
+        self._verify_sources(qd_instrument=qd_instrument, allow_armed=True)
+        return time.monotonic()
 
     @contextmanager
     def lease(self, *, qd_instrument):

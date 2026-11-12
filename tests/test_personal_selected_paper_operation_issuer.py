@@ -282,3 +282,58 @@ def test_revoked_or_completed_financial_lease_receipt_cannot_be_replayed(monkeyp
         assert cap.receipt["operating_gate_independently_accepted"] is False
     with pytest.raises(ValueError, match="REVOKED_LEASE_RECEIPT_REFUSED"):
         _ = cap.receipt
+
+
+def test_source_only_prepared_stop_first_requires_real_current_both_sources(monkeypatch):
+    params = synthetic_port_factory(monkeypatch)
+    runtime = params["stop_owner"]._runtime
+    runtime._stop_first_state = "ARMED"
+    runtime._stop_first_issuer = None
+    runtime.entry_closed.set()
+    runtime.state = "PAUSED"
+    owner = issuer.NativeSelectedPaperOperationIssuer(**params)
+    at = owner.verify_prepared_for_start(qd_instrument=INSTRUMENT)
+    assert type(at) is float
+    assert runtime.entry_closed.is_set()
+    assert runtime.state == "PAUSED"
+    with (pytest.raises(ValueError, match="FINANCIAL_OPERATION_LEASE_REVOKED"),
+          owner.lease(qd_instrument=INSTRUMENT)):
+        pytest.fail("ARMED_PAPER_FINANCIAL_ENTRY_FORBIDDEN")
+    runtime._stop_first_state = "RELEASED"
+    runtime.state = "RUNNING"
+    runtime.entry_closed.clear()
+    with owner.lease(qd_instrument=INSTRUMENT) as cap:
+        assert cap.check()
+
+
+@pytest.mark.parametrize("damage", [
+    "missing_latch", "wrong_phase", "stopped", "stop_used", "issuer_already_selected",
+    "bad_current_iex", "bad_current_hl", "job_exited",
+])
+def test_prepared_source_verifier_never_releases_unverified_entry(monkeypatch, damage):
+    params = synthetic_port_factory(monkeypatch)
+    runtime = params["stop_owner"]._runtime
+    runtime._stop_first_state = "ARMED"
+    runtime._stop_first_issuer = None
+    runtime.entry_closed.set()
+    runtime.state = "PAUSED"
+    owner = issuer.NativeSelectedPaperOperationIssuer(**params)
+    if damage == "missing_latch":
+        runtime.entry_closed.clear()
+    elif damage == "wrong_phase":
+        runtime._stop_first_state = "RELEASED"
+    elif damage == "stopped":
+        runtime.state = "STOP_INCOMPLETE"
+    elif damage == "stop_used":
+        params["stop_owner"]._used = True
+    elif damage == "issuer_already_selected":
+        runtime._stop_first_issuer = object()
+    elif damage == "bad_current_iex":
+        params["qd_source"].revoke = True
+    elif damage == "bad_current_hl":
+        params["hl_source"].revoke = True
+    elif damage == "job_exited":
+        params["owner"].revoke = True
+    with pytest.raises(ValueError):
+        owner.verify_prepared_for_start(qd_instrument=INSTRUMENT)
+    assert runtime.state != "RUNNING"
