@@ -1,7 +1,9 @@
 """R17 precise native CODE-only operator review — no consent granted."""
 from __future__ import annotations
 
+import json
 from copy import deepcopy
+from pathlib import Path
 
 import pytest
 
@@ -9,6 +11,8 @@ from scripts import atlas_r17_operator_install_review as review
 
 
 def test_original_windows_release_operator_review_is_unapproved_and_nonfinancial():
+    if review.installer.TARGET.exists():
+        pytest.skip("historical preinstall operator review completed; installed release cannot requalify")
     record = review.operator_review()
     assert record["schema"] == review.SCHEMA
     assert record["status"] == "PREPARED_FOR_DISTINCT_OPERATOR_DECISION_NOT_APPROVED"
@@ -88,6 +92,8 @@ def test_foreign_or_financial_status_never_becomes_a_review_packet(
 
 
 def test_review_never_creates_operator_grant_or_native_copy(monkeypatch):
+    if review.installer.TARGET.exists():
+        pytest.skip("preinstall review tool is deliberately retired after native code installation")
     monkeypatch.setattr(review.installer, "install",
                         lambda **_: pytest.fail("INSTALL_NOT_AUTHORIZED"))
     monkeypatch.setattr(review.selector, "publish",
@@ -100,6 +106,8 @@ def test_review_never_creates_operator_grant_or_native_copy(monkeypatch):
 
 
 def test_plain_inspect_cli_only_read_only(capsys):
+    if review.installer.TARGET.exists():
+        pytest.skip("create-only preinstall CLI must refuse after installation, not issue new approval")
     assert review.main(["--inspect"]) == 0
     output = capsys.readouterr().out
     assert review.SCHEMA in output
@@ -111,3 +119,26 @@ def test_plain_inspect_cli_only_read_only(capsys):
 def test_without_explicit_inspect_argument_cli_refuses():
     with pytest.raises(SystemExit):
         review.main([])
+
+
+def test_real_completed_r17_one_shot_install_remains_unselected_and_nonfinancial():
+    if not review.installer.TARGET.exists():
+        pytest.skip("real code-only native installation not yet performed")
+    a = review.installer
+    assert a.RECEIPT.is_file()
+    assert a.require_selected_r16() is True
+    assert a.require_original_financial_roots_untouched() is True
+    assert a.require_separate_approval()["one_shot"] is True
+    receipt = json.loads(a.RECEIPT.read_text(encoding="utf-8"))
+    assert receipt["schema"] == "ATLAS_QD_D_RUNTIME_INSTALLATION_V1"
+    assert receipt["stage"] == "D_RUNTIME_LAYOUT_VERIFIED"
+    assert receipt["source_commit"] == a.SOURCE
+    assert receipt["archive_sha256"] == a.ARCHIVE_SHA
+    assert len(receipt["files"]) == a.EXPECTED_TOTAL_FILES
+    assert len(receipt["directories"]) == a.EXPECTED_TOTAL_DIRECTORIES
+    assert receipt["selected"] is False
+    assert receipt["financial_effects"] is False
+    assert receipt["provider_connections"] is False
+    assert receipt["operational_acceptance"] is False
+    assert not (Path("D:/AtlasRuntime/selection")/"r0016.json").exists()
+    assert not (Path("D:/AtlasRuntime/selection")/"r0016.pending").exists()

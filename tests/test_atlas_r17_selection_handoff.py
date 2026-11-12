@@ -175,7 +175,12 @@ def test_noncanonical_receipt_refused_even_when_dict_matches(
 
 def test_genuine_native_selected_r16_waits_for_separate_r17_install():
     record = handoff.inspect()
-    assert record["status"] == "WAITING_FOR_SEPARATELY_APPROVED_R17_NATIVE_CODE_INSTALL"
+    if "proposed_selection_record" in record:
+        assert record["status"] == "INSTALLED_RECEIPT_PROPOSED_NOT_NATIVE_HANDLE_ACCEPTED"
+        assert record["installed_original_handle_readback_accepted"] is False
+        assert record["proposed_selection_record"]["selected"]["release"] == handoff.SOURCE
+    else:
+        assert record["status"] == "WAITING_FOR_SEPARATELY_APPROVED_R17_NATIVE_CODE_INSTALL"
     assert record["native_selected_predecessor"] == "R16"
     assert record["native_selected_head"] == handoff.R16_HEAD
     assert record["proposed_revision"] == 16

@@ -107,6 +107,9 @@ def test_changed_installer_source_digest_cannot_reuse_synthetic_decision():
 
 
 def test_live_one_shot_approval_unpinned_refuses_before_copy_or_utc(monkeypatch):
+    # Reproduce the historical missing-permission guard in a synthetic
+    # fixture even after the genuine one-shot code installation completed.
+    monkeypatch.setattr(installer, "APPROVAL_SHA256", None)
     assert installer.APPROVAL_SHA256 is None
     monkeypatch.setattr(
         installer, "require_code_install_host_ready",
@@ -138,16 +141,42 @@ def test_execute_flag_not_supplied_refuses_even_exact_approval():
 
 
 def test_host_inspection_only_verifies_real_selected_predecessor_without_native_write():
+    import json
+
     assert installer.require_selected_r16()
     assert installer.require_original_financial_roots_untouched()
+    if installer.TARGET.exists():
+        # After the one-shot install, NEVER waive the create-only no-retry
+        # guard. Read the immutable installed receipt instead.
+        assert installer.RECEIPT.is_file()
+        with pytest.raises(ValueError, match="INSTALLATION_ALREADY_EXISTS"):
+            installer.require_create_only_target()
+        record = json.loads(installer.RECEIPT.read_text(encoding="utf-8"))
+        assert record["source_commit"] == installer.SOURCE
+        assert record["archive_sha256"] == installer.ARCHIVE_SHA
+        assert len(record["files"]) == installer.EXPECTED_TOTAL_FILES
+        assert record["selected"] is False
+        assert record["financial_effects"] is False
+        assert record["operational_acceptance"] is False
+        return
     assert installer.require_create_only_target()
-    assert not installer.TARGET.exists()
     assert not installer.RECEIPT.exists()
 
 
 def test_pinned_review_and_archive_exact_real_plan_readonly():
     before = (installer.TARGET.exists(), installer.RECEIPT.exists(),
               installer.RECEIPT.with_suffix(".pending.jsonl").exists())
+    if installer.TARGET.exists():
+        # The preview was ONLY for an empty create-only target. After
+        # installation, a repeated preview MUST refuse any implicit retry.
+        with pytest.raises(ValueError, match="INSTALLATION_ALREADY_EXISTS"):
+            installer.inspect()
+        assert installer.RECEIPT.is_file()
+        assert installer.require_selected_r16()
+        assert installer.require_separate_approval()["one_shot"] is True
+        assert before == (installer.TARGET.exists(), installer.RECEIPT.exists(),
+                          installer.RECEIPT.with_suffix(".pending.jsonl").exists())
+        return
     preview = installer.inspect()
     assert preview["selected_predecessor"] == "R16"
     assert preview["source_commit"] == installer.SOURCE

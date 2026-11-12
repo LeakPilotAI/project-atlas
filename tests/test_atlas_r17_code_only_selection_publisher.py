@@ -162,7 +162,11 @@ def test_publisher_source_changed_refuses_existing_record():
 
 def test_genuine_r16_native_waits_for_r17_install_without_mutating_selector():
     report = publisher.inspect()
-    assert report["status"] == "WAITING_FOR_SEPARATELY_APPROVED_R17_NATIVE_CODE_INSTALL"
+    if report["installed_receipt_proposed"]:
+        assert report["status"] == "READY_FOR_SEPARATE_EXACT_NATIVE_SELECTION_DECISION_NOT_APPROVED"
+        assert report["original_native_installed_handles_accepted"] is False
+    else:
+        assert report["status"] == "WAITING_FOR_SEPARATELY_APPROVED_R17_NATIVE_CODE_INSTALL"
     assert report["proposed_revision"] == 16
     assert report["selected_predecessor"] == "R16"
     assert not report["new_selection_record_published"]
