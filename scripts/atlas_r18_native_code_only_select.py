@@ -43,7 +43,7 @@ from scripts.release_selection_store import NativeSelectionStore
 
 ROOT = Path("D:/Work/Project Atlas")
 APPROVAL = ROOT / "logs/diagnostics/atlas-r18-code-only-select-approved-20261112.json"
-APPROVAL_PIN = None  # Distinct R18 one-time selection operator scope pin.
+APPROVAL_PIN = "aabbc4278110aa109292792d4c86760c910c50928cd8df719076118f81ac41d8"  # Distinct R18 one-time selection operator scope pin.
 SCOPE = "APPROVE_ONE_R18_CODE_ONLY_NATIVE_SELECTION_NO_FINANCIAL_START"
 CLOCK_IDENTITY = "atlas-r18-native-code-only-select-r0017"
 RECORD_REVISION = 17
