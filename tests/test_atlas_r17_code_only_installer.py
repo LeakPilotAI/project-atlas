@@ -244,3 +244,79 @@ def test_copy_admission_refuses_clock_without_entering_native_copy(monkeypatch):
     with pytest.raises(ValueError, match="TWO_PEER_UTC_REVOKED"):
         installer._check_live_copy_admission(
             clock=RevokedUtc(), envelope=FakeCopyEnvelope())
+
+
+def sample_native_copier_snapshot(*, count=3, status=None):
+    return {
+        "schema": "ATLAS_NATIVE_CODE_COPY_V1",
+        "source_commit": installer.SOURCE,
+        "archive_sha256": installer.ARCHIVE_SHA,
+        "operational_acceptance": False,
+        "active_release_modified": False,
+        "financial_actions": 0,
+        "files": [{"path": "PRIVATE_DONT_ECHO"} for _ in range(count)],
+        "directories": [{"path": "."}],
+        **({"status": status} if status is not None else {}),
+    }
+
+
+def test_bound_native_progress_reports_counters_without_private_handles():
+    status = installer.bounded_native_copy_progress(sample_native_copier_snapshot())
+    assert status["status"] == "IN_PROGRESS_UNVERIFIED"
+    assert status["files_created"] == 3
+    assert status["native_directories_created"] == 1
+    assert status["planned_total_files"] == installer.EXPECTED_TOTAL_FILES
+    assert "PRIVATE_DONT_ECHO" not in str(status)
+    assert status["code_selected"] is False
+    assert status["financial_authority"] is False
+    assert status["paper_start_authorized"] is False
+
+
+def test_copy_complete_remains_unselected_and_nonfinancial():
+    snap = sample_native_copier_snapshot(
+        count=2, status="NATIVE_COPY_ACL_IDENTITY_HASH_VERIFIED_UNSELECTED",
+    )
+    progress = installer.bounded_native_copy_progress(snap)
+    assert progress["status"].endswith("UNSELECTED")
+    assert progress["code_selected"] is False
+    assert progress["paper_start_authorized"] is False
+    assert progress["live_orders_authorized"] is False
+
+
+@pytest.mark.parametrize("damage", [
+    "source_commit", "archive_sha256", "schema", "operational_acceptance",
+    "active_release_modified", "financial_actions", "too_many_files",
+    "too_many_dirs", "bad_status", "files_type", "dirs_type",
+])
+def test_no_foreign_or_financial_copy_progress_laundered(damage):
+    sample = sample_native_copier_snapshot()
+    if damage == "too_many_files":
+        sample["files"] = [{} for _ in range(installer.EXPECTED_TOTAL_FILES + 1)]
+    elif damage == "too_many_dirs":
+        sample["directories"] = [{} for _ in range(installer.EXPECTED_TOTAL_DIRECTORIES + 1)]
+    elif damage == "bad_status":
+        sample["status"] = "PAPER_START_VERIFIED"
+    elif damage == "files_type":
+        sample["files"] = {}
+    elif damage == "dirs_type":
+        sample["directories"] = "INVALID"
+    elif damage in ("operational_acceptance", "active_release_modified"):
+        sample[damage] = True
+    elif damage == "financial_actions":
+        sample[damage] = 1
+    else:
+        sample[damage] = "FOREIGN"
+    with pytest.raises(ValueError, match="R17_COPY_PROGRESS_EXACT_NONFINANCIAL"):
+        installer.bounded_native_copy_progress(sample)
+
+
+def test_fail_closed_partial_copy_progress_never_becomes_acceptance():
+    result = installer.bounded_native_copy_progress(
+        sample_native_copier_snapshot(
+            count=5,status="REFUSED_PRESERVE_PARTIAL",
+        )
+    )
+    assert result["status"] == "REFUSED_PRESERVE_PARTIAL"
+    assert result["financial_authority"] is False
+    assert result["code_selected"] is False
+    assert result["paper_start_authorized"] is False

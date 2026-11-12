@@ -259,6 +259,43 @@ def _check_live_copy_admission(*, clock, envelope):
     return True
 
 
+def bounded_native_copy_progress(snapshot):
+    """Safe CLI progress; NEVER part of the exact two-stage native install ACK.
+
+    Native copier callbacks carry thousands of original file IDs and hashes.
+    Export only bounded counts. Do not enlarge/mutate the code-install journal:
+    revision-16 selection must verify its EXACT two-stage intent/final ACK.
+    """
+    status = snapshot.get("status") if type(snapshot) is dict else None
+    if (type(snapshot) is not dict
+            or snapshot.get("schema") != "ATLAS_NATIVE_CODE_COPY_V1"
+            or snapshot.get("source_commit") != SOURCE
+            or snapshot.get("archive_sha256") != ARCHIVE_SHA
+            or snapshot.get("operational_acceptance") is not False
+            or snapshot.get("active_release_modified") is not False
+            or snapshot.get("financial_actions") != 0
+            or type(snapshot.get("files")) is not list
+            or type(snapshot.get("directories")) is not list
+            or len(snapshot["files"]) > EXPECTED_TOTAL_FILES
+            or len(snapshot["directories"]) > EXPECTED_TOTAL_DIRECTORIES
+            or status not in (
+                None, "NATIVE_COPY_ACL_IDENTITY_HASH_VERIFIED_UNSELECTED",
+                "REFUSED_PRESERVE_PARTIAL",
+            )):
+        raise ValueError("R17_COPY_PROGRESS_EXACT_NONFINANCIAL_OBSERVATION_REQUIRED")
+    return {
+        "schema": "ATLAS_R17_CODE_ONLY_NATIVE_COPY_PROGRESS_V1",
+        "status": status or "IN_PROGRESS_UNVERIFIED",
+        "files_created": len(snapshot["files"]),
+        "native_directories_created": len(snapshot["directories"]),
+        "planned_total_files": EXPECTED_TOTAL_FILES,
+        "code_selected": False,
+        "financial_authority": False,
+        "paper_start_authorized": False,
+        "live_orders_authorized": False,
+    }
+
+
 def install(*, approved_execution=False, clock=None):
     """ONE approved native code copy; no fallback, retry, selection, or finance."""
     if approved_execution is not True:
@@ -302,6 +339,9 @@ def install(*, approved_execution=False, clock=None):
             copied = _copy_prepared_code(
                 destination=TARGET, archive_sha256=ARCHIVE_SHA,
                 source_commit=SOURCE, prepared=prepared,
+                observer=lambda row: print(json.dumps(
+                    bounded_native_copy_progress(row), sort_keys=True),
+                    flush=True),
                 admission=lambda: _check_live_copy_admission(
                     clock=clock, envelope=envelope))
             _check_live_copy_admission(clock=clock, envelope=envelope)
