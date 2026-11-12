@@ -48,6 +48,7 @@ from scripts.observation_runtime.personal_native_windows_api import (
 )
 from scripts.observation_runtime.personal_native_writer_lifetime import _identity
 from scripts.observation_runtime.personal_r15_owned_job_activation import (
+    require_exact_r15_populated_root_identities,
     require_exact_r15_preinception_roots,
 )
 from scripts.observation_runtime.personal_version_safe_release_clock import (
@@ -146,6 +147,9 @@ class RetainedSelectedNativeOwnerPreflight:
         self._roots = inspect_two_lane_native_roots()
         self._native_binding = require_exact_r15_preinception_roots(
             qd, perp, self._roots)
+        self._phase = "PREINCEPTION"
+        self._initial_cuts = None
+        self._initial_bootstraps = None
         self.verify_still_running()
 
     def _original_process_identity(self):
@@ -168,7 +172,7 @@ class RetainedSelectedNativeOwnerPreflight:
             "image": raw["image"],
         }
 
-    def verify_still_running(self):
+    def _verify_original_job(self):
         if (self.child.closed or self.child.api is not self.api
                 or self.child.job != self.job or self.child.process != self.process
                 or require_native_version_safe_clock_source(deep=False)
@@ -199,13 +203,103 @@ class RetainedSelectedNativeOwnerPreflight:
             raise ValueError("SELECTED_OWNER_KILL_ON_CLOSE_REQUIRED")
         if self._original_process_identity() != self._identity:
             raise ValueError("SELECTED_OWNER_PROCESS_INCARCATION_CHANGED")
-        roots = inspect_two_lane_native_roots()
-        if (roots != self._roots
-                or require_exact_r15_preinception_roots(
-                    self._original_qd, self._original_perp, roots)
-                   != self._native_binding):
-            raise ValueError("SELECTED_OWNER_ORIGINAL_TWELVE_NATIVE_ROOTS_CHANGED")
         return True
+
+    def verify_still_running(self):
+        self._verify_original_job()
+        roots = inspect_two_lane_native_roots()
+        if self._phase == "PREINCEPTION":
+            if (roots != self._roots
+                    or require_exact_r15_preinception_roots(
+                        self._original_qd, self._original_perp, roots)
+                       != self._native_binding):
+                raise ValueError("SELECTED_OWNER_ORIGINAL_TWELVE_NATIVE_ROOTS_CHANGED")
+        elif self._phase == "INITIAL_READBACK_ONLY":
+            if (require_exact_r15_populated_root_identities(
+                    self._original_qd, self._original_perp, roots,
+                    self._native_binding) != self._native_binding
+                    or type(self._initial_cuts) is not tuple
+                    or len(self._initial_cuts) != 2):
+                raise ValueError("SELECTED_OWNER_INITIAL_NATIVE_CUT_OR_ROOT_DRIFT")
+            if (type(self._initial_bootstraps) is not tuple
+                    or len(self._initial_bootstraps) != 2):
+                raise ValueError("SELECTED_OWNER_INITIAL_PUBLISHERS_NOT_BOUND")
+            # Each genuine bootstrap reads its independently ACKNOWLEDGED
+            # native publication and reruns FS1/FS3 bound-file validation.
+            for bootstrap, (enrollment, current) in zip(
+                    self._initial_bootstraps, self._initial_cuts, strict=True):
+                if bootstrap.enrollment != enrollment:
+                    raise ValueError("SELECTED_OWNER_INITIAL_ENROLLMENT_CHANGED")
+                verified = bootstrap.verify_publication()
+                if (verified.get("current") != current
+                        or verified.get("financial_startup_authorized") is not False):
+                    raise ValueError("SELECTED_OWNER_INITIAL_PUBLICATION_DRIFT")
+        else:
+            # PENDING is deliberately irrevocable within this owner. A partial
+            # two-account inception cannot be retried or assumed completed.
+            raise ValueError("SELECTED_OWNER_INITIAL_INCEPTION_UNKNOWN_RECONCILIATION_REQUIRED")
+        return True
+
+    def observe_verified_initial_inceptions(self, *, qd_bootstrap, hl_bootstrap):
+        """Transition empty -> INITIAL readback only, not a financial lease.
+
+        The actual native FS1/FS3 readers independently verify both account
+        files, opening cash, zero positions and exact original directory IDs.
+        Without an acknowledged real publisher result on BOTH lanes, this
+        owner stays in an UNKNOWN state and cannot authorize a retry/start.
+        """
+        if self._phase != "PREINCEPTION" or self._initial_cuts is not None:
+            raise ValueError("SELECTED_OWNER_INCEPTION_REPLAY_REFUSED")
+        # Freeze the owner before examining any post-inception files. On any
+        # failure, its terminal state is UNKNOWN rather than falsely EMPTY.
+        self._phase = "INITIAL_READBACK_PENDING"
+        self._verify_original_job()
+        from scripts.observation_runtime.personal_paper_inception import (
+            NativePersonalInitialReadback,
+            PersonalInceptionBootstrap,
+            validate_personal_inception,
+        )
+        if (type(qd_bootstrap) is not PersonalInceptionBootstrap
+                or type(hl_bootstrap) is not PersonalInceptionBootstrap
+                or qd_bootstrap is hl_bootstrap
+                or type(qd_bootstrap.readback) is not NativePersonalInitialReadback
+                or type(hl_bootstrap.readback) is not NativePersonalInitialReadback):
+            raise ValueError("SELECTED_OWNER_TWO_GENUINE_NATIVE_PUBLISHERS_REQUIRED")
+        qd_inception, hl_inception = qd_bootstrap.enrollment, hl_bootstrap.enrollment
+        q_lane, q_enroll, _ = validate_personal_inception(qd_inception)
+        h_lane, h_enroll, _ = validate_personal_inception(hl_inception)
+        if (q_lane != "QUALITY_DIPS" or h_lane != "HYPERLIQUID"
+                or digest(q_enroll) != self._qd
+                or digest(h_enroll) != self._perp):
+            raise ValueError("SELECTED_OWNER_INCEPTION_NOT_ORIGINAL_ACCOUNT_ROSTERS")
+        roots = inspect_two_lane_native_roots()
+        require_exact_r15_populated_root_identities(
+            self._original_qd, self._original_perp, roots, self._native_binding)
+        # The ACK comes from each original durable publication store, not a
+        # caller-supplied JSON current. Its bootstrap reads genuine native
+        # FS1/FS3 bound bytes before returning the acknowledged cut.
+        q_verified = qd_bootstrap.verify_publication()
+        h_verified = hl_bootstrap.verify_publication()
+        if (q_verified.get("financial_startup_authorized") is not False
+                or h_verified.get("financial_startup_authorized") is not False):
+            raise ValueError("SELECTED_OWNER_ONLY_NONSTARTABLE_INITIAL_PROOFS_ALLOWED")
+        self._initial_cuts = (
+            (deepcopy(qd_inception), deepcopy(q_verified["current"])),
+            (deepcopy(hl_inception), deepcopy(h_verified["current"])),
+        )
+        self._initial_bootstraps = (qd_bootstrap, hl_bootstrap)
+        self._phase = "INITIAL_READBACK_ONLY"
+        self.verify_still_running()
+        return {
+            "schema": "ATLAS_NATIVE_TWO_ACCOUNT_INITIAL_READBACK_HOLD_V1",
+            "status": "TWO_INITIAL_NATIVE_ACCOUNTS_OBSERVED_NOT_FINANCIAL_LEASE",
+            "both_initial_fs1_fs3_readbacks_verified": True,
+            "original_twelve_native_roots_bound": True,
+            "financial_writer_lease_issued": False,
+            "financial_stop_flatness_accepted": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
 
     def require_exact_roster(self, *, qd, perp):
         if digest(qd) != self._qd or digest(perp) != self._perp:
@@ -225,7 +319,11 @@ class RetainedSelectedNativeOwnerPreflight:
             "original_job_process_handles_retained": True,
             "kill_on_close_and_single_process_verified": True,
             "distinct_qd_and_hl_structural_writer_rosters_verified": True,
-            "native_twelve_original_roots_preinception_verified": True,
+            "native_twelve_original_roots_preinception_verified":
+                self._phase == "PREINCEPTION",
+            "native_both_initial_fs1_fs3_readbacks_verified":
+                self._phase == "INITIAL_READBACK_ONLY",
+            "owner_inception_phase": self._phase,
             "financial_writer_lease_issued": False,
             "operator_activation_accepted": False,
             "financial_clock_lease_accepted": False,

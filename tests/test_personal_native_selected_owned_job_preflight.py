@@ -222,3 +222,147 @@ def test_owner_initial_deep_installed_verification_not_repeated_during_each_rech
     assert source.count("require_selected_native_origin(") == 1
     assert "require_native_version_safe_clock_source(deep=False)" in source
     assert "return self.verify_still_running()" in source
+
+def _synthetic_inception_owner(monkeypatch):
+    """No Job/adoption/finance: synthetic only for state-machine refusal tests."""
+    from app.services.paper_financial_replay import digest
+    from test_personal_r16_owned_job_activation import rosters
+
+    from scripts.observation_runtime import personal_paper_inception as inception
+
+    _, qd, hl = rosters()
+    owner = object.__new__(candidate.RetainedSelectedNativeOwnerPreflight)
+    owner._original_qd, owner._original_perp = copy.deepcopy(qd), copy.deepcopy(hl)
+    owner._qd, owner._perp = digest(qd), digest(hl)
+    owner._phase, owner._initial_cuts = "PREINCEPTION", None
+    binding = tuple(
+        (lane, role, entry["path"], tuple(entry["native_id"]))
+        for lane, enrollment in (("QUALITY_DIPS", qd), ("HYPERLIQUID", hl))
+        for role, entry in enrollment["resources"].items()
+    )
+    owner._native_binding = binding
+    observed = {
+        "schema": "ATLAS_TWO_LANE_EXISTING_NATIVE_ROOT_PRE_ENROLLMENT_V1",
+        "lanes": {
+            lane: {
+                "epoch": enrollment["epoch"],
+                "roots": {
+                    role: {
+                        "path": entry["path"],
+                        "native_id": copy.deepcopy(entry["native_id"]),
+                        "native_identity_verified": True,
+                        "existing_empty_namespace_verified": False,
+                    }
+                    for role, entry in enrollment["resources"].items()
+                },
+            } for lane, enrollment in (("QUALITY_DIPS", qd), ("HYPERLIQUID", hl))
+        },
+        "native_root_total": 12,
+        "native_root_ids_verified": 12,
+        "existing_empty_root_namespaces": 0,
+        "all_twelve_distinct_and_empty": False,
+        "operator_account_enrollment_verified": False,
+        "writer_ownership_verified": False,
+        "financial_inception_verified": False,
+        "paper_start_authorized": False,
+        "live_trading_authorized": False,
+        "filesystem_writes": 0,
+        "network_requests": 0,
+    }
+    owner._verify_original_job = lambda: True
+    monkeypatch.setattr(candidate, "inspect_two_lane_native_roots", lambda: observed)
+    # Synthetic validators only: actual production transition uses genuine
+    # NativePersonalInitialReadback over original Windows file handles.
+    monkeypatch.setattr(
+        inception, "validate_personal_inception",
+        lambda row: (row["lane"], row["enrollment"], {"opening_cash": "1000"}),
+    )
+    check_calls = []
+    class SyntheticNativeReadback:
+        def verify(self, enrollment, current):
+            check_calls.append(enrollment["lane"])
+            return current.get("authenticated_initial") is True
+    monkeypatch.setattr(inception, "NativePersonalInitialReadback",
+                        SyntheticNativeReadback)
+    from types import SimpleNamespace
+
+    def synthetic_acknowledged_bootstrap(lane, enrollment):
+        row = {"lane": lane, "enrollment": enrollment}
+        bootstrap = object.__new__(inception.PersonalInceptionBootstrap)
+        bootstrap.enrollment = row
+        bootstrap.readback = SyntheticNativeReadback()
+        bootstrap.current = {"authenticated_initial": True}
+        bootstrap.publication = SimpleNamespace(
+            acknowledged=lambda operation: (
+                bootstrap.current, {"operation_id": operation, "state": "ACKNOWLEDGED"}))
+        bootstrap.scope = lambda: {"operation_id": "synthetic-" + lane}
+        return bootstrap
+
+    q = synthetic_acknowledged_bootstrap("QUALITY_DIPS", qd)
+    h = synthetic_acknowledged_bootstrap("HYPERLIQUID", hl)
+    return owner, observed, q, h, check_calls
+
+
+def test_two_initial_files_transition_requires_both_native_readbacks(monkeypatch):
+    owner, _, q, h, checked = _synthetic_inception_owner(monkeypatch)
+    result = owner.observe_verified_initial_inceptions(
+        qd_bootstrap=q, hl_bootstrap=h,
+    )
+    assert result["both_initial_fs1_fs3_readbacks_verified"]
+    assert result["financial_writer_lease_issued"] is False
+    assert not result["paper_start_authorized"]
+    assert owner._phase == "INITIAL_READBACK_ONLY"
+    assert checked == ["QUALITY_DIPS", "HYPERLIQUID"] * 2
+    # Rechecks preserve populated identities and both native file readers.
+    assert owner.verify_still_running() is True
+    assert checked == ["QUALITY_DIPS", "HYPERLIQUID"] * 3
+    with pytest.raises(ValueError, match="INCEPTION_REPLAY_REFUSED"):
+        owner.observe_verified_initial_inceptions(
+            qd_bootstrap=q, hl_bootstrap=h,
+        )
+    assert owner._phase == "INITIAL_READBACK_ONLY"
+
+
+@pytest.mark.parametrize("damage", ["missing_hl", "foreign_account", "wrong_original_id"])
+def test_incomplete_initial_financial_native_cut_poisoned_never_promoted(monkeypatch, damage):
+    owner, observed, q, h, _ = _synthetic_inception_owner(monkeypatch)
+    if damage == "missing_hl":
+        h.current = {"authenticated_initial": False}
+    if damage == "foreign_account":
+        h.enrollment["enrollment"]["account_id"] = "OTHER_ACCOUNT"
+    elif damage == "wrong_original_id":
+        observed["lanes"]["HYPERLIQUID"]["roots"]["custody"]["native_id"] = [9, 9, 9]
+    with pytest.raises(ValueError):
+        owner.observe_verified_initial_inceptions(
+            qd_bootstrap=q, hl_bootstrap=h,
+        )
+    assert owner._phase == "INITIAL_READBACK_PENDING"
+    with pytest.raises(ValueError, match="INCEPTION_UNKNOWN_RECONCILIATION_REQUIRED"):
+        owner.verify_still_running()
+    with pytest.raises(ValueError, match="INCEPTION_REPLAY_REFUSED"):
+        owner.observe_verified_initial_inceptions(
+            qd_bootstrap=q, hl_bootstrap=h,
+        )
+
+
+def test_late_native_directory_identity_swap_revokes_initial_readback_owner(monkeypatch):
+    owner, roots, q, h, _ = _synthetic_inception_owner(monkeypatch)
+    owner.observe_verified_initial_inceptions(
+        qd_bootstrap=q, hl_bootstrap=h,
+    )
+    roots["lanes"]["QUALITY_DIPS"]["roots"]["source"]["native_id"] = [7, 7, 7]
+    with pytest.raises(ValueError, match="POPULATED_NATIVE_RESOURCE_IDENTITY_CHANGED"):
+        owner.verify_still_running()
+    assert owner._phase == "INITIAL_READBACK_ONLY"
+    assert not hasattr(owner, "lease")
+
+
+def test_durable_initial_publication_rollback_revokes_owner(monkeypatch):
+    owner, _, q, h, _ = _synthetic_inception_owner(monkeypatch)
+    owner.observe_verified_initial_inceptions(
+        qd_bootstrap=q, hl_bootstrap=h,
+    )
+    q.current["authenticated_initial"] = False
+    with pytest.raises(ValueError, match="PERSONAL_INITIAL_READBACK_REFUSED"):
+        owner.verify_still_running()
+    assert owner._initial_cuts[0][1] == {"authenticated_initial": True}
