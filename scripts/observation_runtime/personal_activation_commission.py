@@ -217,12 +217,13 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
                 or owned_job.release_digest != release_digest):
             raise ValueError('ACTIVATION_FUTURE_NATIVE_FINANCIAL_JOB_ISSUER_MISSING')
         # The original Job-backed activation RECORD is needed BEFORE the first
-        # once-only native PAPER account publisher can run. Allow a narrowly
-        # scoped initialization-only activation while all twelve original
-        # account roots remain EMPTY; never AUTO_PAPER or external orders.
-        # A DIFFERENT post-inception operator activation handles PAPER later.
+        # once-only native PAPER account publisher. Only after independent
+        # native readback of the TWO initial coordination journals (ten other
+        # account roots still EMPTY) may read+initialize activation proceed.
+        # Never AUTO_PAPER or external orders. A distinct post-inception
+        # operator activation is required for any later PAPER operation.
         phase = getattr(owned_job, '_phase', None)
-        if phase == 'PREINCEPTION':
+        if phase == 'PREINCEPTION_COORDINATION_READY':
             # NativePersonalTechnicalChecks always obtains a native READ_ONLY
             # lease before a once-only simulated account opening. A record
             # granting INITIALIZE alone would pass this guard but fail during
@@ -245,7 +246,7 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
                 yield owned_job  # Activation RECORD only; no publisher run here.
             finally:
                 owned_job.require_exact_roster(qd=qd, perp=perp)
-                if getattr(owned_job, '_phase', None) != 'PREINCEPTION':
+                if getattr(owned_job, '_phase', None) != 'PREINCEPTION_COORDINATION_READY':
                     raise ValueError('ACTIVATION_FUTURE_PREINCEPTION_OWNER_PHASE_CHANGED')
             return
         # Any other successor activation requires two ACKNOWLEDGED native

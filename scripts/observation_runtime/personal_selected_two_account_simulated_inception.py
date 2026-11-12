@@ -71,7 +71,7 @@ class NativeSelectedTwoAccountSimulatedInception:
     def _verify(self, *, entering=False):
         owner = self.original_job
         q_pub, h_pub = self.publishers
-        if (self._used or owner._phase != "PREINCEPTION"
+        if (self._used or owner._phase != "PREINCEPTION_COORDINATION_READY"
                 or getattr(owner, "_two_lane_inception_claimed", False)):
             raise ValueError("SELECTED_INCEPTION_ALREADY_ATTEMPTED_OR_OWNER_NOT_EMPTY")
         # The existing parked-job probe runs in the PARENT while the genuine

@@ -150,6 +150,7 @@ class RetainedSelectedNativeOwnerPreflight:
         self._phase = "PREINCEPTION"
         self._initial_cuts = None
         self._initial_bootstraps = None
+        self._initial_coordination = None
         self.verify_still_running()
 
     def _original_process_identity(self):
@@ -214,6 +215,8 @@ class RetainedSelectedNativeOwnerPreflight:
                         self._original_qd, self._original_perp, roots)
                        != self._native_binding):
                 raise ValueError("SELECTED_OWNER_ORIGINAL_TWELVE_NATIVE_ROOTS_CHANGED")
+        elif self._phase == "PREINCEPTION_COORDINATION_READY":
+            self._require_preinception_coordination_ready(roots)
         elif self._phase == "INITIAL_READBACK_ONLY":
             if (require_exact_r15_populated_root_identities(
                     self._original_qd, self._original_perp, roots,
@@ -240,6 +243,73 @@ class RetainedSelectedNativeOwnerPreflight:
             raise ValueError("SELECTED_OWNER_INITIAL_INCEPTION_UNKNOWN_RECONCILIATION_REQUIRED")
         return True
 
+    def _require_preinception_coordination_ready(self, roots):
+        """Original native images are initial, not PAPER account inceptions.
+
+        Two coordination roots have their genuine first immutable images;
+        every other account root is still empty. Both native images and exact
+        selected original directory identities are rechecked before activation.
+        """
+        from app.services.personal_native_coordination import PersonalNativeCoordination
+
+        from scripts.observation_runtime.personal_coordination_store import (
+            NativePersonalCoordinationImages,
+        )
+        ledgers = self._initial_coordination
+        if type(ledgers) is not tuple or len(ledgers) != 2:
+            raise ValueError("SELECTED_OWNER_TWO_ORIGINAL_COORDINATION_JOURNALS_REQUIRED")
+        if require_exact_r15_populated_root_identities(
+                self._original_qd, self._original_perp, roots,
+                self._native_binding) != self._native_binding:
+            raise ValueError("SELECTED_OWNER_ORIGINAL_ROOTS_CHANGED")
+        if (roots.get("existing_empty_root_namespaces") != 10
+                or roots.get("all_twelve_distinct_and_empty") is not False):
+            raise ValueError("SELECTED_OWNER_ONLY_TWO_COORDINATION_ROOTS_MAY_BE_POPULATED")
+        for lane, enrollment, ledger in (
+                ("QUALITY_DIPS", self._original_qd, ledgers[0]),
+                ("HYPERLIQUID", self._original_perp, ledgers[1])):
+            if (type(ledger) is not PersonalNativeCoordination
+                    or type(ledger.images) is not NativePersonalCoordinationImages
+                    or ledger.images.enrollment != digest(enrollment)
+                    or ledger.images.root_id != enrollment["resources"]["coordination"]["native_id"]):
+                raise ValueError("SELECTED_OWNER_NATIVE_COORDINATION_EXACT_LEDGER_REQUIRED")
+            for role, root in roots["lanes"][lane]["roots"].items():
+                if root["existing_empty_namespace_verified"] is not (role != "coordination"):
+                    raise ValueError("SELECTED_OWNER_FINANCIAL_ACCOUNT_FILES_BEFORE_INITIALIZATION")
+            raw, pin = ledger.images._load()
+            if (type(pin) is not dict or pin.get("revision") != 1
+                    or raw != PersonalNativeCoordination.initial_image(ledger.manifest)
+                    or ledger.manifest["release"] != self.release_digest
+                    or enrollment["inception_digest"] != digest(ledger.manifest)):
+                raise ValueError("SELECTED_OWNER_EXACT_INITIAL_COORDINATION_IMAGE_REFUSED")
+        return True
+
+    def observe_preinception_coordination(self, *, qd_ledger, hl_ledger):
+        """Read-only acknowledgement AFTER separately authorized native init.
+
+        This does not initialize journals, create accounts, issue authority,
+        or grant PAPER. Any partial/unknown journal permanently blocks this
+        original owner from treating an unverified first opening as successful.
+        """
+        if self._phase != "PREINCEPTION" or self._initial_coordination is not None:
+            raise ValueError("SELECTED_OWNER_INITIAL_COORDINATION_ALREADY_ATTEMPTED")
+        self._phase = "PREINCEPTION_COORDINATION_PENDING"
+        self._verify_original_job()
+        self._initial_coordination = (qd_ledger, hl_ledger)
+        roots = inspect_two_lane_native_roots()
+        self._require_preinception_coordination_ready(roots)
+        self._phase = "PREINCEPTION_COORDINATION_READY"
+        self.verify_still_running()
+        return {
+            "schema": "ATLAS_SELECTED_NATIVE_TWO_INITIAL_COORDINATION_READBACK_V1",
+            "initial_native_coordination_journals_verified": 2,
+            "other_original_financial_roots_empty": 10,
+            "account_inceptions_published": 0,
+            "financial_writer_lease_issued": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
+
     def observe_verified_initial_inceptions(self, *, qd_bootstrap, hl_bootstrap):
         """Transition empty -> INITIAL readback only, not a financial lease.
 
@@ -248,7 +318,8 @@ class RetainedSelectedNativeOwnerPreflight:
         Without an acknowledged real publisher result on BOTH lanes, this
         owner stays in an UNKNOWN state and cannot authorize a retry/start.
         """
-        if self._phase != "PREINCEPTION" or self._initial_cuts is not None:
+        if (self._phase != "PREINCEPTION_COORDINATION_READY"
+                or self._initial_cuts is not None):
             raise ValueError("SELECTED_OWNER_INCEPTION_REPLAY_REFUSED")
         # Freeze the owner before examining any post-inception files. On any
         # failure, its terminal state is UNKNOWN rather than falsely EMPTY.

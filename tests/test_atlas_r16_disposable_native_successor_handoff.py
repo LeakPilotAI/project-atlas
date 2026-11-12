@@ -169,7 +169,7 @@ def test_real_disposable_native_publisher_acknowledged_two_lane_successor_transi
         # Synthetic in-process preflight owner only; NO original Job claim.
         # Genuine selected R17 must separately provide held Job/PROCESS proof.
         owner = object.__new__(successor.RetainedSelectedNativeOwnerPreflight)
-        owner._phase = "PREINCEPTION"
+        owner._phase = "PREINCEPTION_COORDINATION_READY"
         owner._initial_cuts = None
         owner._initial_bootstraps = None
         owner._original_qd, owner._original_perp = copy.deepcopy(q), copy.deepcopy(h)

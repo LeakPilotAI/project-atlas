@@ -246,7 +246,7 @@ def _synthetic_inception_owner(monkeypatch):
     owner = object.__new__(candidate.RetainedSelectedNativeOwnerPreflight)
     owner._original_qd, owner._original_perp = copy.deepcopy(qd), copy.deepcopy(hl)
     owner._qd, owner._perp = digest(qd), digest(hl)
-    owner._phase, owner._initial_cuts = "PREINCEPTION", None
+    owner._phase, owner._initial_cuts = "PREINCEPTION_COORDINATION_READY", None
     binding = tuple(
         (lane, role, entry["path"], tuple(entry["native_id"]))
         for lane, enrollment in (("QUALITY_DIPS", qd), ("HYPERLIQUID", hl))
@@ -511,7 +511,7 @@ def _synthetic_preinception_activation_owner(monkeypatch):
 
     class FakeOwner:
         release_digest = "f" * 64
-        _phase = "PREINCEPTION"
+        _phase = "PREINCEPTION_COORDINATION_READY"
         origin: ClassVar[dict] = {
             "selected_artifact_digest_bound": True,
             "financial_writer_lease_issued": False,

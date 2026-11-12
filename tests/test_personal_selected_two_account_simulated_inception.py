@@ -23,7 +23,7 @@ def simulated_pair(monkeypatch):
     reader = object()
 
     class Owner:
-        _phase = "PREINCEPTION"
+        _phase = "PREINCEPTION_COORDINATION_READY"
         release_digest = release
         _identity: ClassVar[dict] = {"pid": 123, "creation_filetime": 456, "image": "D:\\SYNTHETIC.exe"}
         origin: ClassVar[dict] = {
