@@ -1,5 +1,4 @@
 """Selected R14 Hyperliquid public book probe: no implicit provider grant."""
-import copy
 import json
 from pathlib import Path
 
@@ -33,11 +32,12 @@ def fixture_book():
     }
 
 
-def test_actual_r15_native_selected_scope_and_existing_readonly_budget(preview):
-    assert preview["schema"]=="ATLAS_SELECTED_R15_HL_PUBLIC_BOOK_PREFLIGHT_V1"
-    assert preview["decision"]=="REQUIRES_EXPLICIT_DATA_ONLY_SCOPE"
-    assert preview["selected_code_revision"]==14
+def test_r16_current_selection_retires_legacy_hl_with_existing_readonly_budget(preview):
+    assert preview["schema"]=="ATLAS_R16_HISTORICAL_HL_PROBE_RETIRED_V1"
+    assert preview["decision"]=="RETIRED_NOT_CURRENT_NO_PROVIDER_CALL"
+    assert preview["selected_code_revision"]==15
     assert preview["selected_code_verified"] is True
+    assert preview["current_release_executable_for_legacy_probe"] is False
     assert preview["existing_request_budget"]["status"]=="EXISTING_UNAUTHORIZED_RESEARCH_BUDGET"
     # November 10: the separately approved final BTC probe consumed the last
     # two public info attempts but did not yield an accepted book. Never
@@ -150,14 +150,18 @@ def test_offline_inspect_never_constructs_clock_or_provider_client(monkeypatch,c
                         lambda *_args,**_kw:pytest.fail("WRITABLE_LEDGER_STARTED"))
     assert probe.main(["--inspect"])==0
     result=json.loads(capsys.readouterr().out)
-    assert result["selected_code_revision"]==14
+    assert result["selected_code_revision"]==15
+    assert result["decision"]=="RETIRED_NOT_CURRENT_NO_PROVIDER_CALL"
     assert result["provider_connection_opened"] is False
     assert result["financial_execution_authorized"] is False
 
 
-def test_explicit_scope_refuses_if_two_attempts_are_not_available(monkeypatch):
-    original=probe.inspect()
-    original["existing_request_budget"]["remaining"]=1
+def test_explicit_scope_refuses_if_two_attempts_are_not_available(monkeypatch, tmp_path):
+    original={"selected_code_revision":14,
+              "selected_code_release":"2c79a8d846d6b33669008114732ae5896153812a",
+              "existing_request_budget":{"remaining":1}}
+    # Exercise historical-budget refusal without borrowing current R16 identity.
+    monkeypatch.setattr(probe,"R16_SUCCESSOR_RECORD",tmp_path/"not-selected.json")
     monkeypatch.setattr(probe,"inspect",lambda:original)
     monkeypatch.setattr(probe,"IndependentNtpClock",
                         lambda **_:pytest.fail("CLOCK_MUST_NOT_START"))
@@ -189,7 +193,8 @@ def test_real_ntp_anchor_math_preserves_millisecond_precision_without_windows_cl
 
 def test_wrong_clock_anchor_or_foreign_source_refuses(monkeypatch):
     class FakeExactNtp:
-        _anchor={"mono_ns":10_000_000_000,"utc_ns":1762800000123456789}
+        def __init__(self):
+            self._anchor={"mono_ns":10_000_000_000,"utc_ns":1762800000123456789}
         def sample(self):
             return {"source":probe.CLOCK_SOURCE,
                     "utc":1762800000,
@@ -231,32 +236,24 @@ def test_http_status_classification_does_not_echo_provider_body():
     assert probe.safe_refusal_code(error)=="HL_PUBLIC_HTTP_STATUS_REFUSED"
 
 
-def test_current_r15_refused_promotion_stops_before_request_budget_and_ntp(
-        monkeypatch,capsys):
+def test_obsolete_r15_selected_review_never_reenters_provider(
+        monkeypatch, capsys):
     from scripts.observation_runtime import atlas_r15_paper_offline_commissioning as r15
-    original=r15.inspect()
-    for field,value in (
-        ('decision','GO'),
-        ('selected_native_revision',13),
-        ('native_hyperliquid_forward_writer_enrolled',True),
-        ('provider_connection_opened',True),
-        ('financial_operating_gates_independently_accepted',1),
-    ):
-        monkeypatch.setattr(
-            r15,'inspect',lambda f=field,v=value: {**original,f:v})
-        monkeypatch.setattr(probe,'HyperliquidRequestGate',
-                            lambda *_a,**_kw:pytest.fail('BUDGET_MUTATED'))
-        monkeypatch.setattr(probe,'IndependentNtpClock',
-                            lambda **_kw:pytest.fail('NTP_STARTED'))
-        monkeypatch.setattr(probe,'HyperliquidAdapter',
-                            lambda:pytest.fail('PUBLIC_INFO_REQUEST_STARTED'))
-        rc=probe.main([
-            '--execute-data-only','--confirm-scope',probe.SCOPE,
-            '--symbol','BTC'])
-        output=json.loads(capsys.readouterr().out)
-        assert rc==1
-        assert output['financial_execution_authorized'] is False
-        assert output['live_order_authorized'] is False
+    assert probe.R16_SUCCESSOR_RECORD.is_file()
+    monkeypatch.setattr(r15, "inspect",
+                        lambda: pytest.fail("R15_LEGACY_FINANCIAL_SOURCE_USED"))
+    monkeypatch.setattr(probe, "HyperliquidRequestGate",
+                        lambda *_a, **_kw: pytest.fail("BUDGET_MUTATED"))
+    monkeypatch.setattr(probe, "IndependentNtpClock",
+                        lambda **_kw: pytest.fail("NTP_STARTED"))
+    monkeypatch.setattr(probe, "HyperliquidAdapter",
+                        lambda: pytest.fail("PUBLIC_INFO_REQUEST_STARTED"))
+    rc = probe.main([
+        "--execute-data-only", "--confirm-scope", probe.SCOPE, "--symbol", "BTC"])
+    output = json.loads(capsys.readouterr().out)
+    assert rc == 1
+    assert output["financial_execution_authorized"] is False
+    assert output["live_order_authorized"] is False
 
 
 def test_selected_r15_preview_refuses_provider_network_or_budget_writes(
@@ -269,8 +266,9 @@ def test_selected_r15_preview_refuses_provider_network_or_budget_writes(
                         lambda **_kw:pytest.fail('NTP_STARTED'))
     assert probe.main(['--inspect'])==0
     data=json.loads(capsys.readouterr().out)
-    assert data['schema']=='ATLAS_SELECTED_R15_HL_PUBLIC_BOOK_PREFLIGHT_V1'
-    assert data['selected_code_revision']==14
+    assert data['schema']=='ATLAS_R16_HISTORICAL_HL_PROBE_RETIRED_V1'
+    assert data['selected_code_revision']==15
+    assert data['decision']=='RETIRED_NOT_CURRENT_NO_PROVIDER_CALL'
     assert data['existing_request_budget']['remaining']==0
     assert data['provider_connection_opened'] is False
     assert data['financial_execution_authorized'] is False
@@ -279,12 +277,11 @@ def test_selected_r15_preview_refuses_provider_network_or_budget_writes(
 def test_future_authorized_r15_sample_uses_current_release_label_with_stubbed_provider(
         monkeypatch):
     # No request-gate installation, durable budget spend, NTP or HTTP.
-    current=copy.deepcopy(probe.inspect())
-    assert current["selected_code_revision"]==14
-    assert current["existing_request_budget"]["remaining"]==0
-    # Only a simulated proposed future budget is injected; the real ledger
-    # stays exhausted and is never opened writable by this regression.
-    current["existing_request_budget"]["remaining"]=2
+    # Historical R15-path contract only, isolated from the CURRENT R16.
+    current={"selected_code_revision":14,
+             "selected_code_release":"2c79a8d846d6b33669008114732ae5896153812a",
+             "existing_request_budget":{"remaining":2}}
+    monkeypatch.setattr(probe,"R16_SUCCESSOR_RECORD",Path("D:/NoSuchR16TestRecord"))
     monkeypatch.setattr(probe,"inspect",lambda:current)
     class FakeGate:
         def remaining(self):return 2
@@ -320,9 +317,15 @@ def test_real_exhausted_public_request_budget_refuses_before_any_new_io(monkeypa
     New data-only probes cannot silently reset the budget or construct any
     NTP, provider client, or mutable request gate after this terminal state.
     """
-    current=probe.inspect()
-    assert current["selected_code_revision"]==14
-    assert current["existing_request_budget"]["remaining"]==0
+    current=probe.read_enrolled_budget()
+    assert current["remaining"]==0
+    # Hypothetical historical R15 budget refusal is exercised without treating
+    # its expired selection as the presently selected R16.
+    monkeypatch.setattr(probe,"R16_SUCCESSOR_RECORD",Path("D:/NoSuchR16TestRecord"))
+    monkeypatch.setattr(probe,"inspect",lambda:{
+        "selected_code_revision":14,
+        "selected_code_release":"2c79a8d846d6b33669008114732ae5896153812a",
+        "existing_request_budget":current})
     monkeypatch.setattr(probe,"HyperliquidRequestGate",
                         lambda *_a,**_kw:pytest.fail("DURABLE_HL_BUDGET_OPENED"))
     monkeypatch.setattr(probe,"IndependentNtpClock",
@@ -331,3 +334,39 @@ def test_real_exhausted_public_request_budget_refuses_before_any_new_io(monkeypa
                         lambda:pytest.fail("NEW_HL_PUBLIC_REQUEST_STARTED"))
     with pytest.raises(ValueError,match="TWO_REQUEST_ENROLLED_BUDGET_NOT_AVAILABLE"):
         probe.execute_data_only(symbol="BTC",confirm_scope=probe.SCOPE)
+
+
+def test_real_r16_successor_retired_legacy_hyperliquid_provider_entrypoint(monkeypatch):
+    # Historical r0014 still exists, but original selector r0015 now selects
+    # R16. Even if an old request budget were replaced, the R14/R15 client
+    # must refuse before touching that ledger, NTP, or a network adapter.
+    assert probe.R16_SUCCESSOR_RECORD.is_file()
+    assert probe.inspect()["current_release_executable_for_legacy_probe"] is False
+    monkeypatch.setattr(
+        probe, "inspect",
+        lambda: pytest.fail("HISTORICAL_INSPECT_NEVER_AUTHORIZES_PROVIDER"))
+    monkeypatch.setattr(
+        probe, "HyperliquidRequestGate",
+        lambda *_args, **_kwargs: pytest.fail("OLD_BUDGET_MUST_NOT_REOPEN"))
+    monkeypatch.setattr(
+        probe, "IndependentNtpClock",
+        lambda **_kwargs: pytest.fail("OBSOLETE_SOURCE_MUST_NOT_START_CLOCK"))
+    monkeypatch.setattr(
+        probe, "HyperliquidAdapter",
+        lambda: pytest.fail("OBSOLETE_SOURCE_MUST_NOT_OPEN_PROVIDER"))
+    with pytest.raises(
+        ValueError, match="HISTORICAL_RELEASE_NOT_CURRENT_AFTER_R16"
+    ):
+        probe.execute_data_only(symbol="BTC", confirm_scope=probe.SCOPE)
+
+
+def test_even_corrupt_or_broken_successor_record_fails_closed_before_transport(
+        monkeypatch, tmp_path):
+    record = tmp_path / "r0015.json"
+    record.write_text("{not-an-authorizing-selector}", encoding="ascii")
+    monkeypatch.setattr(probe, "R16_SUCCESSOR_RECORD", record)
+    monkeypatch.setattr(
+        probe, "inspect",
+        lambda: pytest.fail("CORRUPT_SUCCESSOR_MUST_STOP_PREINSPECT"))
+    with pytest.raises(ValueError, match="HISTORICAL_RELEASE_NOT_CURRENT_AFTER_R16"):
+        probe.execute_data_only(symbol="ETH", confirm_scope=probe.SCOPE)

@@ -11,26 +11,37 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sqlite3
-import httpx
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+import httpx
+from app.adapters import hyperliquid_gate_registry
+from app.adapters.hyperliquid import (
+    HyperliquidAdapter,
+    HyperliquidPublicBookAdmissionRefused,
+)
+from app.adapters.hyperliquid_request_gate import (
+    HyperliquidRequestGate,
+    RequestGateRefused,
+)
+from app.personal_paper import DEFAULT_HYPERLIQUID_BUDGET
+
+from scripts.observation_runtime.atlas_independent_ntp_clock import (
+    SOURCE as CLOCK_SOURCE,
+)
+from scripts.observation_runtime.atlas_independent_ntp_clock import (
+    IndependentNtpClock,
+)
 from scripts.observation_runtime.atlas_r14_selected_paper_readiness import (
     collect_selected_reference,
 )
 from scripts.observation_runtime.atlas_r14_two_lane_source_preflight import (
     selected_contracts,
 )
-from scripts.observation_runtime.hyperliquid_native_preflight import inspect as inventory
-from app.personal_paper import DEFAULT_HYPERLIQUID_BUDGET
-from app.adapters import hyperliquid_gate_registry
-from app.adapters.hyperliquid import HyperliquidAdapter, HyperliquidPublicBookAdmissionRefused
-from app.adapters.hyperliquid_request_gate import (
-    HyperliquidRequestGate, RequestGateRefused,
-)
-from scripts.observation_runtime.atlas_independent_ntp_clock import (
-    IndependentNtpClock, SOURCE as CLOCK_SOURCE,
+from scripts.observation_runtime.hyperliquid_native_preflight import (
+    inspect as inventory,
 )
 
 SCOPE = "HYPERLIQUID_TWO_PUBLIC_INFO_REQUESTS_DATA_ONLY_NO_TRADING"
@@ -40,6 +51,19 @@ MAX_ATTEMPTS = 12
 MAX_HTTP_ATTEMPTS = 2
 HTTP_DEADLINE_SECONDS = 25
 R15_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0014.json")
+R16_SUCCESSOR_RECORD = Path("D:/AtlasRuntime/selection/r0015.json")
+
+
+def require_legacy_release_still_current():
+    """Retire R14/R15 provider calls after R16 selection, even on future budget resets.
+
+    A historic revision-14 record is retained for provenance, NOT proof of
+    current selection. Treat even a damaged/junction successor record as a
+    terminal refusal; only the separately reviewed R16 source path may probe.
+    """
+    if os.path.lexists(R16_SUCCESSOR_RECORD):
+        raise ValueError("R14_HL_HISTORICAL_RELEASE_NOT_CURRENT_AFTER_R16")
+    return True
 
 
 def read_enrolled_budget():
@@ -63,6 +87,40 @@ def read_enrolled_budget():
 
 
 def inspect():
+    if os.path.lexists(R16_SUCCESSOR_RECORD):
+        # Exact R16 readback, NOT the now-obsolete R15-only selected reader.
+        from scripts.observation_runtime.atlas_r16_selected_code_readback import (
+            R16_HEAD,
+            selected_code,
+        )
+        current = selected_code()
+        if (current.get("selected_revision") != 15
+                or current.get("selected_native_head") != R16_HEAD
+                or current.get("code_selection_accepted") is not True
+                or current.get("paper_start_authorized") is not False):
+            raise ValueError("R14_HL_REAL_CURRENT_R16_SELECTED_CODE_REQUIRED")
+        return {
+            "schema": "ATLAS_R16_HISTORICAL_HL_PROBE_RETIRED_V1",
+            "decision": "RETIRED_NOT_CURRENT_NO_PROVIDER_CALL",
+            "selected_code_revision": 15,
+            "selected_code_release": current["selected_release"],
+            "selected_code_verified": True,
+            "current_release_executable_for_legacy_probe": False,
+            "historical_releases_never_inherit_r16_provider_approval": True,
+            "allowed_symbols": list(SYMBOLS),
+            "public_info_requests_per_probe": MAX_HTTP_ATTEMPTS,
+            "total_durable_budget": MAX_ATTEMPTS,
+            "existing_request_budget": read_enrolled_budget(),
+            "provider_connection_opened": False,
+            "private_account_accessed": False,
+            "order_endpoint_used": False,
+            "market_book_observed": False,
+            "provider_rights_independently_accepted": False,
+            "continuous_executable_prices_verified": False,
+            "financial_execution_authorized": False,
+            "paper_startup_authorized": False,
+            "live_trading_authorized": False,
+        }
     # An old selected r0013 remains on disk after native R15 selection.
     # Never call an R14-only verifier to decide the CURRENT selected code.
     if R15_SELECTED_ENVELOPE.exists():
@@ -105,6 +163,8 @@ def inspect():
         "selected_code_revision":revision,
         "selected_code_release":release,
         "selected_code_verified":True,
+        "current_release_executable_for_legacy_probe":not os.path.lexists(R16_SUCCESSOR_RECORD),
+        "historical_releases_never_inherit_r16_provider_approval":True,
         "allowed_symbols":list(SYMBOLS),
         "public_info_requests_per_probe":MAX_HTTP_ATTEMPTS,
         "total_durable_budget":MAX_ATTEMPTS,
@@ -221,6 +281,9 @@ async def _perform_two_requests(symbol, clock, identity, gate):
 
 def execute_data_only(*, symbol, confirm_scope):
     require_execute_scope(mode=True,scope=confirm_scope,symbol=symbol)
+    # Reject an obsolete source before inspecting/consuming any durable budget
+    # or constructing NTP/provider clients. R16 has its own native selection.
+    require_legacy_release_still_current()
     snapshot=inspect()
     expected={13:"7ff9d3dba2eabe110f843c13efac49464805de2a",
               14:"2c79a8d846d6b33669008114732ae5896153812a"}
