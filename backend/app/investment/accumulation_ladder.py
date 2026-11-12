@@ -135,7 +135,10 @@ class AccumulationLadderStore:
             stance = str(board_row.get("stance") or "WATCH").upper()
             quote_quality = str(board_row.get("quote_quality") or "UNKNOWN").upper()
             display_price = _float(board_row.get("quote_display_price")) or _float(board_row.get("quote_price"))
-            trigger_price = _float(board_row.get("quote_trigger_price")) or _float(board_row.get("quote_price"))
+            # Never substitute a display-only reference for an expressly
+            # admitted manual-alert trigger. The quote overlay removes this
+            # field for research-only, stale and non-actionable sources.
+            trigger_price = _float(board_row.get("quote_trigger_price"))
             quote_ts = board_row.get("quote_effective_timestamp")
             quote_session = str(board_row.get("quote_session") or "UNKNOWN")
             quote_source = str(board_row.get("quote_source") or "UNKNOWN")

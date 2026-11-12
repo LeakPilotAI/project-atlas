@@ -470,7 +470,9 @@ class IEXFeed:
             "symbol": symbol,
             "price": float(q["ask"]) if fresh else None,
             "display_price": float(q["ask"]) if q and q["ask"] else None,
-            "trigger_price": float(q["ask"]) if fresh and regular else None,
+            # Research data can be fresh without authorizing manual-buy alerts.
+            # An independently accepted execution lease is separate.
+            "trigger_price": None,
             "bid": float(q["bid"]) if q and q["bid"] else None,
             "ask": float(q["ask"]) if q and q["ask"] else None,
             "source": "ALPACA_IEX_SINGLE_EXCHANGE_NOT_NBBO",
@@ -480,7 +482,7 @@ class IEXFeed:
             "retrieved_at": now.isoformat(),
             "quality": "LIVE" if fresh else "STALE" if q else "UNAVAILABLE",
             "fresh_for_display": fresh,
-            "tradable_for_ladder": fresh and regular,
+            "tradable_for_ladder": False,
             "is_live": fresh,
             "error": None if fresh else "IEX_QUOTE_UNAVAILABLE",
             "size_units": "ROUND_LOTS",
