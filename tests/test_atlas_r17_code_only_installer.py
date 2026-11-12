@@ -320,3 +320,34 @@ def test_fail_closed_partial_copy_progress_never_becomes_acceptance():
     assert result["financial_authority"] is False
     assert result["code_selected"] is False
     assert result["paper_start_authorized"] is False
+
+
+def test_r17_install_requires_real_cpu_budget_before_native_copy(monkeypatch):
+    """Even a synthetically approved install cannot bypass the CPU limiter."""
+    from scripts import install_version_safe_candidate as vsc
+    from scripts.observation_runtime import atlas_independent_ntp_clock as ntp
+
+    class FakeClock:
+        def require_operational(self, _runtime_id):
+            return True
+
+    monkeypatch.setattr(ntp, "IndependentNtpClock", FakeClock)
+    monkeypatch.setattr(vsc, "_qualify_native_clock_180s",
+                        lambda *_args: None)
+    monkeypatch.setattr(installer, "require_separate_approval",
+                        lambda: {"test_only": True})
+    monkeypatch.setattr(installer, "require_selected_r16", lambda: True)
+    monkeypatch.setattr(installer, "require_create_only_target", lambda: True)
+    monkeypatch.setattr(installer, "require_original_financial_roots_untouched",
+                        lambda: True)
+    monkeypatch.setattr(installer, "require_code_install_host_ready",
+                        lambda *_args: {"test_only": True})
+    def cpu_refused():
+        raise ValueError("R17_CPU_BUDGET_GUARD_REFUSED")
+    monkeypatch.setattr(installer, "NativeR17CpuBudget", cpu_refused)
+    monkeypatch.setattr(installer, "LowImpactEnvelope",
+                        lambda **_kw: pytest.fail("NO_NATIVE_COPY_WITHOUT_CPU_GUARD"))
+    monkeypatch.setattr(installer, "inspect_prepared",
+                        lambda: pytest.fail("NO_DISK_IO_WITHOUT_CPU_GUARD"))
+    with pytest.raises(ValueError, match="R17_CPU_BUDGET_GUARD_REFUSED"):
+        installer.install(approved_execution=True, clock=FakeClock())

@@ -48,6 +48,7 @@ from scripts.observation_runtime.atlas_r16_selected_code_readback import (
 from scripts.observation_runtime.atlas_r16_selected_code_readback import (
     selected_code,
 )
+from scripts.observation_runtime.atlas_r17_cpu_budget import NativeR17CpuBudget
 from scripts.observation_runtime.native_install_host_admission import (
     require_code_install_host_ready,
 )
@@ -314,11 +315,15 @@ def install(*, approved_execution=False, clock=None):
     from scripts.install_version_safe_candidate import _qualify_native_clock_180s
     _qualify_native_clock_180s(clock, CLOCK_IDENTITY)
     require_separate_approval()
-    with LowImpactEnvelope(
+    # Hard CPU budget: pin this installer process to <=2 logical CPUs and
+    # refuse when whole-system CPU is >=70%; Windows IDLE priority alone
+    # cannot cap CPU on an otherwise idle machine. Restore affinity on exit.
+    with NativeR17CpuBudget() as cpu, LowImpactEnvelope(
         check_every=CHECK_EVERY, pace_every=PACE_EVERY,
         pause_seconds=PAUSE_SECONDS, max_seconds=MAX_SECONDS,
     ) as envelope:
         prepared = inspect_prepared()
+        cpu.pulse()
         _check_live_copy_admission(clock=clock, envelope=envelope)
         prepared["started"] = time.monotonic()
         write_new_json(RECEIPT.with_suffix(".pending.jsonl"), {
@@ -342,8 +347,10 @@ def install(*, approved_execution=False, clock=None):
                 observer=lambda row: print(json.dumps(
                     bounded_native_copy_progress(row), sort_keys=True),
                     flush=True),
-                admission=lambda: _check_live_copy_admission(
-                    clock=clock, envelope=envelope))
+                admission=lambda: (
+                    cpu.pulse() and _check_live_copy_admission(
+                        clock=clock, envelope=envelope)))
+            cpu.pulse()
             _check_live_copy_admission(clock=clock, envelope=envelope)
             receipt = {
                 "schema": "ATLAS_QD_D_RUNTIME_INSTALLATION_V1",
@@ -361,6 +368,7 @@ def install(*, approved_execution=False, clock=None):
                 raise ValueError("R17_INSTALLED_CHILD_READBACK_DEADLINE")
             installed = installed_readback(
                 TARGET, receipt, artifact_digest, timeout=min(120,remaining-10))
+            cpu.pulse()
             _check_live_copy_admission(clock=clock, envelope=envelope)
             require_selected_r16()
             require_original_financial_roots_untouched()
