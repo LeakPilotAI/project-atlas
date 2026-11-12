@@ -96,9 +96,13 @@ def test_busy_host_aborts_before_native_copy_and_restores_affinity(monkeypatch):
 
 
 def test_cpu_pressure_during_copy_refuses_and_restores(monkeypatch):
+    busy_samples = [
+        (360 + 5*i, 400 + 100*i, 0)
+        for i in range(1, cpu.BUSY_RECOVERY_MAX_SAMPLES + 2)
+    ]
     guard, observed = fixture_budget(monkeypatch, samples=[
         (0,0,0), (90,100,0), (180,200,0), (270,300,0),
-        (360,400,0), (365,500,0),
+        (360,400,0), *busy_samples,
     ])
     with pytest.raises(ValueError, match="HOST_BUSY_PRESERVE_PARTIAL"), guard:
         observed["clock"] = 2.0
@@ -177,3 +181,76 @@ def test_four_window_preflight_rejects_late_cpu_spike_and_restores(monkeypatch):
 def test_cpu_preflight_requires_multiple_consecutive_samples():
     assert cpu.INITIAL_SAMPLE_WINDOWS == 4
     assert cpu.INITIAL_SAMPLE_WINDOWS * cpu.INITIAL_SAMPLE_SECONDS >= 2.0
+
+
+def test_native_busy_recovery_waits_until_two_55_percent_safe_samples(monkeypatch):
+    # Four quiet startup samples, a later >70% system CPU spike, then a
+    # second busy half-second, followed by TWO safe windows.
+    guard, state = fixture_budget(monkeypatch, samples=[
+        (0,0,0), (90,100,0), (180,200,0), (270,300,0),
+        (360,400,0), (365,500,0),
+        (370,600,0), (450,700,0), (530,800,0),
+    ])
+    with guard:
+        state["clock"] = 2.0
+        assert guard.pulse() is True
+        assert guard.busy_recovery_count == 1
+        assert guard.busy_wait_seconds == 1.5
+        assert guard.active is True
+        assert state["mask"].bit_count() == 2
+    assert state["mask"] == 0xFFF
+
+
+def test_native_busy_recovery_requires_consecutive_idle_samples(monkeypatch):
+    guard, state = fixture_budget(monkeypatch, samples=[
+        (0,0,0), (90,100,0), (180,200,0), (270,300,0),
+        (360,400,0), (365,500,0),
+        (445,600,0),  # 15% busy: only one safe
+        (450,700,0),  # 95% busy again: reset consecutive safe count
+        (530,800,0), (610,900,0),  # both <55%: safe to resume
+    ])
+    with guard:
+        state["clock"] = 2.0
+        assert guard.pulse() is True
+        assert guard.busy_wait_seconds == 2.0
+        assert guard.busy_recovery_count == 1
+
+
+def test_native_busy_recovery_refuses_exhausted_cumulative_budget(monkeypatch):
+    guard, state = fixture_budget(monkeypatch, samples=[
+        (0,0,0), (90,100,0), (180,200,0), (270,300,0),
+        (360,400,0), (365,500,0),
+    ])
+    with pytest.raises(ValueError, match="BUSY_WAIT_BUDGET_EXHAUSTED"), guard:
+        guard.busy_wait_seconds = cpu.BUSY_RECOVERY_TOTAL_SECONDS - 0.25
+        state["clock"] = 2.0
+        guard.pulse()
+    assert state["mask"] == 0xFFF
+    assert not guard.active
+
+
+def test_native_busy_recovery_detects_affinity_drift_while_waiting(monkeypatch):
+    guard, state = fixture_budget(monkeypatch, samples=[
+        (0,0,0), (90,100,0), (180,200,0), (270,300,0),
+        (360,400,0), (365,500,0),
+    ])
+    def malicious_wait(_seconds):
+        state["mask"] = 0x400
+    guard.wait = malicious_wait
+    # Initial admission must receive safe clock readings, then malicious
+    # drift is introduced specifically AFTER the first overload.
+    guard.wait = lambda _: None
+    with pytest.raises(ValueError, match="AFFINITY_DRIFT"), guard:
+        guard.wait = malicious_wait
+        state["clock"] = 2.0
+        guard.pulse()
+    assert state["mask"] == 0xFFF
+
+
+def test_busy_recovery_never_changes_cpu_or_financial_authority():
+    assert cpu.MAX_LOGICAL_CPUS == 2
+    assert cpu.MAX_SYSTEM_CPU_PERCENT == 70.0
+    assert cpu.BUSY_RECOVERY_TOTAL_SECONDS <= 30.0
+    assert cpu.BUSY_RECOVERY_MAX_SAMPLES <= 16
+    assert cpu.BUSY_RECOVERY_CONSECUTIVE_SAFE >= 2
+    assert cpu.BUSY_RECOVERY_SAFE_PERCENT < cpu.MAX_SYSTEM_CPU_PERCENT

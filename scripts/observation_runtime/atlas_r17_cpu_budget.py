@@ -22,6 +22,11 @@ MAX_SYSTEM_CPU_PERCENT = 70.0
 INITIAL_SAMPLE_SECONDS = 0.60
 INITIAL_SAMPLE_WINDOWS = 4
 POLL_SECONDS = 1.25
+BUSY_RECOVERY_SAMPLE_SECONDS = 0.50
+BUSY_RECOVERY_MAX_SAMPLES = 12
+BUSY_RECOVERY_TOTAL_SECONDS = 18.0
+BUSY_RECOVERY_SAFE_PERCENT = 55.0
+BUSY_RECOVERY_CONSECUTIVE_SAFE = 2
 
 
 def choose_bounded_mask(available, *, maximum=MAX_LOGICAL_CPUS):
@@ -63,6 +68,8 @@ class NativeR17CpuBudget:
         self.restricted_mask = None
         self.last_sample = None
         self.last_check = None
+        self.busy_wait_seconds = 0.0
+        self.busy_recovery_count = 0
         self.active = False
 
     def _native(self):
@@ -129,8 +136,8 @@ class NativeR17CpuBudget:
         try:
             self._set_affinity(target)
             self.restricted_mask = target
-            # A single quiet 0.3-second window is insufficient before a
-            # 10,599-file native copy on an interactive desktop. Require
+            # A single quiet CPU window is insufficient before a long
+            # immutable native copy on an interactive desktop. Require
             # four consecutive safe, independent system-CPU intervals.
             initial = self._times()
             for _ in range(INITIAL_SAMPLE_WINDOWS):
@@ -147,6 +154,38 @@ class NativeR17CpuBudget:
             self._restore()
             raise
 
+    def _require_still_pinned(self):
+        current_mask, _ = self._affinity()
+        if current_mask != self.restricted_mask:
+            raise ValueError("R17_CPU_AFFINITY_DRIFT_PRESERVE_PARTIAL")
+
+    def _recover_busy_without_native_io(self, previous):
+        """No copy I/O while host is busy; short cooldown or fail closed.
+
+        Bounded by BOTH sample count and cumulative intentional sleep time,
+        even if the monotonic clock or test wait callback stops advancing.
+        Never overrides the initial 4-window CPU admission requirement.
+        """
+        safe = 0
+        for _ in range(BUSY_RECOVERY_MAX_SAMPLES):
+            if (self.busy_wait_seconds + BUSY_RECOVERY_SAMPLE_SECONDS >
+                    BUSY_RECOVERY_TOTAL_SECONDS):
+                raise ValueError("R17_CPU_BUSY_WAIT_BUDGET_EXHAUSTED_PRESERVE_PARTIAL")
+            self.wait(BUSY_RECOVERY_SAMPLE_SECONDS)
+            self.busy_wait_seconds += BUSY_RECOVERY_SAMPLE_SECONDS
+            self._require_still_pinned()
+            current = self._times()
+            percentage = cpu_busy_percent(previous, current)
+            previous = current
+            if percentage < BUSY_RECOVERY_SAFE_PERCENT:
+                safe += 1
+                if safe >= BUSY_RECOVERY_CONSECUTIVE_SAFE:
+                    self.busy_recovery_count += 1
+                    return current
+            else:
+                safe = 0
+        raise ValueError("R17_CPU_HOST_BUSY_PRESERVE_PARTIAL")
+
     def pulse(self):
         if not self.active:
             raise ValueError("R17_CPU_BUDGET_NOT_ACTIVE")
@@ -154,14 +193,18 @@ class NativeR17CpuBudget:
         if now < self.last_check:
             raise ValueError("R17_CPU_MONOTONIC_ROLLBACK")
         if now - self.last_check >= POLL_SECONDS:
-            current_mask, _ = self._affinity()
-            if current_mask != self.restricted_mask:
-                raise ValueError("R17_CPU_AFFINITY_DRIFT_PRESERVE_PARTIAL")
+            self._require_still_pinned()
             current = self._times()
             if cpu_busy_percent(self.last_sample, current) >= MAX_SYSTEM_CPU_PERCENT:
-                raise ValueError("R17_CPU_HOST_BUSY_PRESERVE_PARTIAL")
+                # No further native copy/readback or financial effect occurs
+                # until the host has cooled for TWO safe samples. Never
+                # wait indefinitely or silently relax the >=70% refusal.
+                current = self._recover_busy_without_native_io(current)
+            checked_at = self.monotonic()
+            if checked_at < now:
+                raise ValueError('R17_CPU_MONOTONIC_ROLLBACK')
             self.last_sample = current
-            self.last_check = now
+            self.last_check = checked_at
         return True
 
     def _restore(self):

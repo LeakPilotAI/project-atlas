@@ -29,6 +29,7 @@ def specimen():
         "selected_predecessor_record_sha256": installer.PREDECESSOR_RECORD_SHA,
         "selected_predecessor_artifact_digest": installer.PREDECESSOR_ARTIFACT,
         "installer_source_sha256": installer.source_digest_for_approval(),
+        "cpu_budget_sha256": installer.CPU_GUARD_SHA256,
         "destination": str(installer.TARGET),
         "receipt": str(installer.RECEIPT),
         "one_shot": True,
@@ -60,6 +61,7 @@ def test_synthetic_exact_decision_only_no_operational_permission():
     "archive_sha256", "inventory_sha256", "dependency_inventory_sha256",
     "selected_predecessor_head", "selected_predecessor_record_sha256",
     "selected_predecessor_artifact_digest", "installer_source_sha256",
+    "cpu_budget_sha256",
     "destination", "receipt", "one_shot", "selection_allowed",
     "financial_authority", "provider_access", "paper_accounts",
     "startup_authorized", "paper_orders_authorized", "live_orders_authorized",
@@ -351,3 +353,24 @@ def test_r17_install_requires_real_cpu_budget_before_native_copy(monkeypatch):
                         lambda: pytest.fail("NO_DISK_IO_WITHOUT_CPU_GUARD"))
     with pytest.raises(ValueError, match="R17_CPU_BUDGET_GUARD_REFUSED"):
         installer.install(approved_execution=True, clock=FakeClock())
+
+
+def test_cpu_safety_policy_is_exactly_pinned_without_native_copy():
+    from hashlib import sha256
+
+    assert sha256(installer.CPU_GUARD_FILE.read_bytes()).hexdigest() == (
+        installer.CPU_GUARD_SHA256
+    )
+    assert installer.require_cpu_budget_pinned() is True
+    assert specimen()["cpu_budget_sha256"] == installer.CPU_GUARD_SHA256
+
+
+def test_modified_cpu_guard_does_not_consume_future_operator_approval(
+        monkeypatch, tmp_path):
+    substituted = tmp_path / "substituted_cpu_budget.py"
+    substituted.write_text("MAX_LOGICAL_CPUS = 12\n", encoding="utf-8")
+    monkeypatch.setattr(installer, "CPU_GUARD_FILE", substituted)
+    with pytest.raises(ValueError, match="PINNED_SOURCE_DIGEST_MISMATCH"):
+        installer.require_cpu_budget_pinned()
+    with pytest.raises(ValueError, match="PINNED_SOURCE_DIGEST_MISMATCH"):
+        installer.require_separate_approval()

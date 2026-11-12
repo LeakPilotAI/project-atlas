@@ -79,6 +79,8 @@ EXPECTED_TOTAL_FILES = 10610
 EXPECTED_TOTAL_DIRECTORIES = 914
 EXPECTED_TOTAL_BYTES = 264583312
 REVIEW_MAX_BYTES = 8192
+CPU_GUARD_FILE = ROOT / "scripts/observation_runtime/atlas_r17_cpu_budget.py"
+CPU_GUARD_SHA256 = "a162948f7d786b36b87ee00cbb29fcf3a457bf0ba735cba6e12565ebe5568e2c"
 
 
 def source_digest_for_approval():
@@ -101,6 +103,7 @@ def validate_operator_decision(value, *, sid, installer_source_sha256):
         "archive_sha256", "inventory_sha256", "dependency_inventory_sha256",
         "selected_predecessor_head", "selected_predecessor_record_sha256",
         "selected_predecessor_artifact_digest", "installer_source_sha256",
+        "cpu_budget_sha256",
         "destination", "receipt", "one_shot", "selection_allowed",
         "financial_authority", "provider_access", "paper_accounts",
         "startup_authorized", "paper_orders_authorized",
@@ -122,6 +125,7 @@ def validate_operator_decision(value, *, sid, installer_source_sha256):
             or value.get("selected_predecessor_record_sha256") != PREDECESSOR_RECORD_SHA
             or value.get("selected_predecessor_artifact_digest") != PREDECESSOR_ARTIFACT
             or value.get("installer_source_sha256") != installer_source_sha256
+            or value.get("cpu_budget_sha256") != CPU_GUARD_SHA256
             or value.get("destination") != str(TARGET)
             or value.get("receipt") != str(RECEIPT)
             or value.get("one_shot") is not True
@@ -134,7 +138,14 @@ def validate_operator_decision(value, *, sid, installer_source_sha256):
     return value
 
 
+def require_cpu_budget_pinned():
+    """Hash-pin exact nonfinancial CPU policy against accidental substitution."""
+    _exact_bytes(CPU_GUARD_FILE, CPU_GUARD_SHA256, max_bytes=16384)
+    return True
+
+
 def require_separate_approval():
+    require_cpu_budget_pinned()
     if type(APPROVAL_SHA256) is not str or not re.fullmatch(
             "[0-9a-f]{64}", APPROVAL_SHA256):
         raise ValueError("R17_CODE_INSTALL_SEPARATE_PINNED_OPERATOR_DECISION_MISSING")
@@ -178,6 +189,7 @@ def inspect_prepared():
     require_selected_r16()
     require_create_only_target()
     require_original_financial_roots_untouched()
+    require_cpu_budget_pinned()
     review = json.loads(_exact_bytes(
         REVIEW, REVIEW_SHA, max_bytes=REVIEW_MAX_BYTES))
     # JSON lives inside diagnostics but must precisely match the frozen
@@ -261,6 +273,7 @@ def _check_live_copy_admission(*, clock, envelope):
         require_code_install_host_ready(TARGET.parent)
         require_selected_r16()
         require_original_financial_roots_untouched()
+        require_cpu_budget_pinned()
         require_separate_approval()
         envelope._r17_host_last = elapsed
     return True
