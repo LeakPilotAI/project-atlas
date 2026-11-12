@@ -8,9 +8,11 @@ No network or credentials are read at import or during construction.
 from __future__ import annotations
 
 import asyncio
+import secrets
+import time
 from collections import Counter
 
-from app.investment.alpaca_iex import Credentials, IEXFeed
+from app.investment.alpaca_iex import SYMBOL, Credentials, IEXFeed
 
 from scripts.observation_runtime.atlas_r16_joint_ntp_iex_data_only import (
     NativeUtcUpperBound,
@@ -158,6 +160,7 @@ async def supervise_bounded_data_only(
         raise ValueError("IEX_SUPERVISOR_EXACT_DATA_ONLY_SCOPE_REQUIRED")
     before = require_original_selected_modules()
     window = PinnedIEXWindow(feed=feed, owner=owner, clock=clock)
+    monotonic_start_ns = time.perf_counter_ns()
     stop = asyncio.Event()
     failure = []
 
@@ -191,12 +194,159 @@ async def supervise_bounded_data_only(
             await task
         if failure:
             raise ValueError("IEX_SUPERVISED_WATCHDOG_REFUSED")
-        return window.assess(
+        result = window.assess(
             raw, release_before=before,
             release_after=require_original_selected_modules())
+        monotonic_end_ns = time.perf_counter_ns()
+        if monotonic_end_ns <= monotonic_start_ns:
+            window.refuse("IEX_SUPERVISED_MONOTONIC_WINDOW_INVALID")
+        return {
+            **result,
+            "bounded_window_nonce": secrets.token_hex(16),
+            "bounded_requested_seconds": seconds,
+            "bounded_window_start_monotonic_ns": monotonic_start_ns,
+            "bounded_window_end_monotonic_ns": monotonic_end_ns,
+        }
     finally:
         stop.set()
         if not task.done():
             await task
         # A successful observational window still cannot retain executable prices.
         _invalidate_feed(feed, "IEX_SUPERVISED_BOUNDED_DATA_ONLY_CLOSED")
+
+class BoundedIEXMultiSessionAudit:
+    """In-memory correlation of separate bounded data-only observations.
+
+    It cannot issue leases, verify external market-data rights, attest financial
+    custody, or prove that data was continuously available BETWEEN sockets.
+    Nonces and local monotonic times only detect obvious same-process replay;
+    they are NOT cryptographic evidence or native issuer signatures.
+    """
+
+    def __init__(self, *, max_sessions=12, max_gap_seconds=120):
+        if (type(max_sessions) is not int or not 2 <= max_sessions <= 16
+                or type(max_gap_seconds) is not int
+                or not 0 <= max_gap_seconds <= 120):
+            raise ValueError("IEX_MULTIWINDOW_EXACT_OFFLINE_BOUNDS_REQUIRED")
+        self.max_sessions = max_sessions
+        self.max_gap_seconds = max_gap_seconds
+        self.sessions = []
+        self.nonces = set()
+        self.pins = None
+        self.failed = False
+
+    def _refuse(self, code):
+        # No receipt is emitted from an invalid chain; never silently skip a
+        # bad window and continue as if reliability were uninterrupted.
+        self.failed = True
+        self.sessions.clear()
+        self.nonces.clear()
+        raise ValueError(code)
+
+    def append(self, report):
+        if self.failed or len(self.sessions) >= self.max_sessions:
+            self._refuse("IEX_MULTIWINDOW_CLOSED_OR_OVER_CAPACITY")
+        if type(report) is not dict:
+            self._refuse("IEX_MULTIWINDOW_EXACT_REPORT_REQUIRED")
+        for key, expected in (
+            ("schema", SCHEMA),
+            ("status", "BOUNDED_POSITION_SAFE_DATA_OBSERVED_NOT_FINANCIAL_SOURCE"),
+            ("provider_authenticated_and_subscribed", True),
+            ("socket_closed", True),
+            ("provider_reconnects", 0),
+            ("source_entitlement_accepted", False),
+            ("continuous_source_accepted", False),
+            ("financial_clock_lease_accepted", False),
+            ("financial_writer_lease_accepted", False),
+            ("paper_start_authorized", False),
+            ("live_trading_authorized", False),
+            ("orders_created", 0),
+        ):
+            if key not in report or type(report[key]) is not type(expected) or report[key] != expected:
+                self._refuse("IEX_MULTIWINDOW_FINANCIAL_OR_SOURCE_PROOF_REFUSED")
+        nonce = report.get("bounded_window_nonce")
+        requested = report.get("bounded_requested_seconds")
+        start = report.get("bounded_window_start_monotonic_ns")
+        end = report.get("bounded_window_end_monotonic_ns")
+        pins = report.get("required_open_position_symbols")
+        symbols = report.get("requested_symbols")
+        callbacks = report.get("fresh_callbacks_by_symbol")
+        samples = report.get("native_utc_samples_verified_in_window")
+        readbacks = report.get("native_position_readbacks")
+        if (type(nonce) is not str or len(nonce) != 32
+                or any(char not in "0123456789abcdef" for char in nonce)
+                or nonce in self.nonces
+                or type(requested) is not int or not 10 <= requested <= 60
+                or type(start) is not int or type(end) is not int
+                or not 0 < start < end
+                or not (requested - 1) * 1_000_000_000 <= end - start
+                   <= (requested + 10) * 1_000_000_000
+                or type(pins) is not list
+                or type(symbols) is not list or not 1 <= len(symbols) <= 30
+                or any(type(s) is not str or SYMBOL.fullmatch(s) is None for s in symbols)
+                or len(set(symbols)) != len(symbols)
+                or any(type(s) is not str or s not in symbols for s in pins)
+                or len(set(pins)) != len(pins)
+                or type(callbacks) is not dict or set(callbacks) != set(symbols)
+                or any(type(v) is not int or not 0 <= v <= 10_000_000
+                       for v in callbacks.values())
+                or sum(callbacks.values()) == 0
+                or any(callbacks[s] == 0 for s in pins)
+                or type(samples) is not int or not 1 <= samples <= 100_000
+                or type(readbacks) is not int or not 2 <= readbacks <= 100_000):
+            self._refuse("IEX_MULTIWINDOW_INCOMPLETE_OBSERVATION_REQUIRED")
+        if self.pins is not None and tuple(pins) != self.pins:
+            self._refuse("IEX_MULTIWINDOW_POSITION_SCOPE_CHANGED")
+        if self.sessions:
+            previous_end = self.sessions[-1]["end"]
+            if start < previous_end or start - previous_end > self.max_gap_seconds * 1_000_000_000:
+                self._refuse("IEX_MULTIWINDOW_GAP_OVERLAP_OR_REPLAY")
+        else:
+            self.pins = tuple(pins)
+        self.nonces.add(nonce)
+        self.sessions.append({
+            "start": start, "end": end,
+            "symbols": tuple(symbols),
+            "fresh": dict(callbacks),
+            "samples": samples,
+            "readbacks": readbacks,
+        })
+        return {
+            "schema": "ATLAS_R16_MULTIWINDOW_DATA_ONLY_COLLECTION_V1",
+            "bounded_windows_collected": len(self.sessions),
+            "continuous_source_accepted": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
+
+    def summarize(self):
+        if self.failed or len(self.sessions) < 2:
+            self._refuse("IEX_MULTIWINDOW_AT_LEAST_TWO_VALID_WINDOWS_REQUIRED")
+        total_ns = sum(s["end"] - s["start"] for s in self.sessions)
+        gaps = [self.sessions[i]["start"] - self.sessions[i - 1]["end"]
+                for i in range(1, len(self.sessions))]
+        visited = {s for session in self.sessions for s in session["symbols"]}
+        fresh = {s for session in self.sessions
+                 for s, count in session["fresh"].items() if count > 0}
+        return {
+            "schema": "ATLAS_R16_MULTIWINDOW_DATA_ONLY_RELIABILITY_RESEARCH_V1",
+            "status": "MULTIPLE_BOUNDED_OBSERVATIONS_NOT_CONTINUOUS_CUSTODY",
+            "successful_bounded_windows": len(self.sessions),
+            "separately_observed_seconds": round(total_ns / 1_000_000_000, 3),
+            "unobserved_gap_seconds": round(sum(gaps) / 1_000_000_000, 3),
+            "max_unobserved_gap_seconds": round(max(gaps) / 1_000_000_000, 3),
+            "unique_symbols_requested_over_windows": len(visited),
+            "unique_symbols_with_at_least_one_fresh_callback": len(fresh),
+            "pinned_position_symbols_consistent": list(self.pins),
+            "total_native_utc_verified_samples": sum(s["samples"] for s in self.sessions),
+            "total_custody_readbacks": sum(s["readbacks"] for s in self.sessions),
+            "report_receipts_not_cryptographically_authenticated": True,
+            "unobserved_gaps_present": True,
+            "source_entitlement_accepted": False,
+            "continuous_source_accepted": False,
+            "financial_writer_lease_accepted": False,
+            "financial_clock_lease_accepted": False,
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+            "orders_created": 0,
+        }

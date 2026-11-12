@@ -238,6 +238,12 @@ async def test_bounded_data_only_session_clears_quotes_after_success(monkeypatch
         seconds=10, confirmed_scope=supervised.SCOPE)
     assert calls == [(10, 0, None)]
     assert out["fresh_callbacks_by_symbol"]["MSFT"] == 1
+    assert out["bounded_requested_seconds"] == 10
+    assert len(out["bounded_window_nonce"]) == 32
+    assert out["bounded_window_start_monotonic_ns"] < out["bounded_window_end_monotonic_ns"]
+    # A zero-duration synthetic provider stub is NOT evidence of a real soak.
+    with pytest.raises(ValueError, match="INCOMPLETE_OBSERVATION"):
+        supervised.BoundedIEXMultiSessionAudit().append(out)
     assert not out["paper_start_authorized"]
     assert window.feed.quotes == {}
     assert window.feed.connection == "DISCONNECTED"
@@ -320,3 +326,163 @@ async def test_in_flight_quote_after_watchdog_revocation_is_refused(monkeypatch)
             poll_seconds=0.25)
     assert window.feed.connection == "DISCONNECTED"
     assert window.feed.quotes == {}
+
+
+def multiwindow_report(*, nonce="a" * 32, start=10**12, held=("MSFT",),
+                       symbols=("MSFT", "SPY"), callbacks=None):
+    """Fabricated no-network evidence for schema/replay refusal tests ONLY."""
+    if callbacks is None:
+        callbacks = {"MSFT": 2, "SPY": 0}
+    return {
+        "schema": supervised.SCHEMA,
+        "status": "BOUNDED_POSITION_SAFE_DATA_OBSERVED_NOT_FINANCIAL_SOURCE",
+        "requested_symbols": list(symbols),
+        "required_open_position_symbols": list(held),
+        "native_position_readbacks": 11,
+        "native_utc_samples_verified_in_window": 12,
+        "fresh_callbacks_by_symbol": callbacks,
+        "provider_authenticated_and_subscribed": True,
+        "provider_reconnects": 0,
+        "socket_closed": True,
+        "source_entitlement_accepted": False,
+        "continuous_source_accepted": False,
+        "financial_clock_lease_accepted": False,
+        "financial_writer_lease_accepted": False,
+        "paper_start_authorized": False,
+        "live_trading_authorized": False,
+        "orders_created": 0,
+        "bounded_window_nonce": nonce,
+        "bounded_requested_seconds": 10,
+        "bounded_window_start_monotonic_ns": start,
+        "bounded_window_end_monotonic_ns": start + 10_000_000_000,
+    }
+
+
+def test_bounded_multisession_audit_distinguishes_observed_time_from_gaps():
+    audit = supervised.BoundedIEXMultiSessionAudit(max_sessions=3, max_gap_seconds=5)
+    first = multiwindow_report()
+    second = multiwindow_report(nonce="b" * 32, start=first["bounded_window_end_monotonic_ns"] + 2_000_000_000)
+    assert audit.append(first)["bounded_windows_collected"] == 1
+    assert audit.append(second)["bounded_windows_collected"] == 2
+    summary = audit.summarize()
+    assert summary["successful_bounded_windows"] == 2
+    assert summary["separately_observed_seconds"] == 20
+    assert summary["unobserved_gap_seconds"] == 2
+    assert summary["max_unobserved_gap_seconds"] == 2
+    assert summary["unique_symbols_requested_over_windows"] == 2
+    assert summary["unique_symbols_with_at_least_one_fresh_callback"] == 1
+    assert summary["pinned_position_symbols_consistent"] == ["MSFT"]
+    assert summary["total_native_utc_verified_samples"] == 24
+    assert summary["total_custody_readbacks"] == 22
+    assert summary["report_receipts_not_cryptographically_authenticated"]
+    assert summary["unobserved_gaps_present"]
+    assert not summary["source_entitlement_accepted"]
+    assert not summary["continuous_source_accepted"]
+    assert not summary["paper_start_authorized"]
+
+
+def test_multiwindow_allows_roster_research_rotation_but_preserves_held_symbols():
+    audit = supervised.BoundedIEXMultiSessionAudit()
+    first = multiwindow_report()
+    second = multiwindow_report(
+        nonce="b" * 32, start=first["bounded_window_end_monotonic_ns"],
+        symbols=("MSFT", "AAPL"),
+        callbacks={"MSFT": 1, "AAPL": 1})
+    audit.append(first)
+    audit.append(second)
+    assert audit.summarize()["unique_symbols_requested_over_windows"] == 3
+    assert audit.summarize()["unique_symbols_with_at_least_one_fresh_callback"] == 2
+
+
+@pytest.mark.parametrize("damage", [
+    "replay_nonce", "overlap", "gap", "foreign_pins", "held_quote_missing",
+    "financial_fill", "financial_writer", "continuous_grant", "license_grant",
+    "wrong_status", "not_connected", "nonmonotonic", "fake_duration",
+    "invalid_quote_count", "wrong_symbols", "untrusted_symbol_object",
+    "untrusted_pin_object", "clock_sample_missing", "custody_readback_missing",
+    "forged_order", "boolean_reconnects", "duplicate_symbols", "bad_nonce",
+])
+def test_multiwindow_bad_second_session_revokes_entire_evidence_chain(damage):
+    audit = supervised.BoundedIEXMultiSessionAudit(max_gap_seconds=5)
+    first = multiwindow_report()
+    audit.append(first)
+    bad = multiwindow_report(
+        nonce="b" * 32, start=first["bounded_window_end_monotonic_ns"] + 1_000_000_000)
+    if damage == "replay_nonce":
+        bad["bounded_window_nonce"] = first["bounded_window_nonce"]
+    elif damage == "overlap":
+        bad["bounded_window_start_monotonic_ns"] = first["bounded_window_start_monotonic_ns"] + 1
+        bad["bounded_window_end_monotonic_ns"] = bad["bounded_window_start_monotonic_ns"] + 10_000_000_000
+    elif damage == "gap":
+        bad["bounded_window_start_monotonic_ns"] += 6_000_000_000
+        bad["bounded_window_end_monotonic_ns"] += 6_000_000_000
+    elif damage == "foreign_pins":
+        bad["required_open_position_symbols"] = ["SPY"]
+    elif damage == "held_quote_missing":
+        bad["fresh_callbacks_by_symbol"] = {"MSFT": 0, "SPY": 2}
+    elif damage == "financial_fill":
+        bad["paper_start_authorized"] = True
+    elif damage == "financial_writer":
+        bad["financial_writer_lease_accepted"] = True
+    elif damage == "continuous_grant":
+        bad["continuous_source_accepted"] = True
+    elif damage == "license_grant":
+        bad["source_entitlement_accepted"] = True
+    elif damage == "wrong_status":
+        bad["status"] = "FINANCIAL_READY"
+    elif damage == "not_connected":
+        bad["provider_authenticated_and_subscribed"] = False
+    elif damage == "nonmonotonic":
+        bad["bounded_window_end_monotonic_ns"] = bad["bounded_window_start_monotonic_ns"]
+    elif damage == "fake_duration":
+        bad["bounded_window_end_monotonic_ns"] = bad["bounded_window_start_monotonic_ns"] + 100
+    elif damage == "invalid_quote_count":
+        bad["fresh_callbacks_by_symbol"]["MSFT"] = -1
+    elif damage == "wrong_symbols":
+        bad["fresh_callbacks_by_symbol"]["AAPL"] = 1
+    elif damage == "untrusted_symbol_object":
+        bad["requested_symbols"] = [{"symbol": "MSFT"}]
+    elif damage == "untrusted_pin_object":
+        bad["required_open_position_symbols"] = [{"symbol": "MSFT"}]
+    elif damage == "clock_sample_missing":
+        bad["native_utc_samples_verified_in_window"] = 0
+    elif damage == "custody_readback_missing":
+        bad["native_position_readbacks"] = 0
+    elif damage == "forged_order":
+        bad["orders_created"] = 1
+    elif damage == "boolean_reconnects":
+        bad["provider_reconnects"] = False
+    elif damage == "duplicate_symbols":
+        bad["requested_symbols"] = ["MSFT", "MSFT"]
+    elif damage == "bad_nonce":
+        bad["bounded_window_nonce"] = "BOGUS"
+    with pytest.raises(ValueError, match="IEX_MULTIWINDOW"):
+        audit.append(bad)
+    assert audit.failed and audit.sessions == [] and audit.nonces == set()
+    with pytest.raises(ValueError, match="IEX_MULTIWINDOW"):
+        audit.summarize()
+
+
+def test_multiwindow_requires_two_windows_and_enforces_capacity():
+    audit = supervised.BoundedIEXMultiSessionAudit(max_sessions=2)
+    with pytest.raises(ValueError, match="AT_LEAST_TWO"):
+        audit.summarize()
+    assert audit.failed
+    new = supervised.BoundedIEXMultiSessionAudit(max_sessions=2)
+    one = multiwindow_report()
+    new.append(one)
+    new.append(multiwindow_report(
+        nonce="b" * 32, start=one["bounded_window_end_monotonic_ns"]))
+    with pytest.raises(ValueError, match="OVER_CAPACITY"):
+        new.append(multiwindow_report(
+            nonce="c" * 32, start=one["bounded_window_end_monotonic_ns"] + 10_000_000_000))
+    assert new.failed
+
+
+@pytest.mark.parametrize("max_sessions,max_gap_seconds", [
+    (1, 120), (17, 120), (True, 120), (4, 121), (4, -1), (4, False),
+])
+def test_multiwindow_offline_resource_bounds_never_auto_start(max_sessions, max_gap_seconds):
+    with pytest.raises(ValueError, match="EXACT_OFFLINE_BOUNDS"):
+        supervised.BoundedIEXMultiSessionAudit(
+            max_sessions=max_sessions, max_gap_seconds=max_gap_seconds)
