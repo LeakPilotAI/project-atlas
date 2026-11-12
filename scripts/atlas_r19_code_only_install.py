@@ -58,24 +58,24 @@ from scripts.release_selection_store import NativeSelectionStore
 
 ROOT = Path("D:/Work/Project Atlas")
 DIAG = ROOT / "logs/diagnostics"
-REVIEW = DIAG / "atlas-r19-source-only-20261112-r01"
+REVIEW = DIAG / "atlas-r19-source-only-20261112-r02"
 ARCHIVE = REVIEW / "package/atlas-source.zip"
 REVIEW_FILE = REVIEW / "source-only-review.json"
-SOURCE = "e2ef785dc5b07c6f031bc0bd45d42d1bd6af26d8"
-ARCHIVE_SHA = "266c1337d9d422399708ac7dfae222920cf59b3890c8b40603cb4ac0e15bcac1"
-INVENTORY_SHA = "76613d1873e61dcba7097acd89ce1a83a7cdf9024edee72531d65fa603adb59a"
+SOURCE = "3de954bcfd8533bfaaf32f62745d912a24a71cfc"
+ARCHIVE_SHA = "55d7da9e24b1c20fe1b9a72ea25efb2d6ce0bdd00199f2c60cb8c94ae55d6ed8"
+INVENTORY_SHA = "5b1f8e9b5369bf048c7680dcc686ebf738e6f5b69c022cf6f19e106cb1e6e2d9"
 TARGET = Path("D:/AtlasRuntime/releases") / SOURCE
 RECEIPT = DIAG / ("qd-unselected-release-" + SOURCE + ".json")
 JOURNAL = RECEIPT.with_suffix(".pending.jsonl")
-APPROVAL = DIAG / "atlas-r19-code-only-install-approved-20261112.json"
+APPROVAL = DIAG / "atlas-r19-r02-code-only-install-approved-20261112.json"
 APPROVAL_PIN = None  # Distinct R19 one-time operator approval; source hash canonical.
 SCOPE = "APPROVE_ONE_R19_CODE_ONLY_NATIVE_INSTALL_NO_FINANCIAL_START"
 CLOCK_IDENTITY = "atlas-r19-code-only-native-install-" + SOURCE
-EXPECTED_SOURCE_FILES = 1076
+EXPECTED_SOURCE_FILES = 1091
 EXPECTED_DEPENDENCY_FILES = 9566
-EXPECTED_FILES = 10642
+EXPECTED_FILES = 10657
 EXPECTED_DIRECTORIES = 914
-EXPECTED_BYTES = 264925987
+EXPECTED_BYTES = 265175967
 
 
 def source_hash():
@@ -133,7 +133,7 @@ def frozen_prepared():
     if target != TARGET or receipt != RECEIPT:
         raise ValueError("R19_CREATE_ONLY_INSTALLATION_TARGET_REFUSED")
     raw = _exact_bytes(REVIEW_FILE,
-                       "7ccce57f58bccbd86d3f26b88499c2aec82e85fd7e8be45752b82a40be09b8e9",
+                       "62b01f35082d03d94bbfc5c472d9fa478875c4f97639cf32b7cbb617a0fb7aa3",
                        max_bytes=8192)
     review = release_selection.strict(raw)
     if (review.get("schema") != REVIEW_SCHEMA
