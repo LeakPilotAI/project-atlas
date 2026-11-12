@@ -37,6 +37,11 @@ from scripts.observation_runtime.personal_version_safe_release_clock import (
 
 SCHEMA = "ATLAS_SELECTED_NATIVE_TWO_LANE_PAPER_OPERATION_LEASE_V1"
 LANES = frozenset(("QUALITY_DIPS", "HYPERLIQUID"))
+SOURCE_SCOPES = frozenset((*LANES, "BOTH"))
+
+
+class PaperSourceUnavailable(ValueError):
+    """A proven lane-local READ-ONLY feed refusal before financial dispatch."""
 
 
 class NativeSelectedPaperOperationIssuer:
@@ -124,38 +129,60 @@ class NativeSelectedPaperOperationIssuer:
                 or self.hl_source.clock is not self.clock
                 or self.stop_owner.verify_session() is not True):
             raise ValueError("SELECTED_PAPER_CURRENT_OPERATOR_OR_STOP_REVOKED")
-        self.hl_source._verify()
         return True
 
-    def _verify_sources(self, *, qd_instrument, allow_armed=False):
+    def _verify_sources(self, *, qd_instrument=None, lane="BOTH",
+                        allow_armed=False):
+        if type(lane) is not str or lane not in SOURCE_SCOPES:
+            raise ValueError("SELECTED_PAPER_EXACT_FINANCIAL_LANE_REQUIRED")
         self._verify_base(allow_armed=allow_armed)
-        instrument = strict(body(qd_instrument))
-        if (type(qd_instrument) is not dict
-                or not {"symbol", "instrument_id", "asset_class", "currency"} <=
-                set(qd_instrument)
-                or instrument["asset_class"] not in ("STOCK", "ETF")
-                or instrument["currency"] != "USD"):
-            raise ValueError("SELECTED_PAPER_EXACT_INSTRUMENT_REQUIRED")
-        # quote() verifies actual IEX L1 source age, entitlement, calendar,
-        # current session, and independent financial clock at lease time.
-        quote = self.qd_source.quote(instrument)
-        if (type(quote) is not dict or quote.get("schema") != "QD_AUTO_L1_V1"
-                or quote.get("symbol") != instrument["symbol"]
-                or quote.get("instrument_id") != instrument["instrument_id"]
-                or quote.get("market_status") != "TRADING"
-                or quote.get("delay_status") != "REALTIME"
-                or quote.get("connection_status") != "CONNECTED"):
-            raise ValueError("SELECTED_PAPER_GENUINE_FRESH_QD_L1_REQUIRED")
-        # read_cut() checks durable operational Hyperliquid research archive,
-        # current price/book provenance, verified maker queue and <=5s age.
-        cut = self.hl_source.read_cut()
-        if (type(cut) is not dict
-                or self.hl_source.execution_domain != "OPERATIONAL"):
-            raise ValueError("SELECTED_PAPER_GENUINE_FRESH_HL_OPERATIONAL_CUT_REQUIRED")
+        instrument, quote, cut = None, None, None
+        if lane in ("QUALITY_DIPS", "BOTH"):
+            instrument = strict(body(qd_instrument))
+            if (type(qd_instrument) is not dict
+                    or not {"symbol", "instrument_id", "asset_class", "currency"}
+                    <= set(qd_instrument)
+                    or instrument["asset_class"] not in ("STOCK", "ETF")
+                    or instrument["currency"] != "USD"):
+                raise ValueError("SELECTED_PAPER_EXACT_INSTRUMENT_REQUIRED")
+            # IEX freshness, exchange calendar, entitlement and session
+            # acceptance apply only to the stock/ETF lane. No cached or
+            # research-only quote can authorize Quality Dips entries.
+            try:
+                quote = self.qd_source.quote(instrument)
+            except (ValueError, OSError, TimeoutError, KeyError) as exc:
+                self._verify_base(allow_armed=allow_armed)
+                raise PaperSourceUnavailable(
+                    "SELECTED_PAPER_QD_CURRENT_EXECUTION_FEED_UNAVAILABLE"
+                ) from exc
+            if (type(quote) is not dict or quote.get("schema") != "QD_AUTO_L1_V1"
+                    or quote.get("symbol") != instrument["symbol"]
+                    or quote.get("instrument_id") != instrument["instrument_id"]
+                    or quote.get("market_status") != "TRADING"
+                    or quote.get("delay_status") != "REALTIME"
+                    or quote.get("connection_status") != "CONNECTED"):
+                self._verify_base(allow_armed=allow_armed)
+                raise PaperSourceUnavailable(
+                    "SELECTED_PAPER_GENUINE_FRESH_QD_L1_REQUIRED")
+        if lane in ("HYPERLIQUID", "BOTH"):
+            # The perpetual lane is independently available 24/7; it never
+            # queries IEX or requires an equity exchange OPEN calendar.
+            try:
+                self.hl_source._verify()
+                cut = self.hl_source.read_cut()
+            except (ValueError, OSError, TimeoutError, KeyError) as exc:
+                self._verify_base(allow_armed=allow_armed)
+                raise PaperSourceUnavailable(
+                    "SELECTED_PAPER_HL_CURRENT_OPERATIONAL_SOURCE_UNAVAILABLE"
+                ) from exc
+            if type(cut) is not dict:
+                self._verify_base(allow_armed=allow_armed)
+                raise PaperSourceUnavailable(
+                    "SELECTED_PAPER_GENUINE_FRESH_HL_OPERATIONAL_CUT_REQUIRED")
         self._verify_base(allow_armed=allow_armed)
         return instrument, quote, cut
 
-    def verify_prepared_for_start(self, *, qd_instrument):
+    def verify_prepared_for_start(self, *, qd_instrument=None, lane="BOTH"):
         """Original native owner/source/Stop proof while entry remains CLOSED.
 
         Never starts a session, releases entry, or produces reusable finance
@@ -168,23 +195,26 @@ class NativeSelectedPaperOperationIssuer:
                 or runtime._stop_first_issuer is not None
                 or self.stop_owner._used):
             raise ValueError('SELECTED_PAPER_STOP_FIRST_NOT_SAFELY_ARMED')
-        self._verify_sources(qd_instrument=qd_instrument, allow_armed=True)
+        self._verify_sources(qd_instrument=qd_instrument, lane=lane,
+                             allow_armed=True)
         return time.monotonic()
 
     @contextmanager
-    def lease(self, *, qd_instrument):
+    def lease(self, *, qd_instrument=None, lane="BOTH"):
         """Financial-operation identity check, not an order/Start capability."""
         if not self._lease_lock.acquire(blocking=False):
             raise ValueError("SELECTED_PAPER_FINANCIAL_OPERATION_ALREADY_ACTIVE")
         try:
-            with self._retain_operation_lease(qd_instrument=qd_instrument) as lease:
+            with self._retain_operation_lease(
+                    qd_instrument=qd_instrument, lane=lane) as lease:
                 yield lease
         finally:
             self._lease_lock.release()
 
     @contextmanager
-    def _retain_operation_lease(self, *, qd_instrument):
-        instrument, quote, cut = self._verify_sources(qd_instrument=qd_instrument)
+    def _retain_operation_lease(self, *, qd_instrument, lane):
+        instrument, quote, cut = self._verify_sources(
+            qd_instrument=qd_instrument, lane=lane)
         issuer, pins, session = self, self._ports, self._session
         issued_at = time.monotonic()
         sealed_instrument = strict(body(instrument))
@@ -201,7 +231,7 @@ class NativeSelectedPaperOperationIssuer:
                     return False
                 try:
                     now_instrument, now_quote, now_cut = issuer._verify_sources(
-                        qd_instrument=sealed_instrument)
+                        qd_instrument=sealed_instrument, lane=lane)
                     return (now_instrument == sealed_instrument
                             and now_quote == sealed_quote
                             and now_cut == sealed_hl_cut)
@@ -215,7 +245,10 @@ class NativeSelectedPaperOperationIssuer:
                 return {
                     "schema": SCHEMA,
                     "session_id": session,
-                    "qd_instrument_id": sealed_instrument["instrument_id"],
+                    "source_lane": lane,
+                    "qd_instrument_id": (
+                        sealed_instrument["instrument_id"]
+                        if sealed_instrument is not None else None),
                     "financial_operational_source_and_stop_rechecked": True,
                     "paper_only": True,
                     "live_trading_authorized": False,

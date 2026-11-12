@@ -337,3 +337,88 @@ def test_prepared_source_verifier_never_releases_unverified_entry(monkeypatch, d
     with pytest.raises(ValueError):
         owner.verify_prepared_for_start(qd_instrument=INSTRUMENT)
     assert runtime.state != "RUNNING"
+
+
+@pytest.mark.parametrize("inactive_qd_failure", ["disconnected", "stale_quote"])
+def test_hyperliquid_24x7_lease_never_requires_an_iex_quote(monkeypatch, inactive_qd_failure):
+    ports = synthetic_port_factory(monkeypatch)
+    if inactive_qd_failure == "disconnected":
+        ports["qd_source"].revoke = True
+    else:
+        def stale_market(*_):
+            raise ValueError("STOCK_MARKET_CLOSED_NO_CURRENT_IEX")
+        ports["qd_source"].quote = stale_market
+    obj = issuer.NativeSelectedPaperOperationIssuer(**ports)
+    with obj.lease(lane="HYPERLIQUID", qd_instrument=None) as cap:
+        assert cap.check() is True
+        assert cap.receipt["source_lane"] == "HYPERLIQUID"
+        assert cap.receipt["qd_instrument_id"] is None
+        assert cap.receipt["paper_only"] is True
+        assert not cap.receipt["external_broker_orders_authorized"]
+    with (pytest.raises(issuer.PaperSourceUnavailable, match="QD_CURRENT"),
+          obj.lease(lane="QUALITY_DIPS", qd_instrument=INSTRUMENT)):
+        pytest.fail("CLOSED_IEX_STOCK_TRADE_CANNOT_ENTER")
+    # The closed equities feed must not poison the open 24/7 perp lane.
+    with obj.lease(lane="HYPERLIQUID") as later:
+        assert later.check()
+
+
+def test_quality_dips_live_iex_does_not_require_a_24x7_perp_cut(monkeypatch):
+    ports = synthetic_port_factory(monkeypatch)
+    ports["hl_source"].revoke = True
+    obj = issuer.NativeSelectedPaperOperationIssuer(**ports)
+    with obj.lease(lane="QUALITY_DIPS", qd_instrument=INSTRUMENT) as cap:
+        assert cap.check()
+        assert cap.receipt["source_lane"] == "QUALITY_DIPS"
+        assert cap.receipt["qd_instrument_id"] == INSTRUMENT["instrument_id"]
+    with (pytest.raises(issuer.PaperSourceUnavailable, match="HL_CURRENT"),
+          obj.lease(lane="HYPERLIQUID")):
+        pytest.fail("INVALID_PERP_MARKET_SOURCE_CANNOT_ENTER")
+
+
+@pytest.mark.parametrize("bad_lane", ["", "QUOTES", "KALSHI", "QUALITY_DIPS_HL", 1, None])
+def test_untrusted_or_unknown_lane_never_receives_paper_operation(monkeypatch, bad_lane):
+    ports = synthetic_port_factory(monkeypatch)
+    obj = issuer.NativeSelectedPaperOperationIssuer(**ports)
+    with (pytest.raises(ValueError, match="EXACT_FINANCIAL_LANE"),
+          obj.lease(lane=bad_lane, qd_instrument=INSTRUMENT)):
+        pytest.fail("INVALID_LANE_MUST_NOT_HAVE_ENTRY")
+    assert not obj._lease_lock.locked()
+
+
+def test_prearmed_hyperliquid_start_does_not_require_open_stock_market(monkeypatch):
+    ports = synthetic_port_factory(monkeypatch)
+    runtime = ports["stop_owner"]._runtime
+    runtime._stop_first_state = "ARMED"
+    runtime._stop_first_issuer = None
+    runtime.entry_closed.set()
+    runtime.state = "PAUSED"
+    ports["qd_source"].revoke = True
+    obj = issuer.NativeSelectedPaperOperationIssuer(**ports)
+    stamp = obj.verify_prepared_for_start(lane="HYPERLIQUID")
+    assert type(stamp) is float
+    assert runtime.entry_closed.is_set()
+    assert runtime.state == "PAUSED"
+    with pytest.raises(issuer.PaperSourceUnavailable, match="QD_CURRENT"):
+        obj.verify_prepared_for_start(
+            lane="QUALITY_DIPS", qd_instrument=INSTRUMENT)
+
+
+@pytest.mark.parametrize("failure", ["stop", "native_job", "operator", "clock", "session"])
+def test_all_lanes_still_revoke_on_shared_native_financial_failure(monkeypatch, failure):
+    ports = synthetic_port_factory(monkeypatch)
+    obj = issuer.NativeSelectedPaperOperationIssuer(**ports)
+    if failure == "stop":
+        ports["stop_owner"].revoke = True
+    elif failure == "native_job":
+        ports["owner"].revoke = True
+    elif failure == "operator":
+        ports["operator"].revoke = True
+    elif failure == "clock":
+        ports["clock"].revoke = True
+    else:
+        ports["stop_owner"].session_id = "CHANGED_STOP_SESSION"
+    for lane in ("HYPERLIQUID", "QUALITY_DIPS"):
+        with (pytest.raises(ValueError),
+              obj.lease(lane=lane, qd_instrument=INSTRUMENT)):
+            pytest.fail("SHARED_NATIVE_FAILURE_MUST_BLOCK_BOTH_LANES")

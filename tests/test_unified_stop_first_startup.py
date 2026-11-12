@@ -48,20 +48,27 @@ def made(monkeypatch):
             self.stop_owner = stop_owner
             self._session = stop_owner.session_id
             self.calls = 0
-        def verify_prepared_for_start(self, *, qd_instrument):
+            self.unavailable = set()
+        def verify_prepared_for_start(self, *, qd_instrument, lane="BOTH"):
             import time
             self.calls += 1
-            if qd_instrument != {"symbol": "MSFT"}:
+            if lane not in ("BOTH", "QUALITY_DIPS", "HYPERLIQUID"):
+                raise ValueError("FOREIGN_SOURCE_LANE")
+            if qd_instrument != {"symbol": "MSFT"} and lane != "HYPERLIQUID":
                 raise ValueError("STALE_OR_FOREIGN_SOURCE")
             if not self.stop_owner.verify_session():
                 raise ValueError("STOP_SESSION_UNVERIFIED")
             return time.monotonic()
         @contextmanager
-        def lease(self, *, qd_instrument):
+        def lease(self, *, qd_instrument, lane="BOTH"):
             if self._revoke:
                 raise ValueError("SIMULATED_ISSUER_REVOKED")
+            if lane in self.unavailable:
+                raise issuer_mod.PaperSourceUnavailable(
+                    "SYNTHETIC_READ_ONLY_" + lane + "_FEED_UNAVAILABLE")
             self.calls += 1
-            assert qd_instrument == {"symbol": "MSFT"}
+            assert lane in ("BOTH", "QUALITY_DIPS", "HYPERLIQUID")
+            assert qd_instrument == {"symbol": "MSFT"} or lane == "HYPERLIQUID"
             class Lease:
                 def check(self):
                     return True
@@ -333,3 +340,86 @@ async def test_synthetic_release_dispatches_only_inside_bound_issuer_lease(monke
     assert len(r.lanes["HYPERLIQUID"].calls) == 1
     assert source.calls >= 2
     assert not r.entry_closed.is_set()
+
+
+@pytest.mark.asyncio
+async def test_perp_paper_after_hours_survives_iex_feed_refusal_without_global_stop(
+        monkeypatch):
+    """A closed stock market must never poison an otherwise valid 24/7 lane."""
+    import scripts.observation_runtime.personal_selected_paper_operation_issuer as src
+
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    r.resume_stop_first(
+        stop_owner=stop, issuer=source, qd_instrument=None,
+        source_lane="HYPERLIQUID",
+    )
+    source.unavailable.add("QUALITY_DIPS")
+    assert r._stop_first_initial_source_lane == "HYPERLIQUID"
+    await r.poll()
+    with pytest.raises(src.PaperSourceUnavailable, match="QUALITY_DIPS"):
+        r.dispatch("QUALITY_DIPS", {
+            "operation_id": "CLOSED_EQUITIES_REFUSED",
+            "kind": "ENTRY",
+        })
+    assert r.uncertain is False
+    assert r.entry_closed.is_set() is False
+    assert r.state == "RUNNING"
+    assert not r.lanes["QUALITY_DIPS"].calls
+    receipt = r.dispatch("HYPERLIQUID", {
+        "operation_id": "CONTINUE_PERP_24_7",
+        "kind": "ENTRY",
+    })
+    assert receipt["state"] == "ACKNOWLEDGED"
+    assert len(r.lanes["HYPERLIQUID"].calls) == 1
+    assert r.uncertain is False
+
+
+@pytest.mark.asyncio
+async def test_perp_feed_refusal_does_not_fake_a_perp_fill(monkeypatch):
+    import scripts.observation_runtime.personal_selected_paper_operation_issuer as src
+
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    r.resume_stop_first(
+        stop_owner=stop, issuer=source, qd_instrument=None,
+        source_lane="HYPERLIQUID",
+    )
+    source.unavailable.add("HYPERLIQUID")
+    await r.poll()
+    with pytest.raises(src.PaperSourceUnavailable, match="HYPERLIQUID"):
+        r.dispatch("HYPERLIQUID", {
+            "operation_id": "INACTIVE_BOOK_NO_FILL",
+            "kind": "ENTRY",
+        })
+    assert not r.lanes["HYPERLIQUID"].calls
+    assert r.uncertain is False
+    assert not r.entry_closed.is_set()
+    source.unavailable.clear()
+    assert r.dispatch("HYPERLIQUID", {
+        "operation_id": "VALID_BOOK_FIRST_FILL",
+        "kind": "ENTRY",
+    })["state"] == "ACKNOWLEDGED"
+
+
+def test_perp_resting_admission_uses_only_perp_source(monkeypatch):
+    import scripts.observation_runtime.personal_selected_paper_operation_issuer as src
+
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    r.resume_stop_first(
+        stop_owner=stop, issuer=source,
+        source_lane="HYPERLIQUID", qd_instrument=None,
+    )
+    source.unavailable.add("HYPERLIQUID")
+    with pytest.raises(src.PaperSourceUnavailable, match="HYPERLIQUID"):
+        r.admit_resting({"kind": "RESTING_ORDER"})
+    assert r.uncertain is False
+    assert not r.entry_closed.is_set()
+    assert not any(port.calls for port in r.lanes.values())

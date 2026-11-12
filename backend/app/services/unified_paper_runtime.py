@@ -299,6 +299,7 @@ class UnifiedPaperRuntime:
         self._stop_first_state = 'UNUSED'
         self._stop_first_issuer = None
         self._stop_first_instrument = None
+        self._stop_first_initial_source_lane = None
 
     def _lease(self):
         # Reuse installed component-lease semantics, not a caller approval file.
@@ -378,7 +379,8 @@ class UnifiedPaperRuntime:
                 'paper_entry_authorized': False,
                 'live_trading_authorized': False}
 
-    def resume_stop_first(self, *, stop_owner, issuer, qd_instrument):
+    def resume_stop_first(self, *, stop_owner, issuer, qd_instrument=None,
+                          source_lane="BOTH"):
         """Only a genuine current Stop+source issuer can release the entry latch.
 
         Source/owner verification runs outside gate, because the authentic
@@ -398,7 +400,8 @@ class UnifiedPaperRuntime:
                 or issuer.stop_owner is not stop_owner
                 or stop_owner._runtime is not self):
             raise ValueError('UNIFIED_STOP_FIRST_EXACT_INSTALLED_STOP_AND_ISSUER_REQUIRED')
-        verified_at = issuer.verify_prepared_for_start(qd_instrument=qd_instrument)
+        verified_at = issuer.verify_prepared_for_start(
+            qd_instrument=qd_instrument, lane=source_lane)
         with self.stop_gate, self.gate:
             if (self._stop_first_state != 'ARMED' or self.state != 'PAUSED'
                     or not self.entry_closed.is_set() or self.uncertain
@@ -415,6 +418,7 @@ class UnifiedPaperRuntime:
             # already in flight holds stop_gate and cannot be overwritten.
             self._stop_first_issuer = issuer
             self._stop_first_instrument = strict(body(qd_instrument))
+            self._stop_first_initial_source_lane = source_lane
             self._stop_first_state = 'RELEASED'
             self.state = 'RUNNING'
             self.entry_closed.clear()
@@ -594,19 +598,33 @@ class UnifiedPaperRuntime:
         if self._stop_first_state == 'RELEASED' and not cancel:
             from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
                 NativeSelectedPaperOperationIssuer,
+                PaperSourceUnavailable,
             )
 
             issuer = self._stop_first_issuer
+            attempted = False
             try:
                 if type(issuer) is not NativeSelectedPaperOperationIssuer:
                     raise ValueError('UNIFIED_STOP_FIRST_OPERATION_ISSUER_MISSING')
-                with issuer.lease(qd_instrument=self._stop_first_instrument) as authority:
+                with issuer.lease(
+                    qd_instrument=self._stop_first_instrument,
+                    lane="HYPERLIQUID",
+                ) as authority:
                     if authority.check() is not True:
                         raise ValueError('UNIFIED_STOP_FIRST_OPERATION_AUTHORITY_REVOKED')
+                    attempted = True
                     result = self._resting_bound(proposal, cancel=cancel)
                     if authority.check() is not True:
                         raise ValueError('UNIFIED_STOP_FIRST_RESTING_EFFECT_UNCERTAIN')
                     return result
+            except PaperSourceUnavailable:
+                # A failed read-only feed precheck has made NO financial
+                # effect. Keep the other lane alive. Any post-effect source
+                # change is uncertain and closes both entry lanes.
+                if attempted:
+                    self.uncertain = True
+                    self.entry_closed.set()
+                raise
             except BaseException:
                 self.uncertain = True
                 self.entry_closed.set()
@@ -688,19 +706,30 @@ class UnifiedPaperRuntime:
         if self._stop_first_state == 'RELEASED' and not shutdown:
             from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
                 NativeSelectedPaperOperationIssuer,
+                PaperSourceUnavailable,
             )
 
             issuer = self._stop_first_issuer
+            attempted = False
             try:
                 if type(issuer) is not NativeSelectedPaperOperationIssuer:
                     raise ValueError('UNIFIED_STOP_FIRST_OPERATION_ISSUER_MISSING')
-                with issuer.lease(qd_instrument=self._stop_first_instrument) as authority:
+                with issuer.lease(
+                    qd_instrument=self._stop_first_instrument,
+                    lane=lane,
+                ) as authority:
                     if authority.check() is not True:
                         raise ValueError('UNIFIED_STOP_FIRST_OPERATION_AUTHORITY_REVOKED')
+                    attempted = True
                     result = self._dispatch_bound(lane, proposal, shutdown=shutdown)
                     if authority.check() is not True:
                         raise ValueError('UNIFIED_STOP_FIRST_FINANCIAL_EFFECT_UNCERTAIN')
                     return result
+            except PaperSourceUnavailable:
+                if attempted:
+                    self.uncertain = True
+                    self.entry_closed.set()
+                raise
             except BaseException:
                 self.uncertain = True
                 self.entry_closed.set()
