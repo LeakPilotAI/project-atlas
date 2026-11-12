@@ -10,9 +10,14 @@ from pathlib import Path
 from threading import RLock, get_ident
 
 from app.services.paper_financial_replay import body, digest, strict
+from app.services.perp_operational_contract import (
+    validate_enrollment as validate_hl_enrollment,
+)
 from app.services.quality_dips_autonomous_enrollment import validate_enrollment
 
-from scripts.observation_runtime.personal_local_authority import NativePersonalOperatorAuthority
+from scripts.observation_runtime.personal_local_authority import (
+    NativePersonalOperatorAuthority,
+)
 from scripts.observation_runtime.personal_paper_inception import native_primitives
 from scripts.observation_runtime.quality_dips_read_service import observe_self
 
@@ -21,7 +26,12 @@ class NativePersonalWriterOwnership:
     def __init__(self, *, enrollment=None, authority=None, inception_intent=None, ledger=None, read_only=False):
         if enrollment is None or type(authority) is not NativePersonalOperatorAuthority:
             raise ValueError('PERSONAL_WRITER_INSTALLED_AUTHORITY_REQUIRED')
-        self.enrollment = validate_enrollment(enrollment)
+        self._lane = ('HYPERLIQUID' if type(enrollment) is dict
+                      and enrollment.get('schema') == 'PERP_AUTO_NATIVE_ENROLLMENT_V1'
+                      else 'QUALITY_DIPS')
+        self.enrollment = (validate_hl_enrollment(enrollment)
+                           if self._lane == 'HYPERLIQUID'
+                           else validate_enrollment(enrollment))
         if body(authority.enrollment) != body(self.enrollment):
             raise ValueError('PERSONAL_WRITER_ENROLLMENT_CONFLICT')
         self.authority, self.native = authority, native_primitives()
@@ -57,7 +67,11 @@ class NativePersonalWriterOwnership:
             raise
 
     def _verify(self):
-        if (self.poisoned or not self.mutex or self.authority is not self._authority
+        if (self.poisoned or not self.mutex
+                or getattr(self, '_lane', 'QUALITY_DIPS') != (
+                    'HYPERLIQUID' if self.enrollment.get('schema') ==
+                    'PERP_AUTO_NATIVE_ENROLLMENT_V1' else 'QUALITY_DIPS')
+                or self.authority is not self._authority
                 or self.read_only is not self._read_only
                 or body(self.enrollment) != self._enrollment or body(self.identity) != self._identity
                 or body(self.inception_intent) != self._intent
@@ -117,7 +131,10 @@ class NativePersonalWriterOwnership:
         e = self.enrollment
         if set(request) == {'schema', 'reader_enrollment'} and request['schema'] == 'PERSONAL_NATIVE_READ_LEASE_V1':
             read = request['reader_enrollment']
-            if (read.get('schema') != 'QD_AUTO_OP_READ_ENROLLMENT_V1'
+            expected_read_schema = ('PERP_AUTO_OP_READ_ENROLLMENT_V1'
+                                    if getattr(self, '_lane', 'QUALITY_DIPS') == 'HYPERLIQUID'
+                                    else 'QD_AUTO_OP_READ_ENROLLMENT_V1')
+            if (read.get('schema') != expected_read_schema
                     or read.get('account_id') != e['account_id'] or read.get('epoch') != e['epoch']
                     or any(read.get(role + '_root') != e['resources'][role]['native_id']
                            for role in ('source', 'projection', 'report'))):
@@ -131,6 +148,11 @@ class NativePersonalWriterOwnership:
                     or request['process'] != self.identity):
                 raise ValueError('PERSONAL_WRITER_INCEPTION_CONTEXT')
             return 'INITIALIZE_SIMULATED_ACCOUNTS', request
+        # Perpetual native ownership here is ONLY for original FS1/FS3
+        # simulated opening. All later trading requires the distinct audited
+        # Hyperliquid financial operation issuer and durable Stop owner.
+        if getattr(self, '_lane', 'QUALITY_DIPS') == 'HYPERLIQUID':
+            raise ValueError('PERSONAL_HL_FIRST_INCEPTION_ONLY_NO_RUNTIME_WRITER')
         if set(request) == {'scope', 'enrollment', 'grant'}:
             if request['scope'] != 'LOCAL_ENROLLED' or body(request['enrollment']) != self._enrollment:
                 raise ValueError('PERSONAL_WRITER_NATIVE_SCOPE')

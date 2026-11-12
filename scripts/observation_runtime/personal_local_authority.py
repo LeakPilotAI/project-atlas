@@ -5,7 +5,13 @@ operator's bound native record authorizes actions; it never replaces technical,
 market-data, financial, resource or ownership checks.
 """
 from app.services.paper_financial_replay import body, digest, strict
-from app.services.personal_paper_runtime import validate_activation_record, validate_policy
+from app.services.perp_operational_contract import (
+    validate_enrollment as validate_hl_enrollment,
+)
+from app.services.personal_paper_runtime import (
+    validate_activation_record,
+    validate_policy,
+)
 from app.services.quality_dips_autonomous_enrollment import validate_enrollment
 
 from scripts.observation_runtime.personal_paper_inception import native_primitives
@@ -20,14 +26,20 @@ class NativePersonalOperatorAuthority:
             NativePersonalActivationReader,
         )
         from scripts.observation_runtime.personal_v7_operator_clock import (
-            NativeV7PaperOperatorClock, PROFILE,
+            PROFILE,
+            NativeV7PaperOperatorClock,
         )
-
         from scripts.observation_runtime.personal_v8_operator_clock import (
-            NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
+            PROFILE as V8_NTP_PROFILE,
+        )
+        from scripts.observation_runtime.personal_v8_operator_clock import (
+            NativeV8PaperOperatorClock,
         )
         from scripts.observation_runtime.personal_version_safe_release_clock import (
-            NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+            PROFILE as VERSION_SAFE_NTP_PROFILE,
+        )
+        from scripts.observation_runtime.personal_version_safe_release_clock import (
+            NativeVersionSafePaperOperatorClock,
         )
         allowed_clock = (
             clock_profile == "WINDOWS_TIME_OPERATOR_CLOCK_V4" and type(clock) is LocalWindowsClock
@@ -39,19 +51,28 @@ class NativePersonalOperatorAuthority:
                 or type(reader) is not NativePersonalActivationReader or not allowed_clock):
             raise ValueError('PERSONAL_NATIVE_OPERATOR_DEPENDENCIES_REQUIRED')
         clock.require_operational(runtime_id)
-        self.policy, self.enrollment = validate_policy(policy), validate_enrollment(enrollment)
-        qd_digest = digest(self.enrollment)
+        self.policy = validate_policy(policy)
+        self._lane = ('HYPERLIQUID' if type(enrollment) is dict
+                      and enrollment.get('schema') == 'PERP_AUTO_NATIVE_ENROLLMENT_V1'
+                      else 'QUALITY_DIPS')
+        self.enrollment = (validate_hl_enrollment(enrollment)
+                           if self._lane == 'HYPERLIQUID'
+                           else validate_enrollment(enrollment))
+        local_digest = digest(self.enrollment)
         if accounts is None:
-            # Preserve the previously scoped, separately approved QD-only pilot.
-            bound_accounts = {'QUALITY_DIPS': qd_digest}
+            # Preserve the earlier QD-only pilot; a perpetual first inception
+            # ALWAYS needs both real account identity bindings.
+            if self._lane != 'QUALITY_DIPS':
+                raise ValueError('PERSONAL_HL_TWO_ACCOUNT_INCEPTION_BINDING_REQUIRED')
+            bound_accounts = {'QUALITY_DIPS': local_digest}
         else:
             bound_accounts = strict(body(accounts))
             if (type(accounts) is not dict
                     or set(bound_accounts) != {'QUALITY_DIPS', 'HYPERLIQUID'}
-                    or bound_accounts.get('QUALITY_DIPS') != qd_digest
-                    or type(bound_accounts.get('HYPERLIQUID')) is not str
-                    or len(bound_accounts['HYPERLIQUID']) != 64
-                    or any(c not in '0123456789abcdef' for c in bound_accounts['HYPERLIQUID'])):
+                    or bound_accounts.get(self._lane) != local_digest
+                    or any(type(v) is not str or len(v) != 64
+                           or any(c not in '0123456789abcdef' for c in v)
+                           for v in bound_accounts.values())):
                 raise ValueError('PERSONAL_NATIVE_OPERATOR_TWO_ACCOUNT_BINDING_REQUIRED')
         self.accounts = strict(body(bound_accounts))
         self.reader, self.clock, self.runtime_id = reader, clock, runtime_id
@@ -73,7 +94,13 @@ class NativePersonalOperatorAuthority:
         self.revoked = True
 
     def activation(self, action):
-        if (self.revoked or any(a is not b for a, b in zip(
+        if (getattr(self, '_lane', 'QUALITY_DIPS') == 'HYPERLIQUID'
+                and action not in ('READ_ONLY', 'INITIALIZE_SIMULATED_ACCOUNTS')):
+            raise ValueError('PERSONAL_HL_FIRST_INCEPTION_ONLY_NO_PAPER_OPERATIONS')
+        if (self.revoked or getattr(self, '_lane', 'QUALITY_DIPS') != (
+                'HYPERLIQUID' if self.enrollment.get('schema') ==
+                'PERP_AUTO_NATIVE_ENROLLMENT_V1' else 'QUALITY_DIPS')
+                or any(a is not b for a, b in zip(
                 (self.reader, self.clock, self.native), self._ports[:3], strict=True))
                 or self.clock_profile != self._ports[3]
                 or body({'policy': self.policy, 'enrollment': self.enrollment,
@@ -124,8 +151,12 @@ class NativePersonalRuntimeAuthority:
                  source=None, enrollment=None):
         from app.services.quality_dips_iex_input import IEXPaperQuotes
 
-        from scripts.observation_runtime.personal_engine_session import NativePersonalEngineSession
-        from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
+        from scripts.observation_runtime.personal_engine_session import (
+            NativePersonalEngineSession,
+        )
+        from scripts.observation_runtime.personal_runtime_current import (
+            PersonalRuntimeCurrent,
+        )
         from scripts.observation_runtime.personal_writer_ownership import (
             NativePersonalWriterOwnership,
         )

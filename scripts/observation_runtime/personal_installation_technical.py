@@ -8,34 +8,55 @@ import sqlite3
 from pathlib import Path
 
 from app.services.paper_financial_replay import body, digest, strict
-from app.services.personal_native_coordination import MAX_IMAGE, PersonalNativeCoordination
+from app.services.personal_native_coordination import (
+    MAX_IMAGE,
+    PersonalNativeCoordination,
+)
 from app.services.personal_paper_runtime import CHECKS
-from app.services.quality_dips_autonomous_paper import AutonomousPaper, validate_autonomous_manifest
+from app.services.quality_dips_autonomous_paper import (
+    AutonomousPaper,
+    validate_autonomous_manifest,
+)
 
 from scripts.observation_runtime.personal_coordination_store import (
     MAX_REVISIONS,
     NativePersonalCoordinationImages,
 )
-from scripts.observation_runtime.personal_market_inputs import NativePersonalMarketInputs
+from scripts.observation_runtime.personal_market_inputs import (
+    NativePersonalMarketInputs,
+)
 from scripts.observation_runtime.personal_paper_inception import (
     NativePersonalInceptionFiles,
     NativePersonalInitialReadback,
     PersonalInceptionBootstrap,
     validate_personal_inception,
 )
-from scripts.observation_runtime.personal_release_identity import NativePersonalReleaseIdentity
+from scripts.observation_runtime.personal_release_identity import (
+    NativePersonalReleaseIdentity,
+)
 from scripts.observation_runtime.personal_runtime_current import PersonalRuntimeCurrent
-from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 from scripts.observation_runtime.personal_v7_operator_clock import (
-    NativeV7PaperOperatorClock, PROFILE as V7_NTP_PROFILE,
+    PROFILE as V7_NTP_PROFILE,
+)
+from scripts.observation_runtime.personal_v7_operator_clock import (
+    NativeV7PaperOperatorClock,
 )
 from scripts.observation_runtime.personal_v8_operator_clock import (
-    NativeV8PaperOperatorClock, PROFILE as V8_NTP_PROFILE,
+    PROFILE as V8_NTP_PROFILE,
+)
+from scripts.observation_runtime.personal_v8_operator_clock import (
+    NativeV8PaperOperatorClock,
 )
 from scripts.observation_runtime.personal_version_safe_release_clock import (
-    NativeVersionSafePaperOperatorClock, PROFILE as VERSION_SAFE_NTP_PROFILE,
+    PROFILE as VERSION_SAFE_NTP_PROFILE,
 )
-from scripts.observation_runtime.personal_writer_ownership import NativePersonalWriterOwnership
+from scripts.observation_runtime.personal_version_safe_release_clock import (
+    NativeVersionSafePaperOperatorClock,
+)
+from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+from scripts.observation_runtime.personal_writer_ownership import (
+    NativePersonalWriterOwnership,
+)
 
 
 class NativePersonalTechnicalChecks:
@@ -58,8 +79,12 @@ class NativePersonalTechnicalChecks:
                 or bootstrap.publication.ledger is not ledger):
             raise ValueError('PERSONAL_TECHNICAL_NATIVE_DEPENDENCIES_REQUIRED')
         lane, enrollment, manifest = validate_personal_inception(bootstrap.enrollment)
-        validate_autonomous_manifest(manifest)
-        if (lane != 'QUALITY_DIPS' or body(enrollment) != body(ownership.enrollment)
+        if lane == 'QUALITY_DIPS':
+            validate_autonomous_manifest(manifest)
+        elif (lane != 'HYPERLIQUID' or current is not None or engine is not None
+              or ownership.read_only):
+            raise ValueError('PERSONAL_HL_FIRST_INCEPTION_ONLY_NO_RUNTIME')
+        if (body(enrollment) != body(ownership.enrollment)
                 or body(manifest) != body(ledger.manifest) or release.artifact_digest != enrollment['release_digest']
                 or ledger.images.enrollment != digest(enrollment)
                 or ledger.images.root_id != enrollment['resources']['coordination']['native_id']):
@@ -79,6 +104,7 @@ class NativePersonalTechnicalChecks:
                 or type(engine.source_authority) is not NativePersonalMarketInputs
                 or engine.source_authority.operator is not ownership.authority):
             raise ValueError('PERSONAL_TECHNICAL_RUNTIME_PORTS')
+        self._lane = lane
         self.bootstrap, self.release, self.clock, self.runtime_id = bootstrap, release, clock, runtime_id
         self.ownership, self.ledger, self.files, self.current, self.engine = ownership, ledger, files, current, engine
         self._ports = bootstrap, release, clock, ownership, ledger, files, current, engine
@@ -115,13 +141,31 @@ class NativePersonalTechnicalChecks:
                     or (body(self.bootstrap.enrollment),self.runtime_id,self.clock_profile) != self._scope):
                 raise ValueError('PERSONAL_TECHNICAL_COMPONENT_CHANGED')
             lane, enrollment, manifest = validate_personal_inception(self.bootstrap.enrollment)
-            validate_autonomous_manifest(manifest)
-            policy = self.bootstrap.enrollment['personal_policy']['accounts']['QUALITY_DIPS']
-            facts['SIMULATION_ONLY'] = manifest['schema'] == 'PAPER_EPOCH_AUTONOMOUS_QD_V1'
-            facts['ACCOUNT_ISOLATION'] = lane == 'QUALITY_DIPS' and manifest['currency'] == 'USD'
-            facts['RISK_LIMITS'] = (policy['max_entry_notional']=='100' and policy['max_open_positions']==1
-                and policy['long_only'] is True and policy['scale_in'] is False
-                and manifest['fees_bps']==manifest['slippage_bps']=='2')
+            if (lane != self._lane
+                    or self.release.artifact_digest != enrollment['release_digest']
+                    or getattr(self.ownership, '_lane', 'QUALITY_DIPS') != lane):
+                raise ValueError('PERSONAL_TECHNICAL_NATIVE_LANE_OR_RELEASE_CHANGED')
+            policy = self.bootstrap.enrollment['personal_policy']['accounts'][lane]
+            if lane == 'QUALITY_DIPS':
+                validate_autonomous_manifest(manifest)
+                facts['SIMULATION_ONLY'] = manifest['schema'] == 'PAPER_EPOCH_AUTONOMOUS_QD_V1'
+                facts['ACCOUNT_ISOLATION'] = manifest['currency'] == 'USD'
+                facts['RISK_LIMITS'] = (policy['max_entry_notional']=='100' and policy['max_open_positions']==1
+                    and policy['long_only'] is True and policy['scale_in'] is False
+                    and manifest['fees_bps']==manifest['slippage_bps']=='2')
+            else:
+                # Never manufacture a perpetual runtime command issuer.
+                if (self.current is not None or self.engine is not None
+                        or self.ownership.read_only or self.files is None):
+                    raise ValueError('PERSONAL_HL_INCEPTION_ONLY_TECHNICAL_PROFILE')
+                pp = manifest['perp_policy']
+                facts['SIMULATION_ONLY'] = manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1'
+                facts['ACCOUNT_ISOLATION'] = manifest['currency'] == 'USDC'
+                facts['RISK_LIMITS'] = (policy['opening_balance'] == '1000'
+                    and policy['max_risk_per_trade'] == '1'
+                    and policy['max_open_positions'] == 3
+                    and policy['session_stop_R'] == '-3'
+                    and pp['max_positions'] <= 3)
             release = self.release.verify(release_digest=enrollment['release_digest'])
             process = {'schema':'QD_OP_PROCESS_ID_V1',**release['process']}
             if self.ownership.read_only:
@@ -134,7 +178,9 @@ class NativePersonalTechnicalChecks:
             self.clock.require_operational(self.runtime_id)
             sample = self.clock.runtime_sample()
             facts['CLOCK_CONTINUITY'] = self.clock.verify_runtime_sample(sample) is True
-            read = {'schema':'QD_AUTO_OP_READ_ENROLLMENT_V1','account_id':enrollment['account_id'],'epoch':enrollment['epoch'],
+            read = {'schema':('PERP_AUTO_OP_READ_ENROLLMENT_V1' if lane == 'HYPERLIQUID'
+                             else 'QD_AUTO_OP_READ_ENROLLMENT_V1'),
+                    'account_id':enrollment['account_id'],'epoch':enrollment['epoch'],
                     **{r+'_root':enrollment['resources'][r]['native_id'] for r in ('source','projection','report')}}
             context = {'schema':'PERSONAL_NATIVE_READ_LEASE_V1','reader_enrollment':read}
             with self.ownership.lease(context, sample['utc']) as lease:

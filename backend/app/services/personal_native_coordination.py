@@ -11,7 +11,7 @@ from contextlib import contextmanager, nullcontext
 from pathlib import Path
 
 from app.services.paper_coordination_sql import CanonicalCoordinationSQL
-from app.services.paper_financial_replay import body, strict
+from app.services.paper_financial_replay import body, strict, validate_manifest
 from app.services.quality_dips_autonomous_paper import validate_autonomous_manifest
 
 MAX_IMAGE = 1024 * 1024
@@ -47,9 +47,25 @@ def _restricted_sql(action, one, two, db, trigger):
     return sqlite3.SQLITE_OK
 
 
+def _validate_initial_native_paper_manifest(manifest):
+    """Only autonomous QD or operational simulated HL; never generic fixtures."""
+    if type(manifest) is not dict:
+        raise ValueError('PERSONAL_NATIVE_EXACT_PAPER_MANIFEST_REQUIRED')
+    if manifest.get('schema') == 'PAPER_EPOCH_AUTONOMOUS_QD_V1':
+        validate_autonomous_manifest(manifest)
+    elif manifest.get('schema') == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
+        validate_manifest(manifest)
+        if (manifest.get('currency') != 'USDC'
+                or manifest.get('opening_cash') != '1000'):
+            raise ValueError('PERSONAL_NATIVE_PERP_SIMULATED_OPENING_REQUIRED')
+    else:
+        raise ValueError('PERSONAL_NATIVE_PAPER_OPERATIONAL_MANIFEST_ONLY')
+    return manifest
+
+
 class PersonalNativeCoordination(CanonicalCoordinationSQL):
     def __init__(self, *, manifest, images, path):
-        validate_autonomous_manifest(manifest)
+        _validate_initial_native_paper_manifest(manifest)
         if images is None or path is None:
             raise ValueError('PERSONAL_NATIVE_COORDINATION_PORT_REQUIRED')
         self.manifest = strict(body(manifest))
@@ -105,7 +121,7 @@ class PersonalNativeCoordination(CanonicalCoordinationSQL):
         before financial inception. It is not evidence of any account balance.
         Dispatch/read admission still requires acknowledged native inception.
         """
-        validate_autonomous_manifest(manifest)
+        _validate_initial_native_paper_manifest(manifest)
         db = sqlite3.connect(':memory:')
         try:
             db.executescript('''
