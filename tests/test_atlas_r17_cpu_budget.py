@@ -72,7 +72,8 @@ def fixture_budget(monkeypatch, *, samples, state=None):
 
 def test_budget_affinity_kept_and_restored_after_success(monkeypatch):
     guard, observed = fixture_budget(monkeypatch, samples=[
-        (0,0,0), (80,100,0), (160,200,0),
+        (0,0,0), (80,100,0), (160,200,0), (240,300,0),
+        (320,400,0), (400,500,0),
     ])
     with guard:
         assert guard.active
@@ -96,7 +97,8 @@ def test_busy_host_aborts_before_native_copy_and_restores_affinity(monkeypatch):
 
 def test_cpu_pressure_during_copy_refuses_and_restores(monkeypatch):
     guard, observed = fixture_budget(monkeypatch, samples=[
-        (0,0,0), (90,100,0), (95,200,0),
+        (0,0,0), (90,100,0), (180,200,0), (270,300,0),
+        (360,400,0), (365,500,0),
     ])
     with pytest.raises(ValueError, match="HOST_BUSY_PRESERVE_PARTIAL"), guard:
         observed["clock"] = 2.0
@@ -106,7 +108,8 @@ def test_cpu_pressure_during_copy_refuses_and_restores(monkeypatch):
 
 def test_affinity_drift_during_native_copy_refuses_and_restores(monkeypatch):
     guard, observed = fixture_budget(monkeypatch, samples=[
-        (0,0,0), (80,100,0),
+        (0,0,0), (80,100,0), (160,200,0),
+        (240,300,0), (320,400,0),
     ])
     with pytest.raises(ValueError, match="AFFINITY_DRIFT"), guard:
         observed["mask"] = 0x400
@@ -117,7 +120,8 @@ def test_affinity_drift_during_native_copy_refuses_and_restores(monkeypatch):
 
 def test_monotonic_time_rollback_refuses_copy(monkeypatch):
     guard, observed = fixture_budget(monkeypatch, samples=[
-        (0,0,0), (80,100,0),
+        (0,0,0), (80,100,0), (160,200,0),
+        (240,300,0), (320,400,0),
     ])
     with pytest.raises(ValueError, match="MONOTONIC_ROLLBACK"), guard:
         observed["clock"] = -2.0
@@ -158,3 +162,18 @@ def test_real_windows_native_process_affinity_is_restored_immediately():
     assert restored == original
     assert guard.original_mask is None
     assert not guard.active
+
+
+def test_four_window_preflight_rejects_late_cpu_spike_and_restores(monkeypatch):
+    guard, observed = fixture_budget(monkeypatch, samples=[
+        (0,0,0), (80,100,0), (160,200,0), (165,300,0),
+    ])
+    with pytest.raises(ValueError, match="HOST_BUSY_NO_NATIVE_COPY"), guard:
+        pytest.fail("LATE_SPIKE_CANNOT_ENTER_NATIVE_COPY")
+    assert observed["mask"] == 0xFFF
+    assert not guard.active
+
+
+def test_cpu_preflight_requires_multiple_consecutive_samples():
+    assert cpu.INITIAL_SAMPLE_WINDOWS == 4
+    assert cpu.INITIAL_SAMPLE_WINDOWS * cpu.INITIAL_SAMPLE_SECONDS >= 2.0

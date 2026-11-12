@@ -19,7 +19,8 @@ from ctypes import wintypes
 MAX_LOGICAL_CPUS = 2
 MIN_AVAILABLE_LOGICAL_CPUS = 4
 MAX_SYSTEM_CPU_PERCENT = 70.0
-INITIAL_SAMPLE_SECONDS = 0.30
+INITIAL_SAMPLE_SECONDS = 0.60
+INITIAL_SAMPLE_WINDOWS = 4
 POLL_SECONDS = 1.25
 
 
@@ -128,12 +129,17 @@ class NativeR17CpuBudget:
         try:
             self._set_affinity(target)
             self.restricted_mask = target
+            # A single quiet 0.3-second window is insufficient before a
+            # 10,599-file native copy on an interactive desktop. Require
+            # four consecutive safe, independent system-CPU intervals.
             initial = self._times()
-            self.wait(INITIAL_SAMPLE_SECONDS)
-            after = self._times()
-            if cpu_busy_percent(initial, after) >= MAX_SYSTEM_CPU_PERCENT:
-                raise ValueError("R17_CPU_HOST_BUSY_NO_NATIVE_COPY")
-            self.last_sample = after
+            for _ in range(INITIAL_SAMPLE_WINDOWS):
+                self.wait(INITIAL_SAMPLE_SECONDS)
+                after = self._times()
+                if cpu_busy_percent(initial, after) >= MAX_SYSTEM_CPU_PERCENT:
+                    raise ValueError("R17_CPU_HOST_BUSY_NO_NATIVE_COPY")
+                initial = after
+            self.last_sample = initial
             self.last_check = self.monotonic()
             self.active = True
             return self
