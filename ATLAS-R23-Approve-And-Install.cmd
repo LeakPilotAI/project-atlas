@@ -1,6 +1,6 @@
 @echo off
 setlocal EnableExtensions DisableDelayedExpansion
-title ATLAS R23 - LOCAL CODE-ONLY REVIEW AND INSTALL
+title ATLAS R23 - LOCAL CODE-ONLY INSTALL THEN SELECT
 set "ROOT=D:\Work\Project Atlas"
 set "NATIVE=D:\AtlasRuntime\releases\119dd8626da32e74bd7f86db9de1c1a8fd2c20ac"
 set "TEMP=%ROOT%\logs\temp"
@@ -19,9 +19,10 @@ if not exist "%NATIVE%\python\python.exe" (
   exit /b 2
 )
 cd /d "%ROOT%"
-echo This requires YOUR locally visible Windows console and explicit typed R23 scope.
-echo NO simulated account initialization, PAPER start, release selection, or live orders.
-"%NATIVE%\python\python.exe" -I -B -S -c "import sys; p=r'D:\AtlasRuntime\releases\119dd8626da32e74bd7f86db9de1c1a8fd2c20ac'; sys.path[:0]=[r'D:\Work\Project Atlas',r'D:\Work\Project Atlas\backend',p+r'\python\Lib\site-packages']; from scripts.atlas_r23_local_operator_consent import main; raise SystemExit(main(['--approve-and-install']))"
+echo This requires YOUR locally visible Windows console and TWO independent R23 approvals.
+echo First approval: code-only native INSTALL. After VERIFIED install, second approval: code-only native SELECT.
+echo Neither operation creates simulated accounts, starts PAPER, nor authorizes live orders.
+"%NATIVE%\python\python.exe" -I -B -S -c "import sys; p=r'D:\AtlasRuntime\releases\119dd8626da32e74bd7f86db9de1c1a8fd2c20ac'; sys.path[:0]=[r'D:\Work\Project Atlas',r'D:\Work\Project Atlas\backend',p+r'\python\Lib\site-packages']; from scripts.atlas_r23_local_operator_consent import main; raise SystemExit(main(['--approve-install-and-select']))"
 set "RESULT=%ERRORLEVEL%"
 echo.
 echo R23 code-only local process finished with exit code %RESULT%.

@@ -17,9 +17,13 @@ import tempfile
 from pathlib import Path
 
 from scripts import atlas_r23_code_only_install as inst
+from scripts import atlas_r23_code_only_select as selector
+from scripts import release_selection
 
 EXPECTED_HASH = "c227afa1fd71980e3d294c03a0f50f0a3bc8bd31f99cd4f96988ad054684742a"
+EXPECTED_SELECTOR_HASH = "9a654d9e28255af5de812168131fd9eccaf6e36a926c5a47b604ec53b22901e6"
 SCOPE = "APPROVE_ONE_R23_CODE_ONLY_NATIVE_INSTALL_NO_FINANCIAL_START"
+SELECTION_SCOPE = "APPROVE_ONE_R23_CODE_ONLY_NATIVE_SELECTION_NO_FINANCIAL_START"
 SOURCE_ROOT = Path("D:/Work/Project Atlas")
 
 
@@ -28,6 +32,16 @@ def preflight():
         raise ValueError("R23_LOCAL_ORIGINAL_WINDOWS_INSTALLER_REQUIRED")
     if inst.APPROVAL_PIN is not None or inst.source_hash() != EXPECTED_HASH:
         raise ValueError("R23_ORIGINAL_UNAPPROVED_INSTALLER_HASH_REQUIRED")
+    if (
+        selector.APPROVAL_PIN is not None
+        or selector.source_hash() != EXPECTED_SELECTOR_HASH
+        or Path(selector.__file__).resolve() != SOURCE_ROOT / "scripts/atlas_r23_code_only_select.py"
+        or selector.SCOPE != SELECTION_SCOPE
+        or os.path.lexists(selector.APPROVAL)
+        or any(os.path.lexists(selector.SELECTION_ROOT / f"r0021.{suffix}")
+               for suffix in ("pending", "json"))
+    ):
+        raise ValueError("R23_ORIGINAL_UNAPPROVED_SELECTOR_HASH_REQUIRED")
     if any(os.path.lexists(p) for p in (inst.APPROVAL, inst.TARGET, inst.RECEIPT, inst.JOURNAL)):
         raise ValueError("R23_LOCAL_ONE_SHOT_ORIGINAL_CREATE_ONLY_STATE_REQUIRED")
     prepared = inst.frozen_prepared()
@@ -127,11 +141,115 @@ def pin_after_human_action():
     return sha
 
 
+def selection_review():
+    require_visible_local_console()
+    if (
+        selector.APPROVAL_PIN is not None
+        or selector.source_hash() != EXPECTED_SELECTOR_HASH
+        or Path(selector.__file__).resolve()
+        != SOURCE_ROOT / "scripts/atlas_r23_code_only_select.py"
+        or os.path.lexists(selector.APPROVAL)
+    ):
+        raise ValueError("R23_SEPARATE_UNAPPROVED_SELECTOR_REQUIRED")
+    row = selector.candidate()
+    if row["revision"] != 21 or row["selected"]["release"] != inst.SOURCE:
+        raise ValueError("R23_SEPARATE_EXACT_SELECTED_CANDIDATE_REQUIRED")
+    return {
+        "status": "R23_INSTALLED_AWAITING_DISTINCT_LOCAL_SELECTION_DECISION",
+        "scope": SELECTION_SCOPE,
+        "source_release": inst.SOURCE,
+        "selector_source_sha256": EXPECTED_SELECTOR_HASH,
+        "proposed_record_sha256": release_selection.digest(row),
+        "previous_head": row["previous"],
+        "selected_native_revision": 21,
+        "financial_authority": False,
+        "paper_accounts": False,
+        "paper_start_authorized": False,
+        "live_trading_authorized": False,
+    }
+
+
+def selection_approval_record(row):
+    from scripts.volume_inspector.windows_output import current_sid
+
+    return {
+        "schema": selector.DECISION_SCHEMA,
+        "action": "ONE_SHOT_R23_NATIVE_CODE_ONLY_SELECT",
+        "scope": SELECTION_SCOPE,
+        "operator_sid": current_sid(),
+        "source_commit": inst.SOURCE,
+        "native_predecessor": inst.R21_SOURCE,
+        "previous_head": row["previous"],
+        "revision": 21,
+        "installed_receipt_sha256": row["selected"]["receipt_sha256"],
+        "artifact_digest": row["selected"]["artifact_digest"],
+        "proposed_record_sha256": release_selection.digest(row),
+        "selector_source_sha256": EXPECTED_SELECTOR_HASH,
+        "one_shot": True,
+        "financial_authority": False,
+        "provider_access": False,
+        "paper_accounts": False,
+        "paper_start_authorized": False,
+        "live_trading_authorized": False,
+    }
+
+
+def pin_selection_after_human_action():
+    require_visible_local_console()
+    selection_review()
+    row = selector.candidate()
+    decision = selection_approval_record(row)
+    raw = json.dumps(decision, sort_keys=True, allow_nan=False).encode()
+    sha = hashlib.sha256(raw).hexdigest()
+    marker = (
+        b"APPROVAL_PIN = None  # Distinct R23 one-shot selection "
+        b"user decision canonical source hash."
+    )
+    updated = (
+        b'APPROVAL_PIN = "' + sha.encode("ascii")
+        + b'"  # Distinct R23 one-shot selection user decision canonical source hash.'
+    )
+    path = Path(selector.__file__)
+    original = path.read_bytes()
+    if original.count(marker) != 1:
+        raise ValueError("R23_EXACT_CANONICAL_SELECTION_SOURCE_REQUIRED")
+    # Original one-shot decision must already be durable before its source pin.
+    # Partial state remains a refusal, not a reason to overwrite or retry.
+    with selector.APPROVAL.open("xb") as stream:
+        stream.write(raw)
+        stream.flush()
+        os.fsync(stream.fileno())
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="wb", prefix=".atlas-r23-select-consent-",
+            suffix=".tmp", dir=path.parent, delete=False,
+        ) as stream:
+            temporary = Path(stream.name)
+            stream.write(original.replace(marker, updated))
+            stream.flush()
+            os.fsync(stream.fileno())
+        if path.read_bytes() != original:
+            raise ValueError("R23_SELECTOR_CHANGED_DURING_LOCAL_APPROVAL")
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None and temporary.exists():
+            temporary.unlink()
+    importlib.reload(selector)
+    if (
+        selector.source_hash() != EXPECTED_SELECTOR_HASH
+        or selector.approval_digest(row) != sha
+    ):
+        raise ValueError("R23_LOCAL_SELECTION_APPROVAL_READBACK_REFUSED")
+    return sha
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--review", action="store_true")
     mode.add_argument("--approve-and-install", action="store_true")
+    mode.add_argument("--approve-install-and-select", action="store_true")
     args = parser.parse_args(argv)
 
     if args.review:
@@ -152,6 +270,31 @@ def main(argv=None):
     print("LOCAL_OPERATOR_DECISION_PINNED_SHA256=" + sha, flush=True)
     result = inst.main(["--execute-approved-code-only", "--confirm-scope", SCOPE])
     print(json.dumps(result, sort_keys=True), flush=True)
+    if args.approve_and_install:
+        return 0
+    if (
+        result.get("status") != "R23_CODE_ONLY_NATIVE_INSTALL_VERIFIED_UNSELECTED"
+        or result.get("paper_start_authorized") is not False
+        or result.get("financial_authority") is not False
+    ):
+        raise ValueError("R23_CODE_ONLY_INSTALL_SUCCESS_REQUIRED_BEFORE_SELECTION")
+    second = selection_review()
+    print("\nR23 installation passed. The NEXT action is a DIFFERENT approval:", flush=True)
+    print(json.dumps(second, sort_keys=True, indent=2), flush=True)
+    print("R23 release selection remains CODE ONLY; it creates NO financial accounts.")
+    typed_selection = input(
+        "\nTo select R23, type the DISTINCT native selection scope above or press Enter to leave R21 selected: "
+    )
+    if typed_selection != SELECTION_SCOPE:
+        print("R23 is installed but remains UNSELECTED. Original R21 retained.", flush=True)
+        return 2
+    require_visible_local_console()
+    selection_pin = pin_selection_after_human_action()
+    print("R23_LOCAL_SELECTION_APPROVAL_PIN=" + selection_pin, flush=True)
+    selected = selector.main([
+        "--execute-approved-code-only", "--confirm-scope", SELECTION_SCOPE,
+    ])
+    print(json.dumps(selected, sort_keys=True), flush=True)
     return 0
 
 
