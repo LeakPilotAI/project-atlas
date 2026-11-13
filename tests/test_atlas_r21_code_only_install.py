@@ -39,12 +39,17 @@ def test_clock_only_exact_original_independent_utc_not_synthetic_report():
         }))
 
 
-def test_native_receipt_and_pending_journal_are_create_only():
+def test_native_receipt_and_pending_journal_are_distinct_immutable_domains():
+    # This test must remain meaningful both before and after a genuine
+    # completed installation. The old one-shot R21 attempt has been recovered
+    # and selected; asserting its target does NOT exist would be stale.
     assert r21.RECEIPT != r21.JOURNAL
     assert r21.JOURNAL.suffixes == [".pending", ".jsonl"]
-    assert not r21.TARGET.exists()
-    assert not r21.JOURNAL.exists()
-    assert not r21.RECEIPT.exists()
+    assert r21.TARGET.name == r21.SOURCE
+    assert str(r21.TARGET.parent).replace("\\", "/") == "D:/AtlasRuntime/releases"
+    assert r21.RECEIPT.parent == r21.ROOT / "logs/diagnostics"
+    assert r21.JOURNAL.parent == r21.RECEIPT.parent
+    assert "NO_FINANCIAL_START" in r21.SCOPE
 
 
 def test_original_source_is_separate_from_installer_script_commit():

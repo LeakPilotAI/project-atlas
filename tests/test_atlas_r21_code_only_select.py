@@ -39,7 +39,10 @@ def test_no_selected_native_release_from_faked_clock_report():
         }))
 
 
-def test_original_candidate_requires_real_installed_release_root(monkeypatch):
+def test_original_candidate_requires_real_installed_release_root(monkeypatch, tmp_path):
+    # Isolate the disposable "no installed code" case from the genuine R21
+    # revision-20 selector already committed on this desktop.
+    monkeypatch.setattr(r21, "SELECTION_ROOT", tmp_path)
     monkeypatch.setattr(
         r21, "original_selected_r20",
         lambda: {"release": "d3c26d8189e4b18c0a88d0b4ebdec48b81838d1a"},
