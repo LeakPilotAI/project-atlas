@@ -57,10 +57,11 @@ def _price(value):
     return result
 
 
-def inspect_quote(payload, *, symbol, observed_ns):
+def inspect_quote(payload, *, symbol, observed_ns, uncertainty_ms):
     """Sanitized provider quote metadata at an independently sampled UTC instant."""
     if (type(symbol) is not str or EXACT.fullmatch(symbol) is None
             or type(observed_ns) is not int or observed_ns <= 0
+            or type(uncertainty_ms) is not int or not 0 <= uncertainty_ms <= 1000
             or type(payload) is not dict or set(payload) != {"symbol", "quote"}
             or payload["symbol"] != symbol or type(payload["quote"]) is not dict):
         raise ValueError("IEX_NATIVE_EXACT_QUOTE_ENVELOPE_REQUIRED")
@@ -95,11 +96,23 @@ def inspect_quote(payload, *, symbol, observed_ns):
     age_ns = observed_ns - unix_ns
     # Even with validated transport, IEX has single-venue coverage and the
     # weekend/out-of-session result must remain a stale research observation.
-    fresh = 0 <= age_ns <= 5_000_000_000
+    # clock.sample() reports an integer UTC SECOND; the actual authenticated
+    # UTC instant can be almost 1s later. Reserve the entire quantization
+    # interval rather than treating an age near 5s as current PAPER data.
+    # Add the *issued and verified* independent NTP uncertainty too, so a
+    # 4.5-second-old quote cannot pass via truncation/clock bound.
+    upper_age_ns = age_ns + 1_000_000_000 + uncertainty_ms * 1_000_000
+    fresh = 0 <= age_ns and upper_age_ns <= 5_000_000_000
     return {
         "symbol": symbol,
         "provider_exchange": "IEX",
         "source_age_seconds": age_ns // 1_000_000_000,
+        "utc_clock_sample_quantization_seconds": 1,
+        "verified_ntp_uncertainty_ms": uncertainty_ms,
+        "conservative_quote_age_upper_bound_ms": (
+            (upper_age_ns + 999_999) // 1_000_000
+        ),
+        "provider_quote_freshness_limit_seconds": 5,
         "bid_and_ask_present": active,
         "missing_one_or_both_sided_executable_quote": not active,
         "share_sizes_valid": True,
@@ -167,7 +180,7 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
     if (type(owner) is not RetainedSelectedNativeOwnerPreflight
             or type(clock) is not NativeVersionSafePaperOperatorClock
             or type(runtime_id) is not str or not runtime_id
-            or owner._phase != "PREINCEPTION"
+            or owner._phase not in ("PREINCEPTION", "INITIAL_READBACK_ONLY")
             or owner.verify_still_running() is not True
             or clock.require_operational(runtime_id) is not clock
             or require_version_safe_release_digest(
@@ -214,6 +227,7 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
         rows.append(inspect_quote(
             packet, symbol=symbol,
             observed_ns=s["utc"] * 1_000_000_000,
+            uncertainty_ms=s["uncertainty_ms"],
         ))
     if owner.verify_still_running() is not True:
         raise ValueError("IEX_NATIVE_ORIGINAL_JOB_CHANGED_AT_END")
@@ -233,6 +247,8 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
             else "PROVIDER_REACHABLE_BUT_NOT_ALL_QUOTES_CURRENT_DATA_ONLY"
         ),
         "selected_original_windows_job_verified": True,
+        "original_owner_data_only_phase": owner._phase,
+        "postinception_diagnostic_never_issues_financial_grant": True,
         "two_peer_independent_utc_observed": True,
         "provider_rest_authentication_observed": True,
         "single_exchange_not_nbbo": True,

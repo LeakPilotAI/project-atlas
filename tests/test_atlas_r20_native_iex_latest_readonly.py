@@ -34,13 +34,16 @@ def quote(symbol="MSFT", age=2):
 
 
 @pytest.mark.parametrize("age,fresh", [
-    (-7, False), (-1, False), (0, True), (2, True), (4, True),
-    (5, True), (6, False), (10_000, False),
+    (-7, False), (-1, False), (0, True), (2, True), (3, True),
+    (4, False), (5, False), (6, False), (10_000, False),
 ])
 def test_bounded_independent_utc_never_grants_paper_quote(age, fresh):
     data = quote(age=age)
     freeze = copy.deepcopy(data)
-    r = iex.inspect_quote(data, symbol="MSFT", observed_ns=NOW * 10**9)
+    r = iex.inspect_quote(
+        data, symbol="MSFT", observed_ns=NOW * 10**9,
+        uncertainty_ms=139,
+    )
     assert data == freeze
     assert r["provider_quote_fresh_at_sample"] is fresh
     assert r["executable_paper_quote_authorized"] is False
@@ -96,7 +99,9 @@ def test_invalid_real_quote_wire_cannot_pass(bad):
     else:
         stamp = 0
     with pytest.raises(ValueError):
-        iex.inspect_quote(data, symbol=symbol, observed_ns=stamp)
+        iex.inspect_quote(
+            data, symbol=symbol, observed_ns=stamp, uncertainty_ms=139,
+        )
 
 
 class Response:
@@ -173,9 +178,9 @@ class FakeClock:
             raise ValueError("CLOCK_REFUSED")
         return self
     def sample(self):
-        return {"utc": NOW}
+        return {"utc": NOW, "uncertainty_ms": 139}
     def verify(self, sample):
-        return sample == {"utc": NOW}
+        return sample == {"utc": NOW, "uncertainty_ms": 139}
 
 
 class Opener:
@@ -286,7 +291,7 @@ def test_owner_clock_and_native_release_refuse_before_credentials(
     if tamper == "owner_type":
         owner = object()
     elif tamper == "owner_phase":
-        owner._phase = "INITIAL_READBACK_ONLY"
+        owner._phase = "PREINCEPTION_COORDINATION_READY"
     elif tamper == "owner_revoked":
         owner.valid = False
     elif tamper == "clock_type":
@@ -329,7 +334,10 @@ def test_off_session_iex_zero_side_is_data_only_not_executable(
     data["quote"].update(
         bp=Decimal(bid), ap=Decimal(ask), bs=bid_shares, **{"as": ask_shares},
     )
-    row = iex.inspect_quote(data, symbol="MSFT", observed_ns=NOW * 10**9)
+    row = iex.inspect_quote(
+        data, symbol="MSFT", observed_ns=NOW * 10**9,
+        uncertainty_ms=139,
+    )
     assert row["provider_quote_fresh_at_sample"] is True
     assert row["bid_and_ask_present"] is False
     assert row["missing_one_or_both_sided_executable_quote"] is True
@@ -377,7 +385,94 @@ def test_zero_side_does_not_require_an_iex_exchange_for_absent_liquidity(side):
         data["quote"].update(bp=Decimal(0), bs=0, bx="")
     else:
         data["quote"].update(ap=Decimal(0), **{"as": 0, "ax": None})
-    row = iex.inspect_quote(data, symbol="MSFT", observed_ns=NOW * 10**9)
+    row = iex.inspect_quote(
+        data, symbol="MSFT", observed_ns=NOW * 10**9,
+        uncertainty_ms=139,
+    )
     assert row["bid_and_ask_present"] is False
     assert row["missing_one_or_both_sided_executable_quote"] is True
     assert row["executable_paper_quote_authorized"] is False
+
+
+
+@pytest.mark.parametrize("age,uncertainty_ms,fresh", [
+    (3.860, 139, True),
+    (3.862, 139, False),
+    (3.000, 1000, True),
+    (3.001, 1000, False),
+    (4.000, 0, True),
+    (4.001, 0, False),
+    (3.500, 1000, False),
+])
+def test_actual_ntp_bound_and_integer_second_quantization_are_both_counted(
+    age, uncertainty_ms, fresh,
+):
+    data = quote(age=age)
+    result = iex.inspect_quote(
+        data, symbol="MSFT", observed_ns=NOW * 10**9,
+        uncertainty_ms=uncertainty_ms,
+    )
+    assert result["provider_quote_fresh_at_sample"] is fresh
+    assert result["verified_ntp_uncertainty_ms"] == uncertainty_ms
+    assert result["utc_clock_sample_quantization_seconds"] == 1
+    assert result["provider_quote_freshness_limit_seconds"] == 5
+    assert result["executable_paper_quote_authorized"] is False
+    # No source price/size, credential or generic claim of PAPER authorization.
+    assert "DATA_ONLY_DUMMY" not in str(result)
+    assert "100.0" not in str(result)
+
+
+@pytest.mark.parametrize("invalid", [
+    -1, 1001, None, True, False, 139.0, "139", [], {},
+])
+def test_fake_or_unbounded_ntp_uncertainty_never_treated_as_fresh(invalid):
+    with pytest.raises(ValueError, match="EXACT_QUOTE_ENVELOPE"):
+        iex.inspect_quote(
+            quote(age=1), symbol="MSFT",
+            observed_ns=NOW * 10**9, uncertainty_ms=invalid,
+        )
+
+
+def test_no_default_uncertainty_can_be_silently_inferred():
+    with pytest.raises(TypeError):
+        iex.inspect_quote(quote(age=2), symbol="MSFT", observed_ns=NOW * 10**9)
+
+
+def test_real_after_inception_owner_phase_permits_only_data_observation(test_ports):
+    owner, clock = test_ports
+    owner._phase = "INITIAL_READBACK_ONLY"
+    report, opener = _run(
+        (owner, clock), dict.fromkeys(iex.WATCHLIST, 2),
+        symbols=iex.WATCHLIST,
+    )
+    assert report["original_owner_data_only_phase"] == "INITIAL_READBACK_ONLY"
+    assert report["postinception_diagnostic_never_issues_financial_grant"] is True
+    assert report["fresh_quote_count"] == 4
+    assert len(opener.requests) == 4
+    assert report["authenticated_operational_research_issuer_accepted"] is False
+    assert report["financial_quote_admission_accepted"] is False
+    assert report["paper_startup_authorized"] is False
+    assert report["live_trading_authorized"] is False
+
+
+@pytest.mark.parametrize("phase", [
+    "PREINCEPTION_COORDINATION_READY",
+    "INITIAL_READBACK_PENDING",
+    "LIVE_RUNNING",
+    "PAPER_RUNNING",
+    "CLOSED",
+    None,
+    True,
+])
+def test_intermediate_or_invented_original_owner_phase_refuses_before_credentials(
+    test_ports, phase,
+):
+    owner, clock = test_ports
+    owner._phase = phase
+    with pytest.raises(ValueError, match="ORIGINAL_JOB_CLOCK_OR_SELECTED_RELEASE_REQUIRED"):
+        iex.audit_owned_iex(
+            owner=owner, clock=clock, runtime_id="test-owned",
+            release_digest="a" * 64, symbols=("MSFT",),
+            credential_reader=lambda _: pytest.fail("credentials may not be read"),
+            opener=Opener({}),
+        )
