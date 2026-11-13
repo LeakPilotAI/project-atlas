@@ -54,3 +54,34 @@ def test_native_selector_only_appends_revision_20_never_financial_receipt():
     assert r21.RECORD_REVISION != 19
     assert r21.SCOPE.endswith("NO_FINANCIAL_START")
     assert r21.SELECTION_ROOT.name == "selection"
+
+
+
+@pytest.mark.parametrize("failure", [
+    "old_original_two_stage", "missing_initial_refusal",
+    "wrong_success_receipt", "foreign_recovery_final_stage",
+])
+def test_original_recovered_selector_never_accepts_missing_refusal_or_ack(failure):
+    import json
+
+    initial = b'{"schema":"ORIGINAL_INTENT"}'
+    refused = json.dumps({
+        "stage": "REFUSED_PRESERVE_PARTIAL_NO_RETRY",
+    }, sort_keys=True).encode()
+    completed = json.dumps({
+        "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
+        "receipt_sha256": "a"*64,
+    }, sort_keys=True).encode()
+    rows = [initial, refused, completed]
+    if failure == "old_original_two_stage":
+        rows = [initial, completed]
+    elif failure == "missing_initial_refusal":
+        rows[1] = b'{"stage":"UNKNOWN"}'
+    elif failure == "wrong_success_receipt":
+        rows[2] = b'{"stage":"UNSELECTED_CODE_INSTALL_VERIFIED","receipt_sha256":"bad"}'
+    else:
+        rows[2] = b'{"stage":"RECOVERED_BY_RENAMING"}'
+    with pytest.raises(ValueError, match="PRESERVED_REFUSAL_AND_NEW_ACK"):
+        r21.require_exact_original_recovered_install_ack(
+            rows, receipt_sha="a"*64, artifact="b"*64,
+        )

@@ -30,6 +30,19 @@ from scripts.atlas_r21_code_only_install import (
     original_accounts,
     original_selected_r20,
 )
+from scripts.atlas_r21_native_recovery import (
+    AUDIT_SHA as ORIGINAL_NATIVE_AUDIT_SHA,
+)
+from scripts.atlas_r21_native_recovery import (
+    RECOVERY_JOURNAL,
+    RECOVERY_RECEIPT,
+)
+from scripts.atlas_r21_native_recovery import (
+    SCHEMA as RECOVERY_SCHEMA,
+)
+from scripts.atlas_r21_native_recovery import (
+    approval_digest as recovery_approval_digest,
+)
 from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
 from scripts.observation_runtime.atlas_r17_cpu_budget import NativeR17CpuBudget
 from scripts.observation_runtime.personal_version_safe_release_clock import (
@@ -41,7 +54,7 @@ from scripts.release_selection_store import NativeSelectionStore
 ROOT = Path("D:/Work/Project Atlas")
 DIAG = ROOT / "logs/diagnostics"
 APPROVAL = DIAG / "atlas-r21-code-only-select-approved-20261113.json"
-APPROVAL_PIN = None  # Distinct R21 selected-native user approval canonicalized.
+APPROVAL_PIN = "63ee7205dec51ca23a3350b8bab18e93a72576a8afcf54a76da5a331d05e8ad8"  # Distinct R21 selected-native user approval canonicalized.
 SCOPE = "APPROVE_ONE_R21_CODE_ONLY_NATIVE_SELECTION_NO_FINANCIAL_START"
 CLOCK_IDENTITY = "atlas-r21-native-code-only-select-r0020"
 RECORD_REVISION = 20
@@ -129,7 +142,7 @@ def candidate():
         raise ValueError("R21_ACTUAL_NATIVE_INTERPRETER_LAYOUT_CHANGED")
     rows = journal.splitlines()
     if (
-        len(rows) != 2
+        len(rows) != 3
         or release_selection.strict(rows[0]) != {
             "schema": "ATLAS_R21_UNSELECTED_CODE_INSTALL_INTENT_V1",
             "source_commit": SOURCE,
@@ -140,13 +153,11 @@ def candidate():
             "paper_start_authorized": False,
         }
     ):
-        raise ValueError("R21_NATIVE_ORIGINAL_TWO_STAGE_INTENT_ACK_REQUIRED")
+        raise ValueError("R21_NATIVE_ORIGINAL_REFUSED_AND_RECOVERED_ACK_REQUIRED")
     receipt_sha = hashlib.sha256(raw).hexdigest()
-    if release_selection.strict(rows[1]) != {
-        "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
-        "receipt_sha256": receipt_sha,
-    }:
-        raise ValueError("R21_ORIGINAL_NATIVE_INSTALL_ACK_REFUSED")
+    require_exact_original_recovered_install_ack(
+        rows, receipt_sha=receipt_sha, artifact=artifact,
+    )
     spec = release_selection.validate_spec({
         "schema": "QD_INSTALLED_RELEASE_REFERENCE_V1",
         "domain": "WINDOWS_LOCAL",
@@ -361,6 +372,10 @@ def main(argv=None):
         return {
             "status": "R21_CODE_ONLY_INSTALLED_READY_FOR_SEPARATE_SELECTION",
             "proposed_record_sha256": release_selection.digest(row),
+            "previous_selected_head": row["previous"],
+            "installed_receipt_sha256": row["selected"]["receipt_sha256"],
+            "artifact_digest": row["selected"]["artifact_digest"],
+            "selector_source_sha256": source_hash(),
             "revision": RECORD_REVISION,
             "financial_authority": False,
             "paper_start_authorized": False,
@@ -373,6 +388,79 @@ def main(argv=None):
         return select(clock=clock, approved=True)
     finally:
         clock.revoke()
+
+
+def require_exact_original_recovered_install_ack(rows, *, receipt_sha, artifact):
+    """R21 retains original REFUSED native line, then true new recovery ACK.
+
+    The original install failed; neither delete/replace the historical
+    refusal nor accept a local string/digest as evidence. Require the distinct
+    source/SID/operator-approved recovery, original read-only prefix proof,
+    separate native verified recovered receipt and two-line recovery intent.
+    """
+    if (
+        type(rows) is not list or len(rows) != 3
+        or release_selection.strict(rows[1])
+        != {"stage": "REFUSED_PRESERVE_PARTIAL_NO_RETRY"}
+        or release_selection.strict(rows[2]) != {
+            "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
+            "receipt_sha256": receipt_sha,
+        }
+    ):
+        raise ValueError("R21_ORIGINAL_PRESERVED_REFUSAL_AND_NEW_ACK_REQUIRED")
+    old_sha = hashlib.sha256(b"\n".join(rows[:2])).hexdigest()
+    rec = release_selection.strict(_safe_bytes(RECOVERY_RECEIPT, 8192))
+    trace = _safe_bytes(RECOVERY_JOURNAL, 8192).splitlines()
+    if (
+        type(rec) is not dict
+        or set(rec) != {
+            "schema", "stage", "source_commit", "source_archive_sha256",
+            "original_partial_native_files_rechecked",
+            "new_native_create_only_files", "final_original_native_files",
+            "final_original_native_directories",
+            "original_refusal_journal_sha256",
+            "independent_original_native_installed_readback",
+            "source_release_artifact_digest", "code_only_release_selected",
+            "financial_authority", "paper_start_authorized",
+            "live_trading_authorized",
+        }
+        or rec["schema"] != RECOVERY_SCHEMA
+        or rec["stage"] != "RECOVERY_FULL_NATIVE_ORIGINAL_READBACK_ACCEPTED"
+        or rec["source_commit"] != SOURCE
+        or rec["source_archive_sha256"] != ARCHIVE_SHA
+        or rec["original_partial_native_files_rechecked"] != 7350
+        or rec["new_native_create_only_files"] != 3381
+        or rec["final_original_native_files"] != EXPECTED_FILES
+        or rec["final_original_native_directories"] != EXPECTED_DIRECTORIES
+        or rec["original_refusal_journal_sha256"] != old_sha
+        or rec["source_release_artifact_digest"] != artifact
+        or rec["independent_original_native_installed_readback"] is not True
+        or any(rec[k] is not False for k in (
+            "code_only_release_selected", "financial_authority",
+            "paper_start_authorized", "live_trading_authorized",
+        ))
+        or len(trace) != 2
+        or release_selection.strict(trace[0]) != {
+            "schema": RECOVERY_SCHEMA,
+            "stage": "RECOVERY_INTENT_VERIFY_EXISTING_CREATE_MISSING_ONLY",
+            "original_audit_sha256": ORIGINAL_NATIVE_AUDIT_SHA,
+            "original_refusal_sha256": old_sha,
+            "new_original_root_allowed": False,
+            "financial_authority": False,
+            "selection_allowed": False,
+        }
+        or release_selection.strict(trace[1]) != {
+            "stage": "RECOVERED_FULL_CODE_ONLY_NATIVE_ACK",
+            "receipt_sha256": receipt_sha,
+        }
+    ):
+        raise ValueError("R21_ORIGINAL_NATIVE_RECOVERY_PROVENANCE_REFUSED")
+    # Must still have exactly the independently approved, source-bound
+    # original Windows SID/operator and known old partial audit. A forged
+    # signed-looking file copied into the release folder is insufficient.
+    recovery_approval_digest()
+    return True
+
 
 
 if __name__ == "__main__":
