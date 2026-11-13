@@ -159,3 +159,272 @@ def test_original_native_handle_bound_capacity_readback_does_not_create_a_succes
     assert report["paper_startup_authorized"] is False
     assert report["live_trading_authorized"] is False
     assert after == s.hashes()
+
+
+
+def _second_original_native_epoch(s, *, mismatch=None):
+    """Only a disposable native test root; never a financial/runtime root."""
+    from scripts.observation_runtime.personal_source_epoch_readback import (
+        propose_link_readonly,
+    )
+
+    target = s.root.parent / "source-successor"
+    native = native_primitives()
+    with native.w.WindowsOutput.create_root(str(target)) as out:
+        ident = native.native.file_identity(out.root_handle)
+    successor_enrollment = scope(ident)
+    successor_enrollment.update(
+        epoch="SYNTHETIC-NEW-EPOCH",
+        source_id="SYNTHETIC-NEW-SCANNER",
+    )
+    if mismatch == "account":
+        successor_enrollment["account_id"] = "FOREIGN-ACCOUNT"
+    elif mismatch == "release":
+        successor_enrollment["release_digest"] = "f" * 64
+    elif mismatch == "source_commit":
+        successor_enrollment["source_commit"] = "a" * 40
+    elif mismatch == "epoch":
+        successor_enrollment["epoch"] = s.e["epoch"]
+    elif mismatch == "source_id":
+        successor_enrollment["source_id"] = s.e["source_id"]
+    images = NativePersonalCoordinationImages(
+        root=str(target), native_root=ident,
+        enrollment_digest=digest(successor_enrollment),
+    )
+    try:
+        images.initialize(
+            initial_image(successor_enrollment),
+            authorization=SimpleNamespace(lease=installation_authority),
+        )
+        new = NativePersonalResearchArchive(
+            enrollment=successor_enrollment, images=images,
+            authority=s.auth, clock=s.clock,
+        )
+        if mismatch is not None:
+            with pytest.raises(ValueError, match="DISTINCT_NATIVE_SAME_ACCOUNT"):
+                propose_link_readonly(predecessor=s.archive, successor=new)
+        return SimpleNamespace(
+            enrollment=successor_enrollment, images=images,
+            archive=new, root=target,
+        )
+    except BaseException:
+        images.close()
+        raise
+
+
+def test_two_real_original_native_source_epoch_ack_link_is_readback_only(archive):
+    from scripts.observation_runtime.personal_source_epoch_readback import (
+        propose_link_readonly,
+        verify_link_readonly,
+    )
+    s = archive
+    publish(s)
+    previous_hashes = s.hashes()
+    successor = _second_original_native_epoch(s)
+    try:
+        new = successor.archive
+        init_hashes = {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in successor.root.iterdir()
+        }
+        link = propose_link_readonly(predecessor=s.archive, successor=new)
+        assert link["predecessor"]["head"] == s.archive.current()
+        assert s.hashes() == previous_hashes
+        assert len(init_hashes) == len(list(successor.root.iterdir()))
+        # Genuine original native transaction with DISPOSABLE synthetic
+        # authority ONLY; this tests the physical storage protocol, not an
+        # operational source issuer or account.
+        new.publish(
+            expected=new.current(),
+            packet={
+                "schema": "QD_SCANNER_PUBLICATION_V1",
+                "source_id": successor.enrollment["source_id"],
+                "revision": 1,
+                "observed_at": s.now[0],
+                "bundles": [],
+                "monitors": {},
+            },
+            sources={"epoch_link": link, "research": {
+                "SYNTHETIC_ONLY": True,
+            }},
+        )
+        frozen_successor = {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in successor.root.iterdir()
+        }
+        result = verify_link_readonly(
+            predecessor=s.archive, successor=new,
+        )
+        assert result["cross_epoch_link_structurally_verified"] is True
+        assert result["original_predecessor_ack_readback"] is True
+        assert result["original_successor_ack_readback"] is True
+        assert result["operational_reader_switch_accepted"] is False
+        assert result["market_issuer_independently_verified"] is False
+        assert result["paper_startup_authorized"] is False
+        assert result["live_trading_authorized"] is False
+        restarted = NativePersonalResearchArchive(
+            enrollment=successor.enrollment, images=successor.images,
+            authority=s.auth, clock=s.clock,
+        )
+        assert verify_link_readonly(
+            predecessor=s.archive, successor=restarted,
+        ) == result
+        assert s.hashes() == previous_hashes
+        assert frozen_successor == {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in successor.root.iterdir()
+        }
+        # Every later successor cut must re-attest the same immutable old
+        # native head. The original native append-only store is continuous.
+        new.publish(
+            expected=new.current(),
+            packet={
+                "schema": "QD_SCANNER_PUBLICATION_V1",
+                "source_id": successor.enrollment["source_id"],
+                "revision": 2,
+                "observed_at": s.now[0],
+                "bundles": [],
+                "monitors": {},
+            },
+            sources={"epoch_link": link, "research": {
+                "SYNTHETIC_ONLY": True,
+            }},
+        )
+        ongoing = verify_link_readonly(
+            predecessor=s.archive, successor=new,
+        )
+        assert ongoing["successor_native_revision"] == 3
+        assert ongoing["paper_startup_authorized"] is False
+        # The old native authority cannot continue writing after the link
+        # without invalidating the immutable predecessor cut.
+        publish(s, 2)
+        with pytest.raises(ValueError, match="CHAIN_LINK_MISSING_OR_CHANGED"):
+            verify_link_readonly(predecessor=s.archive, successor=new)
+    finally:
+        successor.images.close()
+
+
+@pytest.mark.parametrize("mismatch", [
+    "account", "release", "source_commit", "epoch", "source_id",
+])
+def test_original_native_epoch_refuses_foreign_account_release_or_alias(
+    archive, mismatch,
+):
+    s = archive
+    publish(s)
+    old = s.hashes()
+    next_epoch = _second_original_native_epoch(s, mismatch=mismatch)
+    try:
+        assert s.hashes() == old
+        assert next_epoch.archive.current()["revision"] == 0
+        from scripts.observation_runtime.personal_source_epoch_readback import (
+            verify_link_readonly,
+        )
+        with pytest.raises(ValueError):
+            verify_link_readonly(
+                predecessor=s.archive, successor=next_epoch.archive,
+            )
+    finally:
+        next_epoch.images.close()
+
+
+def test_original_native_source_epoch_link_does_not_accept_unpublished_successor(
+    archive,
+):
+    from scripts.observation_runtime.personal_source_epoch_readback import (
+        propose_link_readonly,
+        verify_link_readonly,
+    )
+    s = archive
+    publish(s)
+    second = _second_original_native_epoch(s)
+    try:
+        original_hashes = s.hashes()
+        next_hashes = {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in second.root.iterdir()
+        }
+        assert propose_link_readonly(
+            predecessor=s.archive, successor=second.archive,
+        )["schema"] == "QD_ORIGINAL_NATIVE_SOURCE_EPOCH_LINK_V1"
+        with pytest.raises(ValueError, match="SUCCESSOR_PUBLISHED_IMAGE_REQUIRED"):
+            verify_link_readonly(
+                predecessor=s.archive, successor=second.archive,
+            )
+        assert s.hashes() == original_hashes
+        assert next_hashes == {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in second.root.iterdir()
+        }
+    finally:
+        second.images.close()
+
+
+
+def test_native_successor_missing_epoch_provenance_fails_without_rewriting(
+    archive,
+):
+    from scripts.observation_runtime.personal_source_epoch_readback import (
+        propose_link_readonly,
+        verify_link_readonly,
+    )
+
+    s = archive
+    publish(s)
+    second = _second_original_native_epoch(s)
+    try:
+        expected = propose_link_readonly(
+            predecessor=s.archive, successor=second.archive,
+        )
+        assert expected["predecessor"]["head"] == s.archive.current()
+        second.archive.publish(
+            expected=second.archive.current(),
+            packet={
+                "schema": "QD_SCANNER_PUBLICATION_V1",
+                "source_id": second.enrollment["source_id"],
+                "revision": 1,
+                "observed_at": s.now[0],
+                "bundles": [],
+                "monitors": {},
+            },
+            sources={"epoch_link": {
+                "schema": "FORGED_DIGEST_IS_NOT_AUTHORITY",
+            }},
+        )
+        frozen_old = s.hashes()
+        frozen_new = {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in second.root.iterdir()
+        }
+        with pytest.raises(ValueError, match="CHAIN_LINK_MISSING_OR_CHANGED"):
+            verify_link_readonly(
+                predecessor=s.archive, successor=second.archive,
+            )
+        assert s.hashes() == frozen_old
+        assert frozen_new == {
+            p.name: hashlib.sha256(p.read_bytes()).hexdigest()
+            for p in second.root.iterdir()
+        }
+        assert second.archive.current()["revision"] == 1
+    finally:
+        second.images.close()
+
+
+def test_native_source_epoch_cannot_link_before_predecessor_first_publication(
+    archive,
+):
+    from scripts.observation_runtime.personal_source_epoch_readback import (
+        propose_link_readonly,
+    )
+
+    s = archive
+    original_hashes = s.hashes()
+    next_epoch = _second_original_native_epoch(s)
+    try:
+        with pytest.raises(ValueError, match="FINAL_AND_EMPTY_NEW_REQUIRED"):
+            propose_link_readonly(
+                predecessor=s.archive, successor=next_epoch.archive,
+            )
+        assert s.hashes() == original_hashes
+    finally:
+        next_epoch.images.close()

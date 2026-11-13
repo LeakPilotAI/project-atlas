@@ -125,7 +125,8 @@ class QualityDipsSourcePublication(SourcePublication):
         self.components.update(research=research,candidates=candidates)
         self._verify()
 
-    def publish_scanner(self, rows, observed_at, *, evidence=None, expected_head=None):
+    def publish_scanner(self, rows, observed_at, *, evidence=None, expected_head=None,
+                        epoch_link=None):
         self._verify()
         raw=strict(body(self.research.read_current()))
         now=self._now()
@@ -147,6 +148,16 @@ class QualityDipsSourcePublication(SourcePublication):
         sources={'research':raw,'scanner_rows':rows,'scanner_observed_at':observed_at}
         if evidence is not None:
             sources['current_input']=strict(body(evidence))
+        if epoch_link is not None:
+            # The original installed publisher authority still verifies the
+            # WHOLE sources object before a native write. This is provenance
+            # transport, not permission to create or switch native archives.
+            if (type(epoch_link) is not dict
+                    or epoch_link.get('schema')!='QD_ORIGINAL_NATIVE_SOURCE_EPOCH_LINK_V1'
+                    or type(epoch_link.get('successor')) is not dict
+                    or epoch_link['successor'].get('source_id')!=self.source_id):
+                raise ValueError('QD_SOURCE_EXACT_ORIGINAL_EPOCH_LINK_REQUIRED')
+            sources['epoch_link']=strict(body(epoch_link))
         return self.publish(packet,sources,expected_head=expected_head)
 
     def read_publication(self,timeout):
@@ -208,7 +219,9 @@ class PerpSourcePublication(SourcePublication):
                     oracle=self.settlements.read(symbol,at)
                     if oracle is None: continue  # Planner must refuse a due settlement, never substitute current oracle.
                     if self.orders.manifest['schema'] == 'PAPER_EPOCH_PERP_OPERATIONAL_V1':
-                        from app.services.hyperliquid_consensus_settlement import require_consensus_settlement_oracle
+                        from app.services.hyperliquid_consensus_settlement import (
+                            require_consensus_settlement_oracle,
+                        )
                         require_consensus_settlement_oracle(oracle, symbol=symbol, at=at, funding_record=record)
                     if (self.orders.manifest['schema'] != 'PAPER_EPOCH_PERP_OPERATIONAL_V1'
                             and set(oracle) != {'symbol','settlement_at','price','source_id','revision'}

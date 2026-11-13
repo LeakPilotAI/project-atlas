@@ -45,6 +45,7 @@ class QualityDipsCurrentProducer:
         clock,
         enrollment,
         execution_domain,
+        predecessor_archive=None,
     ):
         self.enrollment = validate_enrollment(enrollment)
         if (
@@ -54,13 +55,21 @@ class QualityDipsCurrentProducer:
             or any(x is None for x in (source, input_authority, publication_authority, clock))
             or archive.enrollment != self.enrollment
             or archive.clock is not clock
+            or (predecessor_archive is not None
+                and (type(predecessor_archive) is not NativePersonalResearchArchive
+                     or predecessor_archive is archive
+                     or predecessor_archive.clock is not clock))
         ):
             raise ValueError("QD_CURRENT_EXPLICIT_BOUND_PORTS_REQUIRED")
         self.source, self.input_authority = source, input_authority
         self.archive, self.clock = archive, clock
+        self.predecessor_archive = predecessor_archive
         self.execution_domain = execution_domain
         self._scope = body(self.enrollment)
-        self._ports = source, input_authority, archive, clock, execution_domain
+        self._ports = (
+            source, input_authority, archive, clock, execution_domain,
+            predecessor_archive,
+        )
         self._projection = _Projection()
         self.publication = QualityDipsSourcePublication(
             research=self._projection,
@@ -97,6 +106,7 @@ class QualityDipsCurrentProducer:
                         self.archive,
                         self.clock,
                         self.execution_domain,
+                        self.predecessor_archive,
                     ),
                     self._ports,
                     strict=True,
@@ -257,6 +267,15 @@ class QualityDipsCurrentProducer:
         }
 
     def _archived_input(self, record):
+        # After an explicitly linked successor epoch, restart MUST retain the
+        # original predecessor archive. Constructing a fresh ordinary reader
+        # on the linked native root cannot silently erase that provenance.
+        if (
+            type(record.get("sources")) is not dict
+            or ("epoch_link" in record["sources"])
+            != (self.predecessor_archive is not None)
+        ):
+            raise ValueError("QD_CURRENT_EPOCH_READER_CHAIN_REQUIRED")
         evidence = record["sources"].get("current_input")
         if type(evidence) is not dict or set(evidence) != {"input", "acceptance", "enrollment"}:
             raise ValueError("QD_CURRENT_ARCHIVED_PROVENANCE_REQUIRED")
@@ -316,6 +335,13 @@ class QualityDipsCurrentProducer:
             or not 0 <= self._now() - cut["observed_at"] <= 30
         ):
             raise ValueError("QD_CURRENT_REPLAY_OR_SOURCE_CUT_CHANGED")
+        if self.predecessor_archive is not None:
+            from scripts.observation_runtime.personal_source_epoch_readback import (
+                verify_link_readonly,
+            )
+            verify_link_readonly(
+                predecessor=self.predecessor_archive, successor=self.archive,
+            )
         self._verify()
         return strict(body(record["packet"]))
 
@@ -339,6 +365,45 @@ class QualityDipsCurrentProducer:
                     if cut != prior:
                         raise ValueError("QD_CURRENT_INPUT_REVISION_CONFLICT")
                     return self.read_publication(0.2)
+            # Refuse BEFORE acquiring an original publication lease or
+            # latching UNKNOWN when the source epoch is known to be full.
+            # Native capacity includes its genesis. No caller counter, local
+            # source revision or archive reset can create new headroom.
+            available = self.archive.capacity_readonly(
+                horizon_seconds=30,
+                publication_interval_seconds=30,
+            )
+            if (
+                available["logical_revision"] != head["revision"]
+                or available["native_remaining_publications"] < 1
+                or available["within_existing_epoch"] is not True
+            ):
+                raise ValueError(
+                    "QD_CURRENT_ORIGINAL_NATIVE_EPOCH_EXHAUSTED"
+                    "_NEW_ACCEPTED_SOURCE_EPOCH_REQUIRED"
+                )
+            epoch_link = None
+            if self.predecessor_archive is not None:
+                from scripts.observation_runtime.personal_source_epoch_readback import (
+                    propose_link_readonly,
+                    verify_link_readonly,
+                )
+                if head["revision"] == 0:
+                    epoch_link = propose_link_readonly(
+                        predecessor=self.predecessor_archive,
+                        successor=self.archive,
+                    )
+                else:
+                    # A restarted ongoing publisher must revalidate BOTH
+                    # original native ACK chains, including its epoch link,
+                    # before any further source publication.
+                    verify_link_readonly(
+                        predecessor=self.predecessor_archive,
+                        successor=self.archive,
+                    )
+                    epoch_link = self.archive.read_evidence(head)[
+                        "sources"
+                    ]["epoch_link"]
             if body(self.source.read_current()) != body(cut) or not 0 <= self._now() - now <= 1:
                 raise ValueError("QD_CURRENT_INPUT_CHANGED_BEFORE_PUBLICATION")
             self._accept(cut, self._now())
@@ -350,6 +415,7 @@ class QualityDipsCurrentProducer:
                 datetime.fromtimestamp(cut["observed_at"], UTC).isoformat(),
                 evidence={"input": cut, "acceptance": proof, "enrollment": digest(self.enrollment)},
                 expected_head=head,
+                epoch_link=epoch_link,
             )
             if self.archive.current()["revision"] != head["revision"] + 1:
                 raise ValueError("QD_CURRENT_PUBLICATION_REVISION_UNCERTAIN")

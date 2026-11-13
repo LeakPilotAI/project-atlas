@@ -815,3 +815,197 @@ def test_zero_executable_quote_scope_does_not_grant_entry_when_board_has_values(
         "current_input"
     ]["input"]["quotes"] == {}
     assert f.owner.read_publication(0.2) == packet
+
+
+
+@pytest.mark.parametrize("tamper", ["zero_remaining", "false_head", "false_scope"])
+def test_native_epoch_exhaustion_refuses_before_any_attempt_or_unknown(
+    monkeypatch, tamper,
+):
+    f = fixture(monkeypatch)
+    first = f.owner.publish_current()
+    f.cut["input_revision"] = 2
+    frozen = copy.deepcopy(f.s.s.files)
+    actual = f.s.archive.capacity_readonly
+
+    def no_capacity(*, horizon_seconds, publication_interval_seconds):
+        value = actual(
+            horizon_seconds=horizon_seconds,
+            publication_interval_seconds=publication_interval_seconds,
+        )
+        if tamper == "zero_remaining":
+            value["native_remaining_publications"] = 0
+        elif tamper == "false_head":
+            value["logical_revision"] = 127
+        else:
+            value["within_existing_epoch"] = False
+        return value
+
+    monkeypatch.setattr(f.s.archive, "capacity_readonly", no_capacity)
+    with pytest.raises(ValueError, match="NEW_ACCEPTED_SOURCE_EPOCH_REQUIRED"):
+        f.owner.publish_current()
+    assert f.owner._failed is False
+    assert f.s.s.files == frozen
+    assert f.s.archive.read(f.s.archive.current()) == first
+    assert not f.s.s.owner.poisoned
+    monkeypatch.setattr(f.s.archive, "capacity_readonly", actual)
+    # This disposable fixture still has genuine native capacity. After the
+    # failed pre-effect budget only, publishing on its original owner works.
+    second = f.owner.publish_current()
+    assert second["revision"] == 2
+    assert f.s.archive.current()["revision"] == 2
+
+
+
+def _synthetic_prior_epoch_for_current_producer(f):
+    """DISPOSABLE old native archive facade; never a finance/source issuer."""
+    from scripts.observation_runtime.personal_research_archive import (
+        NativePersonalResearchArchive,
+    )
+
+    predecessor = object.__new__(NativePersonalResearchArchive)
+    predecessor.enrollment = copy.deepcopy(f.s.e)
+    predecessor.enrollment.update(
+        epoch="SYNTHETIC-ORIGINAL-OLDER-EPOCH",
+        source_id="SYNTHETIC-ORIGINAL-OLDER-SCANNER",
+        root_id=[17, 18, 19],
+    )
+    predecessor.images = SimpleNamespace(root_id=[17, 18, 19])
+    predecessor.clock = f.s.clock
+    packet = {
+        "schema": "QD_SCANNER_PUBLICATION_V1",
+        "source_id": predecessor.enrollment["source_id"],
+        "revision": 1,
+        "observed_at": STAMP,
+        "bundles": [],
+        "monitors": {},
+    }
+    head = {
+        "revision": 1,
+        "native_revision": 2,
+        "digest": digest(packet),
+        "archive_binding": digest(predecessor.enrollment),
+        "image_digest": "a" * 64,
+        "native_head": "b" * 64,
+        "native_ack": {"SYNTHETIC_NATIVE_ACK": True},
+    }
+    bound = SimpleNamespace(head=head, packet=packet)
+    predecessor.current = lambda: copy.deepcopy(bound.head)
+    predecessor.read_evidence = lambda _: {
+        "packet": copy.deepcopy(bound.packet),
+        "sources": {"DISPOSABLE_ORIGINAL": True},
+    }
+    return predecessor, bound
+
+
+def test_current_publisher_repeats_original_native_epoch_link_per_source_cut(
+    monkeypatch,
+):
+    from scripts.observation_runtime.personal_source_epoch_readback import (
+        verify_link_readonly,
+    )
+
+    f = fixture(monkeypatch)
+    prior, bound = _synthetic_prior_epoch_for_current_producer(f)
+
+    def construct():
+        f.expected_components.clear()
+        return QualityDipsCurrentProducer(
+            source=f.source,
+            input_authority=f.owner.input_authority,
+            publication_authority=f.s.auth,
+            archive=f.s.archive,
+            candidates=f.candidates,
+            clock=f.s.clock,
+            enrollment=f.s.e,
+            execution_domain="DISPOSABLE",
+            predecessor_archive=prior,
+        )
+
+    successor = construct()
+    first = successor.publish_current()
+    first_sources = f.s.archive.read_evidence(
+        f.s.archive.current()
+    )["sources"]
+    assert first["revision"] == 1
+    assert first_sources["epoch_link"]["predecessor"]["head"] == bound.head
+    assert first_sources["epoch_link"]["successor"]["epoch"] == f.s.e["epoch"]
+    assert verify_link_readonly(
+        predecessor=prior, successor=f.s.archive,
+    )["operational_reader_switch_accepted"] is False
+
+    f.cut["input_revision"] = 2
+    second = successor.publish_current()
+    assert second["revision"] == 2
+    second_sources = f.s.archive.read_evidence(
+        f.s.archive.current()
+    )["sources"]
+    assert second_sources["epoch_link"] == first_sources["epoch_link"]
+    assert second_sources["current_input"]["input"]["input_revision"] == 2
+    assert successor.read_publication(.2) == second
+    assert verify_link_readonly(
+        predecessor=prior, successor=f.s.archive,
+    )["successor_native_revision"] == 3
+
+    reopened = construct()
+    assert reopened.read_publication(.2) == second
+    assert reopened.publish_current() == second
+
+    # The old native owner moving its head after switchover MUST refuse the
+    # next current research publication before attempting a new native write.
+    f.cut["input_revision"] = 3
+    frozen = copy.deepcopy(f.s.s.files)
+    bound.head["revision"] = 2
+    with pytest.raises(ValueError):
+        reopened.publish_current()
+    assert reopened._failed is False
+    assert f.s.s.files == frozen
+    assert not f.s.s.owner.poisoned
+
+    # A linked successor cannot restart as an ordinary unlinked publisher
+    # and silently suppress native predecessor identity/readback checks.
+    f.expected_components.clear()
+    bypass = QualityDipsCurrentProducer(
+        source=f.source,
+        input_authority=f.owner.input_authority,
+        publication_authority=f.s.auth,
+        archive=f.s.archive,
+        candidates=f.candidates,
+        clock=f.s.clock,
+        enrollment=f.s.e,
+        execution_domain="DISPOSABLE",
+    )
+    with pytest.raises(ValueError, match="EPOCH_READER_CHAIN_REQUIRED"):
+        bypass.read_publication(.2)
+    with pytest.raises(ValueError, match="EPOCH_READER_CHAIN_REQUIRED"):
+        bypass.publish_current()
+    assert f.s.s.files == frozen
+    assert bypass._failed is False
+
+
+@pytest.mark.parametrize("predecessor_kind", ["same_archive", "not_native"])
+def test_epoch_successor_must_be_explicit_distinct_native_archive(
+    monkeypatch, predecessor_kind,
+):
+    f = fixture(monkeypatch)
+    if predecessor_kind == "same_archive":
+        prior = f.s.archive
+    else:
+        prior = SimpleNamespace(
+            enrollment=f.s.e,
+            current=f.s.archive.current,
+        )
+    frozen = copy.deepcopy(f.s.s.files)
+    with pytest.raises(ValueError, match="EXPLICIT_BOUND_PORTS_REQUIRED"):
+        QualityDipsCurrentProducer(
+            source=f.source,
+            input_authority=f.owner.input_authority,
+            publication_authority=f.s.auth,
+            archive=f.s.archive,
+            candidates=f.candidates,
+            clock=f.s.clock,
+            enrollment=f.s.e,
+            execution_domain="DISPOSABLE",
+            predecessor_archive=prior,
+        )
+    assert f.s.s.files == frozen
