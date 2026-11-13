@@ -47,6 +47,12 @@ def test_reject_unbounded_requested_hours(hours):
         finished_hours(now_ms=NOW,hours=hours)
 
 
+@pytest.mark.parametrize("now_ms,hours", [(-1, 1), (0, 1), (HOUR_MS, 3), (True, 1)])
+def test_reject_clock_values_without_full_completed_history(now_ms, hours):
+    with pytest.raises(ValueError):
+        finished_hours(now_ms=now_ms, hours=hours)
+
+
 @pytest.mark.parametrize("symbol",SYMBOLS)
 def test_complete_real_parser_never_grants_oracle(symbol):
     result=normalize(**source_args(symbol))

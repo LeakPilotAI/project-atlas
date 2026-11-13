@@ -24,7 +24,8 @@ MAX_BYTES = 60_000
 
 def finished_hours(*, now_ms: int, hours: int):
     if (type(now_ms) is not int or now_ms < 0
-            or type(hours) is not int or not 1 <= hours <= MAX_ROWS):
+            or type(hours) is not int or not 1 <= hours <= MAX_ROWS
+            or now_ms // HOUR_MS < hours):
         raise ValueError("HL_READONLY_BOUNDED_WHOLE_HOURS_REQUIRED")
     # Exclude the last hour: publication timing/funding lags could be ongoing.
     latest_completed_hour = (now_ms // HOUR_MS - 1) * HOUR_MS
