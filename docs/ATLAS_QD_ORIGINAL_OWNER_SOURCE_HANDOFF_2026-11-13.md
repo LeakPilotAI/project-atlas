@@ -1,0 +1,28 @@
+# Atlas — original-child Quality Dips forward source handoff (2026-11-13)
+
+## Actual scope
+
+Source-only, explicit dependency-injected bridge: `scripts/observation_runtime/atlas_r20_qd_selected_source_worker.py`, `SelectedOwnerQDForwardPublisher`. This code **does not activate PAPER production**.
+
+The missing practical architecture seam was a real production integration caller for `QualityDipsCurrentProducer.publish_current()`. Original current-research projection, `CandidateEvidenceAdapter`, `NativePersonalResearchArchive`, and `QualityDipsSourcePublication` had a usable proven memory-test protocol but no original selected-owner operational caller. The new worker:
+
+- **Rejects** a non-operational producer, wrong/foreign enrollment/release, foreign clock, missing/foreign retained Job, unsuitable pre-inception phase, altered binding, or a workspace/foreign executable module. Both the existing original producer and this bridge must originate within the selected installed release path; no source-only workspace script may impersonate an installed worker.
+- Requires exact original Windows Job PROCESS HANDLE liveness and structural native root checks via `RetainedSelectedNativeOwnerPreflight.verify_still_running()`. Its true current-process `observe_self()` must match the held original enrolled child creation timestamp, PID, and executable image. This is intentionally more stringent than observing a child PID from the parked parent.
+- Requires the **same** `NativeVersionSafePaperOperatorClock`, bound runtime ID and independently selected native release digest, plus the exact original `NativePersonalResearchArchive` and enrolled source identifier.
+- Issues **one** explicit, nonretryable call to the original producer's input-authority and native archive CAS publication. It then rereads the original packet, digest-bound archive head, held Windows Job, process, native clock, and original module path. A failure after a possible effect is terminal for that worker. It never fabricates rankings, valuations, issuer acknowledgments, input receipts or a candidate.
+- Returns only source readback evidence. Its schema explicitly sets `independent_source_issuer_accepted=false`, `valuation_issuer_accepted=false`, `financial_inception_authorized=false`, `paper_startup_authorized=false`, and `live_trading_authorized=false`. Even an authenticated native source CAS is not standalone proof of qualified trading data.
+
+## Tested vs not achieved
+
+- Negative and exact handoff tests use **synthetic, disposable in-memory originals**, deliberately monkeypatch selected module/clock/process identity. No physical Windows financial account, source custody, real institution, financial activation or original native root was touched. Passing these tests is a code contract test, **not** operational evidence.
+- Targeted combined suite of native archive, current source, public Hyperliquid observer and worker tests: **156 passed, 9 skipped, 0 failures** with selected R20 Python prior to final hardening; post-hardening test runs and source formatting separately recorded at Git commit. No external API call needed to test the source worker.
+- **Critical next non-code dependency:** authenticate a real original Quality Dips input issuer supplying source-provenanced current ranked rows, exact forward V3 observations, a regulated/accepted current IEX quote and independently verified analyst valuation input; or obtain explicit authorization for a fully reviewed alternative conservative valuation policy. A synthetic receipt or aggregator attribution is not an independent issuer.
+- **Critical operating architecture gap:** the original retained Windows Job object is currently assembled by a *parent* that owns its *child* handles. The genuine writer process must possess its own safely handed-off original Job/PROCESS handles, not adopt its parent's JSON/PID. This module makes the ownership requirement explicit but **does not yet implement that native in-child IPC/handle handoff**; therefore no real operational publication can be claimed. Implement and prove a genuine single-process owner transfer/retained native handle contract prior to using the bridge. Do not weaken the original writer-process requirement to make a parent-hosted fixture pass.
+- This workspace-only bridge **is not in the selected immutable R20 release**. The normal authenticated code-only native installation/selection is still necessary once the original operating dependencies are ready. Until then the new path fails closed when invoked outside a selected immutable image.
+- The original QD native research archive currently has a hard revision-image ceiling **127 publications per epoch**; a continuous months-long source publisher needs an independently reviewed root/epoch rollover protocol instead of silently exhausting or overwriting the native journal. Do not treat repeated publication tests as a successful months-long soak.
+
+## Actual PAPER readiness
+
+Source authority, secure original-child issuer, independent Hyperliquid original settlement oracle/fee rights, exact original two-lane activation, two once-only simulated $1,000 USD/USDC inception journals with FS1/FS3 readback, stop/flatten/restart acceptance and multi-session supervised soak remain missing. Independent financial gates remain **NO-GO** until independently accepted; a component or test count is not a percentage of production readiness.
+
+Storage: all new scripts/docs and test temp settings inside `D:\Work\Project Atlas`. Preserve legacy original native identities `D:\AtlasRuntime`, `D:\AtlasCustody` and `D:\AtlasPaper`. Execute original post-execution temp cleanup after each milestone.
