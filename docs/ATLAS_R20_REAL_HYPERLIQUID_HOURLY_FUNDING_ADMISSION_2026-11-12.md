@@ -1,0 +1,22 @@
+# Atlas R20 original Hyperliquid funding-rate gap, November 12–13, 2026
+
+This is a verified **data-only commissioning diagnostic** for the original selected R20 native PAPER release. It cannot grant financial account inception, source rights, PAPER execution, live-money trading, or exact historical settlement oracle authority.
+
+## Real selected-source proof
+
+- Native selected R20 source: `d3c26d8189e4b18c0a88d0b4ebdec48b81838d1a`, selector revision 19, native artifact `eb141c30aea60a9c05fb8f23f1011aa7e29a02e2f95196549298227d060d68f9`.
+- The original installed validator `backend/app/adapters/hyperliquid.py::_paper_funding_observation` was verified SHA256-identical with the workspace source before running the new diagnostic `scripts/observation_runtime/atlas_r20_real_hl_funding_readonly.py`.
+- Genuine public Hyperliquid `/info` `fundingHistory`, BTC/ETH/SOL, exactly three **completed** UTC funding hours per symbol: **2026-11-13 02:00–05:00 UTC** (02:00, 03:00, 04:00 hourly events). **9/9** original timestamp-ordered hourly rate rows passed the existing exact source validator. Maximum source event publication delay **54 ms**; no missing events, future timestamps, duplicate hours or abnormal rates.
+- The three returned raw provider response SHA256 digests were: BTC `888c7bb87b6069c0a5ae6e5d265d532be5a586da25289f2ada182b210cc3880c`, ETH `f5fa0b633966f7fc0e71b38c461f4db4c18204e4c720e63a73da4bbb53509d03`, SOL `328c140641c10f8bf2d58873925e1037ccbc43871e89c724d9037b76b7038141`. These hashes document source response integrity for research; they are **not** independent issuer/legal entitlement or financial settlement proof.
+- New 21 tests passed, Ruff lint clean. Existing original selected R20 financial inception, issuer, native Job and Hyperliquid oracle/funding safety tests: **198 passed**, zero failed, selected immutable R20 interpreter. Two checks are separate; do not add their counts to any independent financial gate.
+- Original API documents hourly funding and formula, including `funding payment = position_size × historical settlement oracle_price × hourly funding_rate`. Historical public `fundingHistory` returns the **rate**; current `metaAndAssetCtxs.oraclePx` is not an authenticated past consensus oracle. Official references: https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding and https://hyperliquid.gitbook.io/hyperliquid-docs/hypercore/oracle and https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+- Fees are **account-specific** based on rolling volume and discounts; API `userFees` uses a wallet address; no private wallet/accounts are to be accessed or invented here. A public generic tariff cannot be falsely asserted to be this PAPER user's authenticated fee schedule: https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees
+
+## Blockers and strict next critical path
+
+1. Independently accepted historical **settlement-time** oracle/consensus action with real original event provenance, chronological block/event identity, no replacement by present mark/book prices. Existing fail-closed validator `require_consensus_settlement_oracle` correctly requires original price and funding action digests; without them live PAPER funding settlement must remain disabled.
+2. Explicit operator-reviewed conservative **simulated fee schedule** or authenticated applicable venue fee schedule, with native release+time binding and independently verified source permissions. Do not manufacture wallet-specific discount tiers.
+3. Original QD independent current valuation and source acceptance remains missing despite 4/4 historical Alpaca access, original SEC filings and current secondary public analyst reports. Do not treat secondary source names as independently authenticated issuers.
+4. Genuine two-account financial native issuer/activation/inception and Stop/flat/restart, then supervised forward PAPER extended soak. Original 12 account namespaces remain empty and no live-money trading is authorized.
+
+**No new native release is required to keep this source-only diagnostic**, and installed R20 remains immutable and selected. Do not activate PAPER based on nine funding rates or 198 passing tests. All new Atlas files and temporary caches belong under `D:\Work\Project Atlas`; run `scripts/windows/Atlas-Post-Execution-Temp-Cleanup.ps1 -ExecuteVerified` after each execution.
