@@ -5,8 +5,13 @@ import struct
 import pytest
 
 from scripts.observation_runtime.atlas_independent_ntp_clock import (
-    IndependentNtpClock, MAX_UNCERTAINTY_NS, NTP_EPOCH, PEERS,
-    SOURCE, combine_two_peers, parse_ntp_response,
+    MAX_UNCERTAINTY_NS,
+    NTP_EPOCH,
+    PEERS,
+    SOURCE,
+    IndependentNtpClock,
+    combine_two_peers,
+    parse_ntp_response,
 )
 
 BASE_UTC = 1794140000
@@ -237,7 +242,7 @@ def test_mono_rollback_identity_reuse_and_process_scope_fail_closed():
 
 @pytest.mark.parametrize("corruption", ["utc", "bound", "mono", "source", "schema", "unknown"])
 def test_exact_same_process_sample_rejects_mutation(corruption):
-    p, c = fixture()
+    _, c = fixture()
     a = c.sample()
     b = dict(a)
     if corruption == "utc":
@@ -259,3 +264,65 @@ def test_no_authority_to_start_financial_system():
     _, c = fixture()
     assert c.evidence["financial_authority"] is False
     assert c.evidence["source"] == SOURCE
+
+
+
+def test_authenticated_precise_utc_uses_same_monotonic_ntp_anchor_not_wall_clock():
+    p, c = fixture()
+    first = c.sample_precise()
+    assert first["schema"] == "ATLAS_INDEPENDENT_PRECISE_UTC_V1"
+    assert first["utc_ns"] == BASE_UTC * 10**9
+    assert first["source"] == SOURCE
+    assert c.verify_precise(first) is True
+    p.mono_time += 350_000_000
+    later = c.sample_precise()
+    assert later["utc_ns"] - first["utc_ns"] == 350_000_000
+    assert c.verify_precise(later) is True
+    assert c.verify_precise(first) is True
+    assert c.evidence["financial_authority"] is False
+    p.advance(2)
+    assert c.verify_precise(first) is False
+
+
+@pytest.mark.parametrize("tamper", (
+    "utc", "mono", "uncertainty", "schema", "source", "extra", "not_dict",
+))
+def test_precise_utc_requires_exact_same_process_issuance(tamper):
+    _, c = fixture()
+    sample = c.sample_precise()
+    other = dict(sample)
+    if tamper == "utc":
+        other["utc_ns"] += 1
+    elif tamper == "mono":
+        other["monotonic_ns"] += 1
+    elif tamper == "uncertainty":
+        other["uncertainty_ms"] = 999
+    elif tamper == "schema":
+        other["schema"] = "CLIENT_ISSUED"
+    elif tamper == "source":
+        other["source"] = "UNTRUSTED"
+    elif tamper == "extra":
+        other["paper_approved"] = True
+    else:
+        other = "NOT_AN_NTP_SAMPLE"
+    assert c.verify_precise(other) is False
+    assert c.verify_precise(sample) is True
+
+
+def test_precise_utc_fails_closed_on_peer_refresh_and_rollback():
+    p, c = fixture()
+    p.advance(46)
+    p.fail = True
+    with pytest.raises(ValueError, match="REFRESH_FAILED_CAPABILITY_REVOKED"):
+        c.sample_precise()
+    assert c.verify_precise({
+        "schema": "ATLAS_INDEPENDENT_PRECISE_UTC_V1",
+        "utc_ns": BASE_UTC * 10**9,
+        "monotonic_ns": BASE_MONO,
+        "uncertainty_ms": 150,
+        "source": SOURCE,
+    }) is False
+    p2, c2 = fixture()
+    p2.mono_time -= 1
+    with pytest.raises(ValueError, match="MONOTONIC_ROLLBACK"):
+        c2.sample_precise()

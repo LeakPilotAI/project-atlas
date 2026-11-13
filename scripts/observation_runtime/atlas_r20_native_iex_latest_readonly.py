@@ -57,10 +57,15 @@ def _price(value):
     return result
 
 
-def inspect_quote(payload, *, symbol, observed_ns, uncertainty_ms):
-    """Sanitized provider quote metadata at an independently sampled UTC instant."""
+def inspect_quote(
+        payload, *, symbol, observed_ns, uncertainty_ms,
+        observed_precision_ns=1_000_000_000,
+):
+    """Only independently sampled UTC; precise evidence preserves subsecond order."""
     if (type(symbol) is not str or EXACT.fullmatch(symbol) is None
             or type(observed_ns) is not int or observed_ns <= 0
+            or type(observed_precision_ns) is not int
+            or observed_precision_ns not in (0, 1_000_000_000)
             or type(uncertainty_ms) is not int or not 0 <= uncertainty_ms <= 1000
             or type(payload) is not dict or set(payload) != {"symbol", "quote"}
             or payload["symbol"] != symbol or type(payload["quote"]) is not dict):
@@ -94,20 +99,23 @@ def inspect_quote(payload, *, symbol, observed_ns, uncertainty_ms):
     unix_ns = (int(event.timestamp()) * 1_000_000_000
                + event.microsecond * 1000)
     age_ns = observed_ns - unix_ns
-    # Even with validated transport, IEX has single-venue coverage and the
-    # weekend/out-of-session result must remain a stale research observation.
-    # clock.sample() reports an integer UTC SECOND; the actual authenticated
-    # UTC instant can be almost 1s later. Reserve the entire quantization
-    # interval rather than treating an age near 5s as current PAPER data.
-    # Add the *issued and verified* independent NTP uncertainty too, so a
-    # 4.5-second-old quote cannot pass via truncation/clock bound.
-    upper_age_ns = age_ns + 1_000_000_000 + uncertainty_ms * 1_000_000
-    fresh = 0 <= age_ns and upper_age_ns <= 5_000_000_000
+    # Legacy issued clock samples are floored to a whole UTC second, so
+    # reserve the full quantization interval. A *verified* precise original
+    # NTP/monotonic sample has no floor-loss; however a provider timestamp
+    # inside the ±NTP uncertainty interval cannot be proved to predate
+    # receipt and must REFUSE freshness even if the central age is positive.
+    # Neither path authorizes financial trading, provider rights or NBBO.
+    uncertainty_ns = uncertainty_ms * 1_000_000
+    upper_age_ns = age_ns + observed_precision_ns + uncertainty_ns
+    lower_age_ns = age_ns - uncertainty_ns if observed_precision_ns == 0 else age_ns
+    proven_past = lower_age_ns >= 0
+    fresh = proven_past and upper_age_ns <= 5_000_000_000
     return {
         "symbol": symbol,
         "provider_exchange": "IEX",
         "source_age_seconds": age_ns // 1_000_000_000,
-        "utc_clock_sample_quantization_seconds": 1,
+        "utc_clock_sample_quantization_seconds": observed_precision_ns // 1_000_000_000,
+        "provider_event_proven_before_sample": proven_past,
         "verified_ntp_uncertainty_ms": uncertainty_ms,
         "conservative_quote_age_upper_bound_ms": (
             (upper_age_ns + 999_999) // 1_000_000
@@ -220,14 +228,27 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
             raise ValueError("IEX_NATIVE_HTTP_AUTH_OR_ENTITLEMENT_REFUSED") from None
         except urllib.error.URLError:
             raise ValueError("IEX_NATIVE_NETWORK_OR_TLS_UNAVAILABLE") from None
-        s = clock.sample()
-        if (not clock.verify(s)
+        # A high-resolution UTC stamp must be issued by the same native
+        # selected owner and verified before assessing provider event order.
+        # No Windows system clock, client-supplied timestamps, or an
+        # unverified future-looking provider quote may grant freshness.
+        s = clock.sample_precise()
+        if (type(s) is not dict
+                or set(s) != {
+                    "schema", "utc_ns", "monotonic_ns", "uncertainty_ms", "source"
+                }
+                or s.get("schema") != "ATLAS_INDEPENDENT_PRECISE_UTC_V1"
+                or type(s.get("utc_ns")) is not int
+                or type(s.get("uncertainty_ms")) is not int
+                or not 0 <= s["uncertainty_ms"] <= 1000
+                or not clock.verify_precise(s)
                 or owner.verify_still_running() is not True):
-            raise ValueError("IEX_NATIVE_POST_GET_UTC_JOB_REVOKED")
+            raise ValueError("IEX_NATIVE_PRECISE_UTC_JOB_VERIFICATION_REFUSED")
         rows.append(inspect_quote(
             packet, symbol=symbol,
-            observed_ns=s["utc"] * 1_000_000_000,
+            observed_ns=s["utc_ns"],
             uncertainty_ms=s["uncertainty_ms"],
+            observed_precision_ns=0,
         ))
     if owner.verify_still_running() is not True:
         raise ValueError("IEX_NATIVE_ORIGINAL_JOB_CHANGED_AT_END")

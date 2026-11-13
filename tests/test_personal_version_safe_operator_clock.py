@@ -1,5 +1,6 @@
 """Version-safe independent UTC source-only; no operational network or orders."""
 import pytest
+
 from scripts.observation_runtime import personal_version_safe_release_clock as v
 
 
@@ -21,6 +22,19 @@ class FakeNtp:
 
     def verify(self, sample):
         return not self.closed and type(sample) is dict and sample.get("source") == v.SOURCE
+
+    def sample_precise(self):
+        self.require_operational(self.runtime_id)
+        return {
+            "schema": "ATLAS_INDEPENDENT_PRECISE_UTC_V1",
+            "utc_ns": 1800000000500000000,
+            "monotonic_ns": 444,
+            "uncertainty_ms": 139,
+            "source": v.SOURCE,
+        }
+
+    def verify_precise(self, sample):
+        return not self.closed and sample == type(self).sample_precise(self)
 
     def runtime_sample(self):
         return {"utc": 1800000000, "source_id": v.SOURCE}
@@ -121,3 +135,30 @@ def test_selector_refusal_never_initializes_ntp(monkeypatch):
                         lambda **kw: pytest.fail("NTP should never be initialized"))
     with pytest.raises(ValueError, match="NATIVE_UNSELECTED"):
         v.NativeVersionSafePaperOperatorClock(runtime_id="SOURCE_ONLY_TEST")
+
+
+
+def test_selected_native_clock_exposes_only_issued_precise_utc(monkeypatch):
+    c, _ = make_clock(monkeypatch)
+    s = c.sample_precise()
+    assert s["schema"] == "ATLAS_INDEPENDENT_PRECISE_UTC_V1"
+    assert s["utc_ns"] % 1_000_000_000 == 500_000_000
+    assert c.verify_precise(s) is True
+    assert c.verify_precise({**s, "utc_ns": s["utc_ns"] + 1}) is False
+    assert c.verify_precise({**s, "financial_approval": True}) is False
+    assert c._clock.evidence["financial_authority"] is False
+    c.revoke()
+    assert c.verify_precise(s) is False
+
+
+def test_selected_native_precise_sample_refuses_revoked_release(monkeypatch):
+    c, _ = make_clock(monkeypatch)
+    bound = c._bound_clock
+    monkeypatch.setattr(
+        v, "require_native_version_safe_clock_source",
+        lambda *, deep: "wrong-native-selected-head",
+    )
+    with pytest.raises(ValueError, match="VERSION_SAFE_CLOCK_NATIVE_OR_NTP_REVOKED"):
+        c.sample_precise()
+    assert c._revoked is True
+    assert bound.closed is True

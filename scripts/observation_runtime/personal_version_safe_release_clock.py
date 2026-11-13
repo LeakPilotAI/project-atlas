@@ -10,7 +10,10 @@ import os
 import re
 from pathlib import Path
 
-from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock, SOURCE
+from scripts.observation_runtime.atlas_independent_ntp_clock import (
+    SOURCE,
+    IndependentNtpClock,
+)
 
 V7_R11_HEAD = "933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997"
 V7_RELEASE = "af96bec0484a8e43f9965610e071a907a0d316bf"
@@ -189,6 +192,19 @@ class NativeVersionSafePaperOperatorClock:
 
     def __call__(self):
         return self.sample()["utc"]
+
+    def sample_precise(self):
+        """Issue genuine same-process, selected-native subsecond UTC."""
+        self.require_operational(self._runtime_id)
+        return self._clock.sample_precise()
+
+    def verify_precise(self, sample):
+        """Only the original selected owner/clock may verify its issuance."""
+        try:
+            self.require_operational(self._runtime_id)
+            return self._clock.verify_precise(sample)
+        except ValueError:
+            return False
 
     def verify(self, sample):
         try:

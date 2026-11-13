@@ -14,7 +14,6 @@ import secrets
 import socket
 import struct
 import time
-from pathlib import Path
 
 PEERS = ("time.cloudflare.com", "time.google.com")
 SOURCE = "ATLAS_NTP_V1:time.cloudflare.com+time.google.com"
@@ -146,7 +145,7 @@ class _NetworkNtpProbe:
                     response = conn.recv(512)
                     end = self.mono()
                 rows.append(parse_ntp_response(response, nonce, start, end, peer=peer))
-            except (socket.timeout, OSError) as exc:
+            except (TimeoutError, OSError) as exc:
                 raise ValueError("NTP_PINNED_PEER_UNREACHABLE") from exc
         return combine_two_peers(rows)
 
@@ -172,6 +171,7 @@ class IndependentNtpClock:
         self._scope = self._identity + ":" + runtime_id + ":" + secrets.token_hex(16)
         self._revoked = False
         self._issued = {}
+        self._precise_issued = {}
         initial = probe.read()
         if (type(initial) is not dict or set(initial) != {
             "mono_ns", "utc_ns", "uncertainty_ns", "peer_difference_ns", "peer_count"}
@@ -248,6 +248,55 @@ class IndependentNtpClock:
         self._issued = {k: v for k, v in self._issued.items() if now - k <= 1_000_000_000}
         self._issued[now] = result.copy()
         return result
+
+    def sample_precise(self):
+        """Same-process NTP/monotonic-anchored subsecond UTC, no OS wall time.
+
+        A caller must immediately verify this exact issued object. This
+        does not issue source, financial, trading or provider authority.
+        """
+        now = self._check()
+        if now < self._anchor["mono_ns"]:
+            now = self._probe.mono()
+        if now < self._anchor["mono_ns"] or now > self._expires:
+            self.revoke()
+            raise ValueError("NTP_PRECISE_MONOTONIC_REFRESH_DISCONTINUITY")
+        utc_ns = self._anchor["utc_ns"] + now - self._anchor["mono_ns"]
+        result = {
+            "schema": "ATLAS_INDEPENDENT_PRECISE_UTC_V1",
+            "utc_ns": utc_ns,
+            "monotonic_ns": now,
+            "uncertainty_ms": self.evidence["bound_ms"],
+            "source": SOURCE,
+        }
+        self._precise_issued = {
+            k: v for k, v in self._precise_issued.items()
+            if now - k <= 1_000_000_000
+        }
+        self._precise_issued[now] = result.copy()
+        return result
+
+    def verify_precise(self, value):
+        """Reject altered, replayed or unissued subsecond UTC evidence."""
+        if type(value) is not dict or set(value) != {
+            "schema", "utc_ns", "monotonic_ns", "uncertainty_ms", "source"
+        }:
+            return False
+        try:
+            now = self._check()
+        except ValueError:
+            return False
+        mono = value.get("monotonic_ns")
+        return (
+            type(mono) is int
+            and 0 <= now - mono <= 1_000_000_000
+            and self._precise_issued.get(mono) == value
+            and value["schema"] == "ATLAS_INDEPENDENT_PRECISE_UTC_V1"
+            and type(value["utc_ns"]) is int
+            and type(value["uncertainty_ms"]) is int
+            and 0 <= value["uncertainty_ms"] <= 1000
+            and value["source"] == SOURCE
+        )
 
     def __call__(self):
         return self.sample()["utc"]

@@ -182,6 +182,18 @@ class FakeClock:
     def verify(self, sample):
         return sample == {"utc": NOW, "uncertainty_ms": 139}
 
+    def sample_precise(self):
+        return {
+            "schema": "ATLAS_INDEPENDENT_PRECISE_UTC_V1",
+            "utc_ns": NOW * 10**9 + 500_000_000,
+            "monotonic_ns": 777,
+            "uncertainty_ms": 139,
+            "source": "TEST_ONLY",
+        }
+
+    def verify_precise(self, sample):
+        return sample == type(self).sample_precise(self)
+
 
 class Opener:
     def __init__(self, ages):
@@ -476,3 +488,86 @@ def test_intermediate_or_invented_original_owner_phase_refuses_before_credential
             credential_reader=lambda _: pytest.fail("credentials may not be read"),
             opener=Opener({}),
         )
+
+
+
+@pytest.mark.parametrize("event_ms,expected", (
+    (0, True),     # original sample is 600ms later, fully > 139ms uncertainty
+    (300, True),   # provider event is proven 300ms before central sample
+    (470, False),  # 130ms < NTP uncertainty; event order is ambiguous
+    (700, False),  # provider event is in the future relative to sample
+    (-4_000, True),  # 4.6 seconds +139ms < 5s, no 1s floor tax
+    (-4_500, False), # 5.1 seconds +139ms > 5s
+))
+def test_precise_original_ntp_conservatively_checks_event_arrival_order(
+    event_ms, expected,
+):
+    data = quote(age=0)
+    data["quote"]["t"] = (
+        UTCSTAMP + timedelta(milliseconds=event_ms)
+    ).isoformat().replace("+00:00", "Z")
+    r = iex.inspect_quote(
+        data, symbol="MSFT",
+        observed_ns=NOW * 10**9 + 600_000_000,
+        uncertainty_ms=139, observed_precision_ns=0,
+    )
+    assert r["provider_quote_fresh_at_sample"] is expected
+    assert r["provider_event_proven_before_sample"] is (
+        (600 - event_ms) >= 139
+    )
+    assert r["utc_clock_sample_quantization_seconds"] == 0
+    assert r["verified_ntp_uncertainty_ms"] == 139
+    assert r["executable_paper_quote_authorized"] is False
+    assert "100." not in str(r)
+
+
+@pytest.mark.parametrize("precision", (-1, 1, 300, 1_000_000_001, True, "0"))
+def test_unverified_clock_precision_never_qualifies_a_quote(precision):
+    with pytest.raises(ValueError, match="EXACT_QUOTE_ENVELOPE"):
+        iex.inspect_quote(
+            quote(age=0), symbol="MSFT",
+            observed_ns=NOW*10**9 + 600_000_000,
+            uncertainty_ms=139, observed_precision_ns=precision,
+        )
+
+
+def test_data_only_owned_rest_uses_verified_precise_clock_per_symbol(test_ports):
+    r, _ = _run(test_ports, {"MSFT": 0, "AVGO": 2})
+    assert r["http_get_count"] == 2
+    assert r["fresh_quote_count"] == 2
+    assert all(q["utc_clock_sample_quantization_seconds"] == 0
+               for q in r["quotes"])
+    assert all(q["provider_event_proven_before_sample"] is True
+               for q in r["quotes"])
+    assert r["provider_data_rights_independently_accepted"] is False
+    assert r["financial_quote_admission_accepted"] is False
+    assert r["paper_startup_authorized"] is False
+
+
+@pytest.mark.parametrize("damage", ("forged", "missing", "future"))
+def test_data_only_owned_rest_refuses_unissued_precise_clock_proof(
+    monkeypatch, test_ports, damage,
+):
+    original, clock = test_ports
+    if damage == "forged":
+        monkeypatch.setattr(clock, "verify_precise", lambda sample: False)
+    elif damage == "missing":
+        monkeypatch.setattr(clock, "sample_precise",
+                            lambda: {"utc": NOW, "uncertainty_ms": 139})
+    else:
+        def forged_future():
+            data = clock.__class__.sample_precise(clock)
+            data["utc_ns"] += 10_000_000_000
+            return data
+        monkeypatch.setattr(clock, "sample_precise", forged_future)
+    opener = Opener({"MSFT": 2})
+    with pytest.raises(ValueError, match="PRECISE_UTC_JOB_VERIFICATION_REFUSED"):
+        iex.audit_owned_iex(
+            owner=original, clock=clock, runtime_id="test-owned",
+            release_digest="a"*64, symbols=("MSFT",),
+            opener=opener,
+            credential_reader=lambda _: Credentials(
+                "DATA_ONLY_DUMMY", "DATA_ONLY_DUMMY"
+            ),
+        )
+    assert len(opener.requests) == 1
