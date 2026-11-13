@@ -74,6 +74,15 @@ def validate_public_book(packet, *, observed_ms):
     }
 
 
+def require_fast_five_level_book(receipt):
+    if (type(receipt) is not dict or type(receipt.get("bid_levels")) is not int
+            or type(receipt.get("ask_levels")) is not int
+            or not 1 <= receipt["bid_levels"] <= 5
+            or not 1 <= receipt["ask_levels"] <= 5):
+        raise ValueError("HL_FAST_BOOK_MAX_FIVE_LEVELS_REQUIRED")
+    return receipt
+
+
 def qualify_continuity(*, subscribed, counts, max_gap, last_message_gap,
                        invalid, total):
     return (subscribed == set(SYMBOLS)
@@ -85,8 +94,9 @@ def qualify_continuity(*, subscribed, counts, max_gap, last_message_gap,
             and invalid == 0 and total < 1500)
 
 
-async def observe(*, seconds=20, connect=None, wall_ms=None, monotonic=None):
-    if type(seconds) is not int or not 10 <= seconds <= MAX_DURATION_SECONDS:
+async def observe(*, seconds=20, fast_books=False, connect=None, wall_ms=None, monotonic=None):
+    if (type(seconds) is not int or not 10 <= seconds <= MAX_DURATION_SECONDS
+            or type(fast_books) is not bool):
         raise ValueError("HL_WS_BOUNDED_WINDOW_REQUIRED")
     clock = wall_ms or (lambda: time.time_ns() // 1_000_000)
     steady = monotonic or time.monotonic
@@ -97,6 +107,7 @@ async def observe(*, seconds=20, connect=None, wall_ms=None, monotonic=None):
     last_recv = {symbol: None for symbol in SYMBOLS}
     max_gap = {symbol: 0.0 for symbol in SYMBOLS}
     max_age = {symbol: 0 for symbol in SYMBOLS}
+    max_depth = {symbol: 0 for symbol in SYMBOLS}
     invalid = 0
     total = 0
     began = steady()
@@ -106,9 +117,11 @@ async def observe(*, seconds=20, connect=None, wall_ms=None, monotonic=None):
         max_size=MAX_MESSAGE_BYTES,
     ) as socket:
         for symbol in SYMBOLS:
+            subscription = {"type": "l2Book", "coin": symbol}
+            if fast_books:
+                subscription["fast"] = True
             await socket.send(json.dumps({
-                "method": "subscribe",
-                "subscription": {"type": "l2Book", "coin": symbol},
+                "method": "subscribe", "subscription": subscription,
             }))
         until = began + seconds
         while steady() < until and total < 1500:
@@ -133,12 +146,15 @@ async def observe(*, seconds=20, connect=None, wall_ms=None, monotonic=None):
                     subscription = data.get("subscription") if type(data) is dict else None
                     if (type(subscription) is dict and data.get("method") == "subscribe"
                             and subscription.get("type") == "l2Book"
-                            and subscription.get("coin") in SYMBOLS):
+                            and subscription.get("coin") in SYMBOLS
+                            and (not fast_books or subscription.get("fast") is True)):
                         subscribed.add(subscription["coin"])
                     continue
                 if item.get("channel") != "l2Book":
                     continue
                 receipt = validate_public_book(item, observed_ms=clock())
+                if fast_books:
+                    require_fast_five_level_book(receipt)
                 symbol = receipt["symbol"]
                 if symbol not in subscribed:
                     invalid += 1
@@ -159,6 +175,9 @@ async def observe(*, seconds=20, connect=None, wall_ms=None, monotonic=None):
                 last_recv[symbol] = moment
                 count[symbol] += 1
                 max_age[symbol] = max(max_age[symbol], receipt["source_age_ms"])
+                max_depth[symbol] = max(
+                    max_depth[symbol], receipt["bid_levels"], receipt["ask_levels"]
+                )
             except (ValueError, KeyError, TypeError, json.JSONDecodeError):
                 invalid += 1
 
@@ -178,9 +197,12 @@ async def observe(*, seconds=20, connect=None, wall_ms=None, monotonic=None):
                    if complete else "PUBLIC_BOOK_CONTINUITY_INCOMPLETE_DATA_ONLY"),
         "window_seconds": seconds,
         "endpoint": URL,
+        "fast_five_level_mode_requested": fast_books,
+        "full_depth_maker_queue_verified": False,
         "subscription_acknowledged": sorted(subscribed),
         "valid_book_messages": count,
         "maximum_observed_source_age_ms": max_age,
+        "maximum_observed_depth_per_side": max_depth,
         "maximum_interarrival_gap_seconds": {
             symbol: round(max_gap[symbol], 3) for symbol in SYMBOLS
         },
@@ -204,11 +226,12 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--observe-public", action="store_true")
     parser.add_argument("--seconds", type=int, default=20)
+    parser.add_argument("--fast-books", action="store_true")
     args = parser.parse_args(argv)
     if not args.observe_public:
         parser.error("Explicit read-only public WebSocket observation required")
     try:
-        report = asyncio.run(observe(seconds=args.seconds))
+        report = asyncio.run(observe(seconds=args.seconds, fast_books=args.fast_books))
         print(json.dumps(report, sort_keys=True))
         return 0 if report["data_only_probe_passed"] else 2
     except (OSError, ValueError, TypeError, websockets.WebSocketException, TimeoutError):

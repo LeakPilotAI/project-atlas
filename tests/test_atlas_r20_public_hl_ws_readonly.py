@@ -11,6 +11,7 @@ from scripts.observation_runtime.atlas_r20_public_hl_ws_readonly import (
     URL,
     observe,
     qualify_continuity,
+    require_fast_five_level_book,
     validate_public_book,
 )
 
@@ -86,14 +87,18 @@ def test_refuse_unbounded_websocket_observation(seconds):
         asyncio.run(observe(seconds=seconds, connect=None))
 
 
-def test_fake_websocket_round_trip_never_grants_paper():
+@pytest.mark.parametrize("fast_books,ack_fast,passed", [
+    (False, False, True), (True, True, True), (True, False, False),
+])
+def test_fake_websocket_round_trip_never_grants_paper(fast_books, ack_fast, passed):
     class Socket:
         def __init__(self):
             self.sent = []
             self.messages = [
                 {"channel": "subscriptionResponse", "data": {
                     "method": "subscribe", "subscription": {
-                        "type": "l2Book", "coin": coin}}}
+                        "type": "l2Book", "coin": coin,
+                        **({"fast": True} if ack_fast else {})}}}
                 for coin in SYMBOLS
             ]
             for index in range(40):
@@ -121,15 +126,21 @@ def test_fake_websocket_round_trip_never_grants_paper():
 
     sock = Socket()
     report = asyncio.run(observe(
-        seconds=10, connect=lambda url, **kwargs: sock,
+        seconds=10, fast_books=fast_books,
+        connect=lambda url, **kwargs: sock,
         wall_ms=lambda: NOW_MS, monotonic=Clock()))
     assert len(sock.sent) == 3
     assert all(x["method"] == "subscribe" for x in sock.sent)
-    assert report["data_only_probe_passed"] is True
+    assert all(x["subscription"].get("fast") is True for x in sock.sent) == fast_books
+    assert report["fast_five_level_mode_requested"] is fast_books
+    assert report["data_only_probe_passed"] is passed
     assert report["schema"] == SCHEMA
     assert report["endpoint"] == URL
-    assert set(report["subscription_acknowledged"]) == set(SYMBOLS)
-    assert all(report["valid_book_messages"][coin] >= 2 for coin in SYMBOLS)
+    assert set(report["subscription_acknowledged"]) == (
+        set(SYMBOLS) if passed else set()
+    )
+    if passed:
+        assert all(report["valid_book_messages"][coin] >= 2 for coin in SYMBOLS)
     assert report["paper_startup_authorized"] is False
     assert report["live_trading_authorized"] is False
     assert report["provider_rights_verified"] is False
@@ -154,3 +165,14 @@ def test_sparse_or_incomplete_public_websocket_never_qualifies(change):
         subscribed=set(SYMBOLS), counts=counts, max_gap=gaps,
         last_message_gap=end, invalid=invalid, total=12,
     ) is False
+
+
+@pytest.mark.parametrize("depth", [0, 6, 20, True, "5"])
+def test_fast_depth_cannot_silently_accept_standard_or_malformed_book(depth):
+    with pytest.raises(ValueError):
+        require_fast_five_level_book({"bid_levels": depth, "ask_levels": 5})
+
+
+def test_fast_depth_requires_maximum_five_levels_each_side():
+    value = {"bid_levels": 5, "ask_levels": 3, "symbol": "BTC"}
+    assert require_fast_five_level_book(value) is value
