@@ -109,3 +109,45 @@ def test_unselected_workspace_source_refuses_before_self_job_assignment():
     assert current != expected, "TEST MUST IMPORT UNSELECTED SOURCE AND REFUSE"
     with pytest.raises(ValueError, match="ISOLATED_SELECTED_NATIVE"):
         observer.run_isolated_readonly()
+
+
+@pytest.mark.parametrize("bad", [0, 1, None, "yes", [], {}])
+def test_live_peer_check_never_coerces_untrusted_flag_to_enabled(bad):
+    with pytest.raises(ValueError, match="EXPLICIT_NTP_CHECK_BOOLEAN"):
+        observer.run_isolated_readonly(check_independent_ntp=bad)
+
+
+def test_in_process_ntp_cannot_borrow_source_from_workspace():
+    class Owner:
+        def verify_still_running(self):
+            raise AssertionError("Unselected path must refuse before Job access")
+
+    # The imported real class comes from workspace, never the selected root.
+    with pytest.raises(ValueError, match="SELECTED_NATIVE_CLOCK_AND_JOB"):
+        observer._selected_original_job_clock(
+            owner=Owner(),
+            release=Path("D:/AtlasRuntime/releases/" + "a" * 40),
+            release_digest="f" * 64,
+        )
+
+
+def test_ntp_without_explicit_isolated_job_execution_is_refused():
+    with pytest.raises(SystemExit) as result:
+        observer.main(["--check-independent-ntp"])
+    assert result.value.code == 2
+
+
+@pytest.mark.parametrize("flags", [
+    {"verify_ntp_refresh": True},
+    {"verify_ntp_refresh": 1, "check_independent_ntp": True},
+    {"verify_ntp_refresh": "true", "check_independent_ntp": True},
+])
+def test_refresh_never_runs_without_explicit_original_two_peer_clock(flags):
+    with pytest.raises(ValueError, match="NTP_REFRESH_REQUIRES_NTP_CHECK"):
+        observer.run_isolated_readonly(**flags)
+
+
+def test_cli_refresh_flag_cannot_escape_original_job_preflight():
+    with pytest.raises(SystemExit) as result:
+        observer.main(["--verify-ntp-refresh", "--check-independent-ntp"])
+    assert result.value.code == 2
