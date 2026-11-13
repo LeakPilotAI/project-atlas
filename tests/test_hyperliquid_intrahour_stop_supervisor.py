@@ -175,6 +175,10 @@ def test_revoked_clock_or_owner_cannot_requalify(original):
     with pytest.raises(ValueError, match="UTC_ROLLBACK"):
         guard.tick()
     assert original.callbacks == []
+    assert guard.terminal is True
+    assert original._runtime.entry_closed.is_set()
+    assert original._runtime.uncertain is True
+    assert original._runtime.state == "STOP_INCOMPLETE"
 
 
 def test_source_class_does_not_change_original_financial_oracle_or_startup():
@@ -191,3 +195,26 @@ def test_source_class_does_not_change_original_financial_oracle_or_startup():
     with pytest.raises(ValueError):
         require_consensus_settlement_oracle(None, symbol="BTC", at=HOUR_START + HOUR,
                                             funding_record={"hourly_rate": "0"})
+
+
+
+def test_an_unverifiable_initial_clock_latches_already_running_paper(original):
+    original._runtime.value = 0
+    with pytest.raises(ValueError, match="GENUINE_INTEGER_UTC_REQUIRED"):
+        stop.NativeIntrahourPaperStopSupervisor(owner=original)
+    assert original._runtime.entry_closed.is_set()
+    assert original._runtime.uncertain is True
+    assert original._runtime.state == "STOP_INCOMPLETE"
+    assert original.callbacks == []
+
+
+def test_a_revoked_selected_stop_owner_latches_new_entries_before_next_tick(original):
+    guard = stop.NativeIntrahourPaperStopSupervisor(owner=original)
+    original.session_id = "different-session"
+    with pytest.raises(ValueError, match="STOP_OWNER_CHANGED_OR_REVOKED"):
+        guard.entry_window()
+    assert guard.terminal is True
+    assert original._runtime.entry_closed.is_set()
+    assert original._runtime.uncertain is True
+    assert original._runtime.state == "STOP_INCOMPLETE"
+    assert original.callbacks == []

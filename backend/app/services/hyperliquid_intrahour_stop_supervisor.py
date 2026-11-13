@@ -49,15 +49,30 @@ class NativeIntrahourPaperStopSupervisor:
         self.runtime = runtime
         self.clock = runtime.clock
         self.session_id = owner.session_id
-        self.initial_hour = _int_time(self.clock()) // HOUR
         self.terminal = False
         self._last_time = None
+        try:
+            self.initial_hour = _int_time(self.clock()) // HOUR
+        except BaseException:
+            self._refuse_unverifiable()
+            raise
+
+    def _refuse_unverifiable(self):
+        # A proof failure is not an ordinary no-signal event. In particular,
+        # an invalid UTC after Start must not leave the PAPER run continuing
+        # without the mandatory time-based Stop.
+        self.terminal = True
+        self.runtime.entry_closed.set()
+        self.runtime.uncertain = True
+        if self.runtime.state in ("RUNNING", "PAUSED"):
+            self.runtime.state = "STOP_INCOMPLETE"
 
     def _require_same_owner(self):
         r, owner = self.runtime, self.owner
+        if self.terminal:
+            raise ValueError("HL_PRE_FUNDING_STOP_OWNER_CHANGED_OR_REVOKED")
         if (
-            self.terminal
-            or owner._runtime is not r
+            owner._runtime is not r
             or owner.session_id != self.session_id
             or r.clock is not self.clock
             or r._stop_first_state != "RELEASED"
@@ -66,12 +81,17 @@ class NativeIntrahourPaperStopSupervisor:
             or r.uncertain or r.entry_closed.is_set() or owner._used
             or owner.verify_session() is not True
         ):
+            self._refuse_unverifiable()
             raise ValueError("HL_PRE_FUNDING_STOP_OWNER_CHANGED_OR_REVOKED")
 
     def _time(self):
-        value = _int_time(self.clock())
-        if self._last_time is not None and value < self._last_time:
-            raise ValueError("HL_PRE_FUNDING_UTC_ROLLBACK")
+        try:
+            value = _int_time(self.clock())
+            if self._last_time is not None and value < self._last_time:
+                raise ValueError("HL_PRE_FUNDING_UTC_ROLLBACK")
+        except BaseException:
+            self._refuse_unverifiable()
+            raise
         self._last_time = value
         return value
 
