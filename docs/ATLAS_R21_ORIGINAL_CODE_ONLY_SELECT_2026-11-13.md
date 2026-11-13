@@ -1,0 +1,9 @@
+# Atlas R21 code-only native selection — 2026-11-13
+
+This independent `scripts/atlas_r21_code_only_select.py` is a strict create-only native selector for a completed, separately verified R21 code-only installation (source `119dd8626da32e74bd7f86db9de1c1a8fd2c20ac`). It is not authority to start financial PAPER or live trading.
+
+Preconditions: R21 native original installation receipt must include the exact 10,731 installed file identities, 915 directories, release source/archive/inventory checksum, exact installed Python 3.12 layout and full source/file-handle readback; the two-line original native intent plus successful receipt must agree byte for byte. It requires the genuine 19-record immutable R20 selected predecessor, all twelve native financial root identities empty, no preexisting selector `r0020.json` or `r0020.pending`, a separate original Windows SID-bound, selector-source-hash/installed-receipt/before-head/proposed-record-hash one-time decision and independent 180-second NTP qualification.
+
+Only under these conditions may an existing `NativeSelectionStore` append the exact immutable `SELECT` revision **20** and verify its readback. It never creates accounts, accesses providers, starts PAPER, changes live-money limits, adds desktop shortcuts, or modifies original predecessor files. A missing/ambiguous R21 install or selection record is a refusal, never a blind replacement.
+
+This selector is source-only and not part of the frozen R21 code package. Separate original postinception technical acceptance, current QD issuer rights and valuations, HL original settlement+fee evidence and financial Stop-first session are STILL required. This code and its tests reside under the single main project D: directory; legacy D: native release/selection are identity-bound and are not to be relocated.
