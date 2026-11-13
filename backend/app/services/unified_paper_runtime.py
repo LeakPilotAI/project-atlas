@@ -300,6 +300,9 @@ class UnifiedPaperRuntime:
         self._stop_first_issuer = None
         self._stop_first_instrument = None
         self._stop_first_initial_source_lane = None
+        # An opt-in hourly PAPER Stop guards live run-loop ENTRY and new
+        # resting orders without changing any legacy source/Stop contract.
+        self._intrahour_supervisor = None
 
     def _lease(self):
         # Reuse installed component-lease semantics, not a caller approval file.
@@ -464,7 +467,8 @@ class UnifiedPaperRuntime:
             self.observations = dict(zip(LANES, results, strict=True))
             return self.snapshot()
 
-    async def run(self, *, seconds, interval=1, stop=None, stop_signal=None):
+    async def run(self, *, seconds, interval=1, stop=None, stop_signal=None,
+                  intrahour_supervisor=None):
         """Bounded supervision; explicitly injected owner-only desktop Stop.
 
         The optional Windows event does not create a financial owner or grant.
@@ -497,6 +501,47 @@ class UnifiedPaperRuntime:
                     or self.state not in ('RUNNING', 'PAUSED')
                     or owner.verify_session() is not True):
                 raise ValueError('UNIFIED_ACCEPTED_OWNER_STOP_SIGNAL_REQUIRED')
+        if intrahour_supervisor is not None:
+            from app.services.hyperliquid_intrahour_stop_supervisor import (
+                NativeIntrahourPaperStopSupervisor,
+            )
+
+            # The additional time-based STOP is only a risk reducer attached
+            # to an already accepted real Stop-first HYPERLIQUID-only owner.
+            # Never let a planning flag construct an owner or start a session.
+            if (type(intrahour_supervisor) is not NativeIntrahourPaperStopSupervisor
+                    or stop_signal is None
+                    or intrahour_supervisor.owner is not stop_signal._owner
+                    or intrahour_supervisor.runtime is not self
+                    or intrahour_supervisor.session_id != self.grant['session_id']
+                    or self._stop_first_initial_source_lane != 'HYPERLIQUID'
+                    or self._stop_first_state != 'RELEASED'):
+                raise ValueError('UNIFIED_PRE_FUNDING_EXACT_ACCEPTED_STOP_OWNER_REQUIRED')
+            if self._intrahour_supervisor is not None:
+                raise ValueError('UNIFIED_PRE_FUNDING_ONE_ACTIVE_SESSION_ONLY')
+            self._intrahour_supervisor = intrahour_supervisor
+
+        def funding_stop_request():
+            if intrahour_supervisor is None:
+                return None
+            try:
+                proof = intrahour_supervisor.tick()
+                if (type(proof) is dict
+                        and proof.get('status') ==
+                        'ORIGINAL_NATIVE_DURABLE_STOP_FLAT_BEFORE_FUNDING'):
+                    return proof['original_native_stop_receipt']
+                if (type(proof) is dict
+                        and proof.get('status') ==
+                        'STILL_SUPERVISING_NO_FINANCIAL_PERMISSION'):
+                    return None
+                raise ValueError('UNIFIED_PRE_FUNDING_GUARD_PROOF_REFUSED')
+            except BaseException:
+                self.entry_closed.set()
+                self.uncertain = True
+                if self.state in ('RUNNING', 'PAUSED'):
+                    self.state = 'STOP_INCOMPLETE'
+                raise
+
         def stop_request():
             if stop_signal is None:
                 return None
@@ -508,7 +553,7 @@ class UnifiedPaperRuntime:
                 if type(result) is not dict:
                     raise ValueError('UNIFIED_OWNER_STOP_RECEIPT_UNVERIFIED')
                 if result.get('status') == 'NO_STOP_SIGNAL':
-                    return None
+                    return funding_stop_request()
                 if (result.get('schema') != 'QD_CONTROL_STOP_V1'
                         or result.get('phase') != 'FINISHED'):
                     raise ValueError('UNIFIED_OWNER_STOP_RECEIPT_UNVERIFIED')
@@ -582,6 +627,9 @@ class UnifiedPaperRuntime:
                                             max(0, deadline - asyncio.get_running_loop().time())))
             finally:
                 self.pause()  # Never resume automatically after a bounded run.
+                # A completed bounded run is paused/stopped. Unknown Stop
+                # state stays latched by self.uncertain and entry_closed.
+                self._intrahour_supervisor = None
         return self.read_snapshot()
 
     def dispatch(self, lane, proposal):
@@ -603,6 +651,10 @@ class UnifiedPaperRuntime:
                 or (self._stop_first_state == 'RELEASED'
                     and not cancel and lane != 'HYPERLIQUID')):
             raise ValueError('UNIFIED_RESTING_EXPLICIT_PERP_LANE_REQUIRED')
+        if not cancel and self._intrahour_supervisor is not None:
+            guard = self._intrahour_supervisor
+            if (guard.runtime is not self or guard.entry_window() is not True):
+                raise ValueError('UNIFIED_HL_INTRAHOUR_RESTING_ENTRY_CLOSED')
         """Reserve pending exposure before control publication; never a fill."""
         if self._stop_first_state == 'RELEASED' and not cancel:
             from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
@@ -719,6 +771,12 @@ class UnifiedPaperRuntime:
         return self._dispatch(lane, proposal, shutdown=True)
 
     def _dispatch(self, lane, proposal, *, shutdown):
+        if (not shutdown and self._intrahour_supervisor is not None
+                and lane == 'HYPERLIQUID'
+                and type(proposal) is dict and proposal.get('kind') == 'ENTRY'):
+            guard = self._intrahour_supervisor
+            if guard.runtime is not self or guard.entry_window() is not True:
+                raise ValueError('UNIFIED_HL_INTRAHOUR_FINANCIAL_ENTRY_CLOSED')
         if self._stop_first_state == 'RELEASED' and not shutdown:
             from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
                 NativeSelectedPaperOperationIssuer,

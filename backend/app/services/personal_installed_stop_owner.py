@@ -151,7 +151,8 @@ def open_personal_installed_python_stop_signal(*, owner, offline_test_id=""):
 
 
 async def run_personal_installed_owner_session(*, owner, seconds, interval=1,
-                                               stop=None, offline_test_id=""):
+                                               stop=None, offline_test_id="",
+                                               intrahour_flat_before_funding=False):
     """Supervise an accepted PAPER session with a temporary desktop Stop event.
 
     This does not construct or start a session. Only an approved existing owner
@@ -164,6 +165,14 @@ async def run_personal_installed_owner_session(*, owner, seconds, interval=1,
             or type(interval) not in (int, float) or not .05 <= interval <= 5):
         raise ValueError('PERSONAL_INSTALLED_OWNER_ACTIVE_SESSION_REQUIRED')
     runtime = owner._runtime
+    if type(intrahour_flat_before_funding) is not bool:
+        raise ValueError('PERSONAL_PAPER_EXPLICIT_INTRAHOUR_STOP_SCOPE_REQUIRED')
+    funding_guard = None
+    if intrahour_flat_before_funding:
+        from app.services.hyperliquid_intrahour_stop_supervisor import (
+            NativeIntrahourPaperStopSupervisor,
+        )
+        funding_guard = NativeIntrahourPaperStopSupervisor(owner=owner)
 
     def refuse_unverified():
         runtime.entry_closed.set()
@@ -174,9 +183,12 @@ async def run_personal_installed_owner_session(*, owner, seconds, interval=1,
     try:
         with open_personal_installed_python_stop_signal(
                 owner=owner, offline_test_id=offline_test_id) as signal:
-            result = await runtime.run(seconds=seconds, interval=interval,
-                                       stop=stop, stop_signal=signal)
-            if signal._used:
+            result = await runtime.run(
+                seconds=seconds, interval=interval,
+                stop=stop, stop_signal=signal, intrahour_supervisor=funding_guard,
+            )
+            if signal._used or (funding_guard is not None
+                               and funding_guard.terminal and owner._used):
                 if (type(result) is not dict or result.get('schema') != 'QD_CONTROL_STOP_V1'
                         or result.get('phase') != 'FINISHED'
                         or runtime.state != 'STOPPED'
