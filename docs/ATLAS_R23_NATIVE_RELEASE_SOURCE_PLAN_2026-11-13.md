@@ -28,3 +28,35 @@ It intentionally reports the **missing independently reviewed local operator sco
 The source-only local supervisor tests (including two newly added rollback/revocation financial-latch regressions) and R23 original release-review boundary tests passed: **32 combined**. The previous broad run across the Stop-first, native account, Quality Dips publisher, public HL, NTP and original historical funding contracts recorded **450 passed** before the two additional no-owner/rollback safety regressions. An updated broad regression should be run after the complete new source tree is committed. No original financial account file was written, and no issuer, live wallet, provider order endpoint, paid data or VPS was accessed.
 
 The user still needs a real and durable simulated-account commissioning/Start/Stop acceptance before Atlas is full PAPER-production ready. No status checker should be cosmetically promoted.
+
+## Actual R23 source bundle (verified, NO native install)
+
+The independently opened R23 reviewer passed against the genuine immutable selected R21 native rev20, selected installed artifact, 12 original empty financial native roots, pinned historical R21 source archive, bounded canonical Windows source list and original dependency inventory. It created and validated the source archive ONLY inside the one D: main project:
+
+- Source commit: `96c6b85f76368a69bfd035cbcf3eb05776c21525`
+- Source archive SHA-256: `8ffd8a429a3a2831a8058e39a234c1b7a8db2caa0e3d4f4bab41a6792021a53e`
+- Source inventory SHA-256: `0d4228333d089094248ea2d871204a630dd41411efa6627006600706d1468e5f`
+- Source review receipt SHA-256: `c97a1e8f44308e061d20c2979e6de5aed62d9ec206cbedc263749abdca2b0c41`
+- Archive path: `D:\Work\Project Atlas\logs\diagnostics\atlas-r23-source-only-20261113-r01\package\atlas-source.zip`
+- 1,197 tracked source files, 9,566 pinned Python dependencies, total **10,763 planned native files**, **915 planned directories**, **265,991,191** native bytes
+- Candidate target: `D:\AtlasRuntime\releases\96c6b85f76368a69bfd035cbcf3eb05776c21525`, MUST NOT exist before separate approval
+- Status: `AUDITED_R23_SOURCE_ONLY_NOT_INSTALLED`, with `native_code_installed=false`, `new_release_selected=false`, `paper_start_authorized=false`, `live_trading_authorized=false`
+
+## Actual original one-shot R23 code-only installer now separately prepared
+
+Added external workspace install controller `scripts/atlas_r23_code_only_install.py`, derived from the actual original R21 low-resource Windows native approved-copy contract, not from a generic copy command. It pins the exact R23 frozen review/archive/manifest, original selected immutable R21 predecessor, native file counts, D: target and receipt; retains Windows-native original writer/account-root checks; a <=2 CPU budget, a bounded low-impact 180s dual-peer NTP qualification, native create-only file materialization and full installed readback, one-way pending journal refusal/preserve-on-uncertainty, and **separate, source-hash-bound Windows operator decision**. No code selection or account inception is in this installer.
+
+Its genuine desktop native `--inspect` passed: `R23_FULL_NATIVE_CODE_ONLY_FROZEN_PLAN_NOT_INSTALLED`, `native_files=10763`, `approval_pin_present=false`, `financial_authority=false`, `paper_start_authorized=false`. The 15 combined installer/source-review tests passed including real historical pin validation and refusal to run a native install without an exact independently reviewed SID- and source-bound operator decision. A global ChatGPT user instruction, old V5 test approval, arbitrary JSON or console argument cannot replace the required one-shot operator decision. The installer intentionally has `APPROVAL_PIN=None`; it has **not been executed**. The installer controller was written after the frozen R23 archive and is not claimed to be a file inside that already-pinned archive.
+
+No original native copy, release selection, account genesis, provider session or order was attempted. To proceed to native install, the sole Windows operator must independently approve the exact **code-only / no financial / no selection** scope with current SID and reviewed source hash, then PIN that approval as required by the code. Installation remains a separate operation; any original financial startup/inception is independently approved later.
+
+## Final independent safety checks (same desktop execution)
+
+The actual source-only R23 installer controller is presently **unselected/unapproved** and is intentionally absent from the already frozen source archive (it is a separately reviewed external workspace-side installer, not a member of installed R23). Its current unpinned canonical source hash (before any future independent approval PIN change) is:
+`c227afa1fd71980e3d294c03a0f50f0a3bc8bd31f99cd4f96988ad054684742a`
+
+The genuine ORIGINAL Windows source package/installer `--inspect` checked all 10,763 planned native files, 915 planned native directories, 265,991,191 planned bytes and a still-empty financial native account state, then exited successfully **without starting the 180s clock/install**. Its returned `approval_pin_present=false` is a real blocker, not an inconvenience to be bypassed.
+
+The updated broad selected R21 original-Python regression passed **467 tests** (zero failures), covering current R23 source review, new guarded install controller, upgraded fail-closed clock and Stop supervisor, previous HL intrahour policy, original two-account journal and simulated inception validators, original operation/Stop-first, Quality Dips source discipline and unchanged original signed-consensus settlement requirements. No original financial files were written.
+
+**Next user-local decision required, not auto-inferred:** the separate R23 code-only scope `APPROVE_ONE_R23_CODE_ONLY_NATIVE_INSTALL_NO_FINANCIAL_START`, tied to the exact above source, archive, review digest, Windows SID and source-hashed unmodified installer. Even after a later approved code-only install/selection, the genuine independently authorized account-opening operator scope and accepted market-data rights remain separate financial prerequisites. No PAPER or LIVE operations are authorized by this file.
