@@ -4,6 +4,9 @@
 $ErrorActionPreference = "Stop"
 
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+# Atlas-only Temp and tool caches live under the ONE project home on D:.
+# Does not move or weaken native immutable financial release roots.
+. (Join-Path $PSScriptRoot "Atlas-Use-Project-Storage.ps1") -ProjectRoot $root
 $sid = [System.Security.Principal.WindowsIdentity]::GetCurrent().User.Value
 $mutexName = "Local\AtlasObservationOwner_$sid"
 $eventName = "Local\AtlasObservationStop_$sid"
