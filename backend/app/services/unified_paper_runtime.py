@@ -610,6 +610,13 @@ class UnifiedPaperRuntime:
                 PaperSourceUnavailable,
             )
 
+            # An initial QD-only grant is NOT an implicit 24/7 HL order
+            # permission. Refuse before any financial effect or ambiguous
+            # issuer lease, without falsely poisoning the healthy QD lane.
+            if self._stop_first_initial_source_lane not in ('BOTH', 'HYPERLIQUID'):
+                raise PaperSourceUnavailable(
+                    'UNIFIED_STOP_FIRST_HL_NOT_INCLUDED_IN_INITIAL_SOURCE_SCOPE'
+                )
             issuer = self._stop_first_issuer
             attempted = False
             try:
@@ -718,6 +725,15 @@ class UnifiedPaperRuntime:
                 PaperSourceUnavailable,
             )
 
+            # The original source-lane selection was verified with a
+            # real Stop-first issuer while entry admission was CLOSED.
+            # Neither HL-only nor QD-only startup may silently activate
+            # the other lane. No effect was attempted, so do not poison
+            # the already verified/healthy lane on this refusal.
+            if lane in LANES and self._stop_first_initial_source_lane not in ('BOTH', lane):
+                raise PaperSourceUnavailable(
+                    'UNIFIED_STOP_FIRST_' + lane + '_NOT_INCLUDED_IN_INITIAL_SOURCE_SCOPE'
+                )
             issuer = self._stop_first_issuer
             attempted = False
             try:

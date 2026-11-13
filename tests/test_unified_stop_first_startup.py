@@ -513,3 +513,139 @@ async def test_supervisor_does_not_relabel_stock_resting_proposal_as_perp(monkey
     assert pending_effects == []
     assert not any(port.calls for port in r.lanes.values())
     assert r.uncertain is False
+
+
+
+@pytest.mark.asyncio
+async def test_stop_first_perpetual_only_paper_scope_does_not_require_open_us_equity(
+    monkeypatch,
+):
+    """Paper 24/7 perps can be sourced independently; QD remains unavailable."""
+    from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+        PaperSourceUnavailable,
+    )
+
+    r, grant, Stop, Issuer = made(monkeypatch)
+    armed = r.arm_stop_first(grant)
+    assert armed["entry_closed"] is True
+    assert not any(lane.calls for lane in r.lanes.values())
+    stop = Stop(r)
+    issuer = Issuer(stop)
+    resumed = r.resume_stop_first(
+        stop_owner=stop, issuer=issuer, qd_instrument=None,
+        source_lane="HYPERLIQUID",
+    )
+    assert resumed["state"] == "RUNNING"
+    assert resumed["external_live_orders_authorized"] is False
+    assert r._stop_first_instrument is None
+    assert r._stop_first_initial_source_lane == "HYPERLIQUID"
+    view = await r.poll()
+    assert view["lanes"]["QUALITY_DIPS"]["session"] == "CLOSED"
+    assert view["lanes"]["HYPERLIQUID"]["session"] == "OPEN"
+    assert not any(lane.calls for lane in r.lanes.values())
+    result = r.dispatch("HYPERLIQUID", {
+        "operation_id": "SYNTHETIC_HL_ONLY",
+        "kind": "ENTRY",
+    })
+    assert result["state"] == "ACKNOWLEDGED"
+    assert len(r.lanes["HYPERLIQUID"].calls) == 1
+    assert r.lanes["QUALITY_DIPS"].calls == []
+    # A genuine stock quote / issuer is still REQUIRED separately. The
+    # simulated unavailable branch makes NO QD financial effect.
+    issuer.unavailable.add("QUALITY_DIPS")
+    with pytest.raises(PaperSourceUnavailable):
+        r.dispatch("QUALITY_DIPS", {
+            "operation_id": "SYNTHETIC_QD_CLOSED",
+            "kind": "ENTRY",
+        })
+    assert not r.uncertain
+    assert not r.entry_closed.is_set()
+    assert r.lanes["QUALITY_DIPS"].calls == []
+    result2 = r.dispatch("HYPERLIQUID", {
+        "operation_id": "SYNTHETIC_HL_ONLY_SECOND",
+        "kind": "ENTRY",
+    })
+    assert result2["state"] == "ACKNOWLEDGED"
+    assert len(r.lanes["HYPERLIQUID"].calls) == 2
+
+
+def test_stop_first_hl_only_cannot_start_from_no_original_source_issuer(
+    monkeypatch,
+):
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    source = Issuer(stop)
+    source.unavailable.add("HYPERLIQUID")
+    # The preparation phase itself refuses if the only requested source is
+    # absent. No lower-trust QD quote or initial Start workaround is allowed.
+    # The fake issuer's prepare method is explicitly a disposable test stub;
+    # the real installed NativeSelectedPaperOperationIssuer checks live HL.
+    with pytest.raises(ValueError, match="SOURCE_LANE"):
+        r.resume_stop_first(
+            stop_owner=stop, issuer=source, qd_instrument=None,
+            source_lane="FAKE_ALL",
+        )
+    assert r.state == "PAUSED" and r.entry_closed.is_set()
+    assert not any(lane.calls for lane in r.lanes.values())
+
+
+
+def test_hl_only_original_start_does_not_reinterpret_later_qd_as_new_source_grant(
+    monkeypatch,
+):
+    from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+        PaperSourceUnavailable,
+    )
+
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    issuer = Issuer(stop)
+    r.resume_stop_first(
+        stop_owner=stop, issuer=issuer,
+        source_lane="HYPERLIQUID", qd_instrument=None,
+    )
+    previous = issuer.calls
+    with pytest.raises(PaperSourceUnavailable, match="NOT_INCLUDED_IN_INITIAL_SOURCE_SCOPE"):
+        r.dispatch("QUALITY_DIPS", {
+            "operation_id": "FORBIDDEN_QD",
+            "kind": "ENTRY",
+        })
+    assert issuer.calls == previous
+    assert r.state == "RUNNING" and not r.entry_closed.is_set()
+    assert not r.uncertain
+    assert r.lanes["QUALITY_DIPS"].calls == []
+    assert r.lanes["HYPERLIQUID"].calls == []
+
+
+def test_qd_only_initial_source_never_promotes_hl_entry_or_new_resting(
+    monkeypatch,
+):
+    from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+        PaperSourceUnavailable,
+    )
+
+    r, grant, Stop, Issuer = made(monkeypatch)
+    r.arm_stop_first(grant)
+    stop = Stop(r)
+    issuer = Issuer(stop)
+    r.resume_stop_first(
+        stop_owner=stop, issuer=issuer,
+        source_lane="QUALITY_DIPS", qd_instrument={"symbol": "MSFT"},
+    )
+    previous = issuer.calls
+    with pytest.raises(PaperSourceUnavailable, match="NOT_INCLUDED_IN_INITIAL_SOURCE_SCOPE"):
+        r.dispatch("HYPERLIQUID", {
+            "operation_id": "FORBIDDEN_HL",
+            "kind": "ENTRY",
+        })
+    with pytest.raises(PaperSourceUnavailable, match="HL_NOT_INCLUDED_IN_INITIAL_SOURCE_SCOPE"):
+        r.admit_resting({
+            "kind": "RESTING_ORDER",
+            "operation_id": "FORBIDDEN_HL_RESTING",
+        }, lane="HYPERLIQUID")
+    assert issuer.calls == previous
+    assert r.state == "RUNNING" and not r.entry_closed.is_set()
+    assert not r.uncertain
+    assert not any(lane.calls for lane in r.lanes.values())

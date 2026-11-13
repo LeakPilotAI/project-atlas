@@ -737,3 +737,81 @@ def test_free_source_bundle_and_real_readonly_scanner_reach_archive_as_no_entry(
     )
     assert len(calls) == before_calls == 6
     assert not (tmp_path / "history").exists()
+
+
+
+def test_no_executable_quotes_can_publish_authentic_watch_only_source(monkeypatch):
+    """A closed market is not a license to manufacture an eligible instrument."""
+    f = fixture(monkeypatch, ("MSFT", "AVGO"))
+    source = copy.deepcopy(f.cut)
+    # Keep genuine research rows and original forward observations, but no
+    # issuer-approved instrument / executable quote. Inputs are still subject
+    # to the independently injected disposable test authority.
+    f.cut["instruments"] = []
+    f.cut["quotes"] = {}
+    packet = f.owner.publish_current()
+    assert packet["schema"] == "QD_SCANNER_PUBLICATION_V1"
+    assert packet["bundles"] == []
+    assert packet["monitors"] == {}
+    assert f.owner.read_publication(0.2) == packet
+    assert source["instruments"] and source["quotes"]
+    assert f.cut["instruments"] == [] and f.cut["quotes"] == {}
+    assert len(f.s.archive.read_evidence(f.s.archive.current())["sources"][
+        "research"
+    ]["board"]) == 2
+    frozen = copy.deepcopy(f.s.s.files)
+    reopened = f.reopen()
+    assert reopened.read_publication(0.2) == packet
+    assert reopened.publish_current() == packet
+    assert f.s.s.files == frozen
+    assert "paper_startup_authorized" not in packet
+
+
+@pytest.mark.parametrize("damage", [
+    "orphan_quote", "fake_instrument", "issuer_refusal",
+    "missing_observations", "foreign_monitor", "empty_research",
+])
+def test_no_executable_source_cannot_bypass_original_requirements(
+    monkeypatch, damage,
+):
+    f = fixture(monkeypatch, ("MSFT",))
+    f.cut["instruments"] = []
+    f.cut["quotes"] = {}
+    if damage == "orphan_quote":
+        f.cut["quotes"]["MSFT"] = {
+            "symbol": "MSFT", "source": "FAKE-LIVE",
+            "effective_timestamp": STAMP, "execution_price": "999999",
+        }
+    elif damage == "fake_instrument":
+        f.cut["instruments"] = [{"symbol": "MSFT", "instrument_id": "FAKE"}]
+    elif damage == "issuer_refusal":
+        f.flags.accepted = False
+    elif damage == "missing_observations":
+        f.cut["observations"] = {}
+    elif damage == "foreign_monitor":
+        f.cut["monitors"] = {"FOREIGN": {
+            "instrument": {"instrument_id": "FOREIGN", "symbol": "AVGO"},
+            "symbol": "AVGO", "observed_at": STAMP,
+        }}
+    else:
+        f.cut["rows"] = []
+    before = copy.deepcopy(f.s.s.files)
+    with pytest.raises((ValueError, KeyError)):
+        f.owner.publish_current()
+    assert f.s.s.files == before
+
+
+def test_zero_executable_quote_scope_does_not_grant_entry_when_board_has_values(
+    monkeypatch,
+):
+    f = fixture(monkeypatch)
+    # Keep real original per-stock synthetic projected research, and ensure
+    # the WATCH/no-market state never emits a candidate or an execution proof.
+    f.cut["instruments"] = []
+    f.cut["quotes"] = {}
+    packet = f.owner.publish_current()
+    assert packet["bundles"] == []
+    assert f.s.archive.read_evidence(f.s.archive.current())["sources"][
+        "current_input"
+    ]["input"]["quotes"] == {}
+    assert f.owner.read_publication(0.2) == packet

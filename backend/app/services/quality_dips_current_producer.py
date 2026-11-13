@@ -157,7 +157,11 @@ class QualityDipsCurrentProducer:
             or type(observations) is not dict
             or set(observations) != {r.get("symbol") for r in rows}
             or type(instruments) is not list
-            or not 0 < len(instruments) <= 16
+            # A genuine source cut can have zero executable instruments
+            # outside market hours or after price/valuation refusal. Preserve
+            # the researched WATCH board without inventing a trade candidate.
+            # quotes MUST also be empty (exact symbol equality below).
+            or not 0 <= len(instruments) <= 16
             or any(type(i) is not dict for i in instruments)
             or type(quotes) is not dict
             or set(quotes) != {i.get("symbol") for i in instruments}
