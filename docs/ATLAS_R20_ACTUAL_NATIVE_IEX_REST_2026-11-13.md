@@ -1,0 +1,34 @@
+# Atlas R20 — actual selected original-Job Alpaca IEX quote access (2026-11-13)
+
+**Result: all four authenticated IEX REST requests succeeded as DATA-ONLY transport; zero fresh executable market quotes. Financial PAPER commissioning and live trading remain NO-GO.**
+
+## What was implemented
+
+- New `scripts/observation_runtime/atlas_r20_native_iex_latest_readonly.py`: bounded, no-retry, no-redirect, TLS-only, exact Alpaca stock IEX `GET /v2/stocks/<symbol>/quotes/latest?feed=iex`, maximum **four** requests, explicitly limited to MSFT/AVGO/SCHD/VTI. Credentials are loaded only from the existing private file `D:\Work\Project Atlas\config\alpaca.env`, with the **original installed** `app.investment.alpaca_iex.Credentials.load` requiring `ALPACA_TRADING_ENABLED=false` and an IEX-only feed configuration (the loader's default feed is IEX). The probe never returns/persists API keys, raw bid/ask prices or quote JSON; only bounded source age and bid/ask presence booleans and counts.
+- Attached as optional `--check-alpaca-iex-rest` to the pre-existing `scripts/observation_runtime/atlas_selected_original_selfjob_structural_readonly.py`. It requires both explicit `--execute-isolated-readonly` and `--check-independent-ntp`, and executes inside one actual **selected R20** original self-owned Windows Job with independent Google+Cloudflare NTP source-clock and original native 5+7 structural writer roster. It fails closed on wrong selected module/class, clock, Job, stage, source path, trading-enabled credentials, provider response identity, duplicate JSON fields, TLS/redirect failure, unacceptable timestamp, non-IEX positive-side exchange, malformed share size, nonfinite/negative price, crossed nonzero quotes.
+- This new probe is **uninstalled D: workspace diagnostic code** explicitly loaded from the main project's exact file path; it does **not** claim to be a selected immutable R20 operational source or financial issuer. Only the original native process/clock/credential/Job and IEXFeed classes come from selected immutable R20.
+- Important source-domain distinction: Alpaca IEX can return numeric **zero** price/size where no active one-sided quote exists, especially outside regular hours. This is source-transport evidence but **never** executable liquidity. For absent price sides the exchange code is not treated as a valid positive-side IEX quote, while every positive-priced side still **must** show exchange `V`. Tests ensure a zero-sided/stale source remains blocked for PAPER. Alpaca references: https://alpaca.markets/learn/latest-trade-quote and https://docs.alpaca.markets/us/docs/market-data-faq; IEX zero quote explanation https://forum.alpaca.markets/t/understanding-quote-data/13098.
+
+## Actual real provider evidence
+
+Ran after hours in one bounded R20 native Job with a real original selected release-bound independent NTP clock. No financial files or simulated orders created. Original safe source receipt:
+`logs/diagnostics/atlas-r20-selected-job-native-clock-iex-latest-readonly-20261113.json`
+SHA256 **`1c20f319352b5744b45691205d0319a70878fe09f31d1c332828d3511a7861ca`**
+
+- Four authenticated HTTP 200 responses, feed explicitly `iex`: **MSFT, AVGO, SCHD, VTI**. `http_get_count=4`, no retries, no redirects.
+- Provider latest quote source age at the genuine NTP cut: MSFT **37,714 seconds**, AVGO **37,715 seconds**, SCHD **37,711 seconds**, VTI **37,714 seconds**. All four are **stale** relative to the unchanged maximum five-second current quote rule.
+- **AVGO 1/4** had both positive bid and ask with share sizes; **MSFT/SCHD/VTI 3/4** had at least one absent IEX bid or ask, correctly classified as `LATEST_QUOTES_HAVE_MISSING_IEX_SIDES_DATA_ONLY`. `fresh_and_both_sided_source_only_count=0`; no current executable quote was admitted.
+- Independent selected native NTP uncertainty bound **139 ms**, two peers agreed within **1 ms**; original selected Windows native Job and original 12 native resource identities with **5 QD + 7 HL** role roster passed. All clocks revoked on exiting.
+- Actual `provider_rest_authentication_observed=true` proves data-only API response using local credentials, **not** independent license rights, full SIP/NBBO, session/calendar, source issuer, current executable market prices, Robinhood instrument eligibility or financial permission. `provider_data_rights_independently_accepted=false`, `authenticated_operational_research_issuer_accepted=false`, `financial_quote_admission_accepted=false`, `paper_startup_authorized=false`, `live_trading_authorized=false`.
+
+## What's materially better
+
+This closes the real integration gap between the old R15-selected read-only Alpaca REST diagnostic and current selected **R20** native original ownership + independent clock + live provider access. The observed after-hours zero-sided/stale provider response is now **explicitly represented** rather than being mistaken for a transport/provider outage or accepted PAPER liquidity. New strict regression tests cover correct missing-side handling, invalid foreign exchange on nonzero sides, invalid quote source, feed/clock original identity, no false authorization, unknown provider fields, no secret leaks, and fixed sanitized failure codes.
+
+**Remaining production barriers:** accepted independent Quality Dips valuation provenance and genuine operational native source publisher, provider license scope and current real market quote continuity during an actual open market, exact original financial activation/account enrollment, accepted Hyperliquid historical settlement oracle and actual account fees, independent financial Stop/flatten/crash/restart, and supervised multi-session months-long forward PAPER evaluation. Source-only tests cannot substitute for those.
+
+Storage and cleanup: all new code and evidence under `D:\Work\Project Atlas`; existing selected R20 immutable release unchanged and protected legacy native roots `D:\AtlasRuntime`, `D:\AtlasCustody`, `D:\AtlasPaper` untouched. Run approved Windows C: Atlas orphan temp cleanup after each execution.
+
+## Regression disposition
+
+Focused new R20 native IEX + Job-bound clock tests **85 passed**. R20-relevant combined source/provenance/book/funding/real native Job/selected IEX runtime tests **606 passed, 10 skipped, zero failures**, Ruff checks clean. An exploratory **broader historical** sweep containing `tests/test_alpaca_iex_probe_cli.py` stopped at **240 passed and one failure**: its older R15-only data-probe CLI test expects a successful R15 selected-source gate while the machine is actually selected to R20. It is not part of the green R20-focused regression, was not silently patched to turn a historical test green, and has **not** been claimed as a clean entire-repository test run. Historical test compatibility should be reviewed separately if a full cross-release test matrix is needed. Production financial acceptance remains NO-GO regardless of these test counts.

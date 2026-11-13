@@ -151,3 +151,44 @@ def test_cli_refresh_flag_cannot_escape_original_job_preflight():
     with pytest.raises(SystemExit) as result:
         observer.main(["--verify-ntp-refresh", "--check-independent-ntp"])
     assert result.value.code == 2
+
+
+
+@pytest.mark.parametrize("kwargs", [
+    {"check_alpaca_iex_rest": True},
+    {"check_alpaca_iex_rest": 1, "check_independent_ntp": True},
+    {"check_alpaca_iex_rest": "true", "check_independent_ntp": True},
+])
+def test_iex_rest_requires_explicit_original_job_and_native_ntp(kwargs):
+    with pytest.raises(ValueError, match="IEX_REQUIRES_ORIGINAL_JOB_NTP_CHECK"):
+        observer.run_isolated_readonly(**kwargs)
+
+
+def test_iex_cli_cannot_escape_isolated_original_job():
+    with pytest.raises(SystemExit) as result:
+        observer.main(["--check-alpaca-iex-rest", "--check-independent-ntp"])
+    assert result.value.code == 2
+
+
+
+@pytest.mark.parametrize("reason,expected", [
+    ("IEX_NATIVE_HTTP_AUTH_OR_ENTITLEMENT_REFUSED",
+     "IEX_NATIVE_HTTP_AUTH_OR_ENTITLEMENT_REFUSED"),
+    ("IEX_NATIVE_IEX_EXCHANGE_AND_SHARES_REQUIRED",
+     "IEX_NATIVE_IEX_EXCHANGE_AND_SHARES_REQUIRED"),
+    ("secret=ALPACA_SECRET_1234",
+     "ORIGINAL_NATIVE_BOUNDARY_OR_SOURCE_REFUSED"),
+])
+def test_selected_native_cli_never_prints_secret_or_raw_provider_error(
+    monkeypatch, capsys, reason, expected,
+):
+    def refuse(**kwargs):
+        raise ValueError(reason)
+    monkeypatch.setattr(observer, "run_isolated_readonly", refuse)
+    assert observer.main(["--execute-isolated-readonly"]) == 2
+    output = capsys.readouterr().out
+    assert expected in output
+    if "secret=" in reason:
+        assert reason not in output
+    assert '"paper_startup_authorized": false' in output
+    assert '"live_trading_authorized": false' in output

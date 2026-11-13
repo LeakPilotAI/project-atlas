@@ -20,6 +20,38 @@ import time
 from pathlib import Path
 
 SCHEMA = "ATLAS_SELECTED_ORIGINAL_SELF_JOB_PREINCEPTION_READONLY_V1"
+# ONLY these fixed source-only codes may cross the credential/provider boundary.
+# Untrusted provider exception text, URLs, credentials or HTTP payloads NEVER do.
+IEX_PUBLIC_REFUSALS = frozenset((
+    "IEX_NATIVE_INSTALLED_SELECTED_PORTS_REQUIRED",
+    "IEX_NATIVE_BOUND_DATA_ONLY_CREDENTIAL_FILE_REQUIRED",
+    "IEX_NATIVE_ORIGINAL_DATA_CREDENTIALS_REQUIRED",
+    "IEX_NATIVE_ORIGINAL_JOB_CLOCK_OR_SELECTED_RELEASE_REQUIRED",
+    "IEX_NATIVE_ORIGINAL_JOB_REVOKED_BEFORE_GET",
+    "IEX_NATIVE_POST_GET_UTC_JOB_REVOKED",
+    "IEX_NATIVE_ORIGINAL_JOB_CHANGED_AT_END",
+    "IEX_NATIVE_HTTP_AUTH_OR_ENTITLEMENT_REFUSED",
+    "IEX_NATIVE_NETWORK_OR_TLS_UNAVAILABLE",
+    "IEX_NATIVE_HTTP_STATUS_REDIRECT_OR_TYPE_REFUSED",
+    "IEX_NATIVE_HTTP_RESPONSE_BOUNDS_REFUSED",
+    "IEX_NATIVE_JSON_NOT_ACCEPTED",
+    "IEX_NATIVE_EXACT_QUOTE_ENVELOPE_REQUIRED",
+    "IEX_NATIVE_IEX_EXCHANGE_AND_SHARES_REQUIRED",
+    "IEX_NATIVE_SHARE_SIZES_MALFORMED",
+    "IEX_NATIVE_QUOTE_EXCHANGE_NOT_IEX",
+    "IEX_NATIVE_POSITIVE_SIDE_EXCHANGE_NOT_IEX",
+    "IEX_NATIVE_DECIMAL_PRICE_REQUIRED",
+    "IEX_NATIVE_NONNEGATIVE_FINITE_PRICE_REQUIRED",
+    "IEX_NATIVE_CROSSED_QUOTE_REFUSED",
+    "IEX_NATIVE_PROVIDER_UTC_TIMESTAMP_REQUIRED",
+    "IEX_NATIVE_DUPLICATE_PROVIDER_FIELD",
+    "IEX_NATIVE_NONFINITE_NUMBER",
+    "IEX_TRADING_MUST_BE_DISABLED",
+    "IEX_ONLY_FEED_REQUIRED",
+    "IEX_CREDENTIALS_MISSING_OR_INVALID",
+    "IEX_CONFIGURATION_UNAVAILABLE",
+    "IEX_CONFIG_DUPLICATE",
+))
 
 
 def _synthetic_structural_enrollment(
@@ -67,7 +99,8 @@ def _synthetic_structural_enrollment(
     return validate_qd(data) if lane == "QUALITY_DIPS" else validate_hl(data)
 
 
-def _selected_original_job_clock(*, owner, release, release_digest, verify_refresh=False):
+def _selected_original_job_clock(*, owner, release, release_digest,
+                                 verify_refresh=False, check_alpaca_iex_rest=False):
     """Two actual original public NTP peers under this retained native Job.
 
     No persistent clock grant, caller-replaceable network ports, time changes,
@@ -84,8 +117,8 @@ def _selected_original_job_clock(*, owner, release, release_digest, verify_refre
     if (Path(inspect.getfile(NativeVersionSafePaperOperatorClock)).resolve() != expected
             or owner.verify_still_running() is not True):
         raise ValueError("ISOLATED_SELECTED_NATIVE_CLOCK_AND_JOB_REQUIRED")
-    if type(verify_refresh) is not bool:
-        raise ValueError("ISOLATED_EXPLICIT_REFRESH_BOUND_REQUIRED")
+    if type(verify_refresh) is not bool or type(check_alpaca_iex_rest) is not bool:
+        raise ValueError("ISOLATED_EXPLICIT_BOUND_SOURCE_MODE_REQUIRED")
     runtime_id = "atlas-original-self-job-two-peer-source-only"
     clock = None
     try:
@@ -119,6 +152,28 @@ def _selected_original_job_clock(*, owner, release, release_digest, verify_refre
                     or clock.require_operational(runtime_id) is not clock):
                 raise ValueError("ISOLATED_ONE_ORIGINAL_NTP_REFRESH_REFUSED")
             refresh_verified = True
+        iex_result = None
+        if check_alpaca_iex_rest:
+            # This newly authored *diagnostic* is uninstalled workspace code.
+            # Load it by exact path as READ-ONLY research, never as a selected
+            # native financial source/issuer or a member of installed R20.
+            from importlib.util import module_from_spec, spec_from_file_location
+
+            file = Path(
+                "D:/Work/Project Atlas/scripts/observation_runtime/"
+                "atlas_r20_native_iex_latest_readonly.py"
+            )
+            if (not file.is_file() or file.is_symlink() or file.is_junction()):
+                raise ValueError("ISOLATED_IEX_DIAGNOSTIC_EXACT_WORKSPACE_FILE_REQUIRED")
+            module_spec = spec_from_file_location("atlas_r20_data_only_iex", file)
+            if module_spec is None or module_spec.loader is None:
+                raise ValueError("ISOLATED_IEX_SOURCE_ONLY_MODULE_NOT_LOADABLE")
+            module = module_from_spec(module_spec)
+            module_spec.loader.exec_module(module)
+            iex_result = module.audit_owned_iex(
+                owner=owner, clock=clock, runtime_id=runtime_id,
+                release_digest=release_digest,
+            )
         evidence = clock._clock.evidence
         if (evidence.get("domain") != "TWO_PUBLIC_UNAUTHENTICATED_NTP_PEERS"
                 or evidence.get("financial_authority") is not False
@@ -133,6 +188,7 @@ def _selected_original_job_clock(*, owner, release, release_digest, verify_refre
             "ntp_peer_difference_ms": evidence["peer_difference_ms"],
             "two_native_clock_samples_verified": True,
             "one_real_ntp_refresh_verified": refresh_verified,
+            "alpaca_iex_rest_source_only": iex_result,
             "continuous_financial_clock_lease_accepted": False,
         }
     finally:
@@ -140,12 +196,16 @@ def _selected_original_job_clock(*, owner, release, release_digest, verify_refre
             clock.revoke()
 
 
-def run_isolated_readonly(*, check_independent_ntp=False, verify_ntp_refresh=False):
+def run_isolated_readonly(*, check_independent_ntp=False, verify_ntp_refresh=False,
+                          check_alpaca_iex_rest=False):
     if type(check_independent_ntp) is not bool:
         raise ValueError("ISOLATED_EXPLICIT_NTP_CHECK_BOOLEAN_REQUIRED")
     if (type(verify_ntp_refresh) is not bool
             or verify_ntp_refresh and not check_independent_ntp):
         raise ValueError("ISOLATED_EXPLICIT_NTP_REFRESH_REQUIRES_NTP_CHECK")
+    if (type(check_alpaca_iex_rest) is not bool
+            or check_alpaca_iex_rest and not check_independent_ntp):
+        raise ValueError("ISOLATED_IEX_REQUIRES_ORIGINAL_JOB_NTP_CHECK")
     from app.services.perp_operational_contract import WRITERS as HL_WRITERS
     from app.services.quality_dips_autonomous_enrollment import WRITERS as QD_WRITERS
 
@@ -233,10 +293,12 @@ def run_isolated_readonly(*, check_independent_ntp=False, verify_ntp_refresh=Fal
             owner=owner, release=release,
             release_digest=spec["artifact_digest"],
             verify_refresh=verify_ntp_refresh,
+            check_alpaca_iex_rest=check_alpaca_iex_rest,
         ) if check_independent_ntp else {
             "two_peer_runtime_utc_verified": False,
             "two_native_clock_samples_verified": False,
             "one_real_ntp_refresh_verified": False,
+            "alpaca_iex_rest_source_only": None,
             "continuous_financial_clock_lease_accepted": False,
         }
     )
@@ -268,6 +330,7 @@ def main(argv=None):
     parser.add_argument("--execute-isolated-readonly", action="store_true")
     parser.add_argument("--check-independent-ntp", action="store_true")
     parser.add_argument("--verify-ntp-refresh", action="store_true")
+    parser.add_argument("--check-alpaca-iex-rest", action="store_true")
     args = parser.parse_args(argv)
     if not args.execute_isolated_readonly:
         parser.error("Explicit isolated native source-only preflight flag required")
@@ -275,12 +338,19 @@ def main(argv=None):
         print(json.dumps(run_isolated_readonly(
             check_independent_ntp=args.check_independent_ntp,
             verify_ntp_refresh=args.verify_ntp_refresh,
+            check_alpaca_iex_rest=args.check_alpaca_iex_rest,
         ), sort_keys=True))
         return 0
-    except (ValueError, OSError, KeyError, TypeError, RuntimeError):
+    except (ValueError, OSError, KeyError, TypeError, RuntimeError) as exc:
+        safe = (
+            str(exc) if isinstance(exc, ValueError)
+            and str(exc) in IEX_PUBLIC_REFUSALS
+            else "ORIGINAL_NATIVE_BOUNDARY_OR_SOURCE_REFUSED"
+        )
         print(json.dumps({
             "schema": SCHEMA,
             "status": "ORIGINAL_NATIVE_PREINCEPTION_STRUCTURAL_REFUSED",
+            "sanitized_reason": safe,
             "financial_native_files_written": False,
             "paper_startup_authorized": False,
             "live_trading_authorized": False,
