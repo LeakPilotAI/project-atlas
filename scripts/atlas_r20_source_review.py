@@ -134,7 +134,7 @@ def source_selection():
     if (not code <= tracked or not changed
             or any(not name.startswith(ROOTS) for name in code)
             or any(Path(name).suffix.lower() not in ALLOWED_EXTENSIONS
-                   for name in code)):
+                   for name in changed - original)):
         raise ValueError("R20_TRACKED_SOURCE_AND_EXTENSION_BOUNDS_REQUIRED")
     closure = required_runtime_documents(
         ROOT, selected={f for f in code if f.startswith(SOURCE_ROOTS)},
