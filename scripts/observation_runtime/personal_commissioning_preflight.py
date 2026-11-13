@@ -263,7 +263,7 @@ def main():
     # Dependencies are explanatory, never synthetic PASS states or permissions.
     next_actions = {
         "OPERATIONAL_QD_SOURCE_PUBLICATION":
-            "First independently review authentic original research and provider rights; then two original coordination journals, exact preinception READ+INITIALIZE activation and two simulated FS1/FS3 account ACKs; only afterward a distinct postinception CONNECT_APPROVED_DATA activation can initialize the original QD archive and publish the current FORWARD_COLLECTION source. This legacy read-only checker cannot attest native issuer acceptance.",
+            "First independently review authentic original research and provider rights; then two original coordination journals, exact preinception READ+INITIALIZE activation and two simulated FS1/FS3 account ACKs; only afterward a distinct postinception CONNECT_APPROVED_DATA activation can initialize the original QD archive and publish the current FORWARD_COLLECTION source. A native archive epoch permits only 127 source publications after genesis; independently accept a safe multi-epoch handoff before extended PAPER sessions. This legacy read-only checker cannot attest issuer or rollover acceptance.",
         "ACTIVATION_RECORD_PRESENT":
             "Obtain operator-approved installed activation record under existing native PersonalPaper custody; do not generate from preflight",
         "ACTIVATION_NATIVE_VERIFIED":

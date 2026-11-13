@@ -114,6 +114,54 @@ class NativePersonalResearchArchive:
         self._water=head
         return strict(body(head))
 
+    def capacity_readonly(self, *, horizon_seconds=0, publication_interval_seconds=30):
+        """Verify immutable source head and native remaining writes, with NO effects.
+
+        This is not an epoch rollover, future lease, original source issuer, or
+        financial approval. The source has a cumulative 128-native-revision
+        budget including genesis; a 30s current-source TTL cannot be turned
+        into months of continuous PAPER via a revised forecast or local hash.
+        """
+        from scripts.observation_runtime import personal_coordination_store as native
+
+        if (type(horizon_seconds) is not int or not 0 <= horizon_seconds <= 366 * 86400
+                or type(publication_interval_seconds) is not int
+                # A slower forecast is NOT continuously current QD research.
+                # The original source reader has a maximum 30-second TTL.
+                or not 1 <= publication_interval_seconds <= 30
+                or native.MAX_REVISIONS != 128):
+            raise ValueError('QD_SOURCE_CAPACITY_EXACT_BOUNDED_HORIZON_REQUIRED')
+        self._verify()
+        head = self.current()
+        remaining = self.images.remaining_commits()
+        # Native genesis consumes one revision; current logical head consumes
+        # all further native commits. Compare exact original on-disk ACK.
+        if (type(remaining) is not int
+                or not 0 <= remaining <= 127
+                or head['native_revision'] != head['revision'] + 1
+                or remaining != native.MAX_REVISIONS - head['native_revision']
+                or self.current() != head):
+            raise ValueError('QD_SOURCE_CAPACITY_ORIGINAL_ACK_CHANGED')
+        expected = ((horizon_seconds + publication_interval_seconds - 1)
+                    // publication_interval_seconds)
+        return strict(body({
+            'schema': 'QD_ORIGINAL_NATIVE_SOURCE_CAPACITY_READONLY_V1',
+            'source_id': self.enrollment['source_id'],
+            'archive_epoch': self.enrollment['epoch'],
+            'logical_revision': head['revision'],
+            'native_revision': head['native_revision'],
+            'native_remaining_publications': remaining,
+            'required_horizon_seconds': horizon_seconds,
+            'assumed_publication_interval_seconds': publication_interval_seconds,
+            'required_new_publications_for_horizon': expected,
+            'within_existing_epoch': expected <= remaining,
+            'requires_new_original_source_epoch': expected > remaining,
+            'native_root_modified': False,
+            'automatic_rollover_verified': False,
+            'paper_startup_authorized': False,
+            'live_trading_authorized': False,
+        }))
+
     def read(self,expected):
         return self.read_evidence(expected)['packet']
 

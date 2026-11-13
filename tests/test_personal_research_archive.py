@@ -164,3 +164,101 @@ def test_original_source_producer_roundtrips_candidate_bundle_through_native_ima
     assert packet['bundles']==[b] and producer.read_current()==packet and n.ledger.snapshot()==before
     s.now[0]+=31
     with pytest.raises(ValueError):producer.read_current()
+
+
+
+def test_original_127_source_successors_are_not_a_months_long_paper_lease(monkeypatch):
+    """Native head and forecast are read-only and cannot manufacture an epoch."""
+    s = setup(monkeypatch)
+    frozen = copy.deepcopy(s.s.files)
+    p = s.archive.capacity_readonly(
+        horizon_seconds=90 * 24 * 3600,
+        publication_interval_seconds=30,
+    )
+    assert p["schema"] == "QD_ORIGINAL_NATIVE_SOURCE_CAPACITY_READONLY_V1"
+    assert p["native_revision"] == 1 and p["logical_revision"] == 0
+    assert p["native_remaining_publications"] == 127
+    assert p["required_new_publications_for_horizon"] == 259200
+    # A single 6.5-hour U.S. equities session needs 780 cuts if every
+    # source stays at most 30 seconds old, already > six times the limit.
+    equity_session = s.archive.capacity_readonly(
+        horizon_seconds=6 * 3600 + 1800, publication_interval_seconds=30,
+    )
+    assert equity_session["required_new_publications_for_horizon"] == 780
+    assert equity_session["requires_new_original_source_epoch"] is True
+    assert p["within_existing_epoch"] is False
+    assert p["requires_new_original_source_epoch"] is True
+    assert p["automatic_rollover_verified"] is False
+    assert p["paper_startup_authorized"] is False
+    assert p["live_trading_authorized"] is False
+    assert frozen == s.s.files
+    assert s.archive.capacity_readonly(
+        horizon_seconds=127 * 30, publication_interval_seconds=30,
+    )["within_existing_epoch"] is True
+    assert s.archive.capacity_readonly(
+        horizon_seconds=128 * 30, publication_interval_seconds=30,
+    )["within_existing_epoch"] is False
+    publish(s)
+    p2 = s.archive.capacity_readonly(horizon_seconds=127 * 30)
+    assert p2["logical_revision"] == 1
+    assert p2["native_revision"] == 2
+    assert p2["native_remaining_publications"] == 126
+    assert p2["requires_new_original_source_epoch"] is True
+
+
+@pytest.mark.parametrize("damage", [
+    "fake_remaining", "forged_native_ack", "foreign_enrollment",
+    "revoke_authority", "noncanonical_epoch",
+])
+def test_source_capacity_rejects_false_original_ack_or_revoked_custody(
+    monkeypatch, damage,
+):
+    s = setup(monkeypatch)
+    frozen = copy.deepcopy(s.s.files)
+    if damage == "fake_remaining":
+        monkeypatch.setattr(s.s.owner, "remaining_commits", lambda: 9999)
+    elif damage == "forged_native_ack":
+        s.s.owner.known["revision"] = 5
+    elif damage == "foreign_enrollment":
+        s.archive.enrollment["epoch"] = "NOT_THE_REAL_EPOCH"
+    elif damage == "revoke_authority":
+        s.auth.valid = False
+    else:
+        import scripts.observation_runtime.personal_coordination_store as native
+        monkeypatch.setattr(native, "MAX_REVISIONS", 512)
+    with pytest.raises(ValueError):
+        s.archive.capacity_readonly(horizon_seconds=30)
+    assert frozen == s.s.files
+
+
+@pytest.mark.parametrize("seconds, interval", [
+    (-1, 30), (367 * 86400, 30), (False, 30),
+    (30, 0), (30, -1), (30, True), (30, "30"),
+    (30, 31), (30, 60), (30, 86401),
+    (0.5, 30), (None, 30),
+])
+def test_source_capacity_cannot_infer_an_unbounded_or_forged_horizon(
+    monkeypatch, seconds, interval,
+):
+    s = setup(monkeypatch)
+    frozen = copy.deepcopy(s.s.files)
+    with pytest.raises(ValueError, match="EXACT_BOUNDED_HORIZON"):
+        s.archive.capacity_readonly(
+            horizon_seconds=seconds, publication_interval_seconds=interval,
+        )
+    assert frozen == s.s.files
+
+
+def test_source_capacity_writes_never_occur_in_months_long_forecast(monkeypatch):
+    s = setup(monkeypatch)
+    def fail(*args, **kwargs):
+        raise AssertionError("read-only capacity admission attempted a native write")
+    monkeypatch.setattr(s.s.owner.output, "write_bound", fail)
+    for _ in range(3):
+        report = s.archive.capacity_readonly(
+            horizon_seconds=45 * 86400,
+            publication_interval_seconds=15,
+        )
+        assert not report["within_existing_epoch"]
+        assert report["native_root_modified"] is False
+        assert report["paper_startup_authorized"] is False

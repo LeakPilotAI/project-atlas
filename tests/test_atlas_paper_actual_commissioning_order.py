@@ -221,3 +221,34 @@ def test_actual_installed_phase_action_constants_do_not_conflict_with_plan():
     assert _names().index("G_POSTINCEPTION_DATA_ACTIVATION") > _names().index(
         "F_ORIGINAL_TWO_SIMULATED_ACCOUNT_INCEPTIONS"
     )
+
+
+
+def test_months_forward_paper_are_postlaunch_live_evaluation_not_launch_gate():
+    plan = stages.plan(legacy_preflight=_legacy())
+    assert plan["prelaunch_stage_count"] == 11
+    assert plan["prelaunch_stages_without_claimed_proof"] == 11
+    assert plan["post_paper_evaluation_stage_count"] == 1
+    assert plan["post_paper_evaluation_stages_without_claimed_proof"] == 1
+    assert plan["months_of_paper_required_before_starting_paper"] is False
+    assert plan["months_of_paper_required_before_considering_live"] is True
+    assert plan["stages"][-1]["lifecycle"] == (
+        "POST_PAPER_LIVE_ELIGIBILITY_EVALUATION"
+    )
+    assert all(row["lifecycle"] == "PAPER_COMMISSIONING_PRELAUNCH"
+               for row in plan["stages"][:-1])
+    assert plan["paper_startup_authorized"] is False
+
+
+def test_11_unauthenticated_stage_claims_cannot_grant_paper_or_live():
+    # Stage labels alone are not evidence. Distinguish the LIVE-review soak
+    # from PAPER-commissioning obligations, without optimistic authorization.
+    plan = stages.plan(authentic_native_accepted=list(stages.PAPER_PRELAUNCH_STAGES))
+    assert plan["prelaunch_stages_without_claimed_proof"] == 0
+    assert plan["post_paper_evaluation_stages_without_claimed_proof"] == 1
+    assert plan["stages_without_claimed_proof"] == 1
+    assert plan["next_possible_stages"] == ["L_EXTENDED_SUPERVISED_FORWARD_PAPER"]
+    assert plan["claimed_stages_are_not_original_native_proof"] is True
+    assert plan["independent_financial_start_review_accepted"] is False
+    assert plan["paper_startup_authorized"] is False
+    assert plan["live_trading_authorized"] is False

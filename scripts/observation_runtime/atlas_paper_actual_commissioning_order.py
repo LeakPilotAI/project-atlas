@@ -122,7 +122,9 @@ STAGES = (
             "Original installed operator-owned current QD issuer with "
             "authenticated and independently checked upstream provenance, "
             "current fresh quote/valuation policy and exact native CAS "
-            "readback; no synthetic receipt or digest-as-issuer"
+            "readback; verified multi-epoch rollover needed for 30-second "
+            "source freshness beyond 127 native publications; no synthetic "
+            "receipt or digest-as-issuer"
         ),
     ),
     (
@@ -159,6 +161,12 @@ STAGES = (
         ),
     ),
 )
+
+# PAPER production readiness means being ready to START supervised PAPER.
+# Extended performance is post-PAPER evidence for potential future LIVE review.
+# It must NOT become a prerequisite to starting PAPER itself.
+PAPER_PRELAUNCH_STAGES = tuple(item[0] for item in STAGES[:-1])
+POST_PAPER_VALIDATION_STAGES = ("L_EXTENDED_SUPERVISED_FORWARD_PAPER",)
 
 LEGACY_READONLY_ONLY = frozenset((
     "OPERATIONAL_QD_SOURCE_PUBLICATION",
@@ -208,6 +216,11 @@ def plan(*, authentic_native_accepted=None, legacy_preflight=None):
             "dependency_ready": not blocked,
             "missing_upstream": blocked,
             "observed_accepted": name in accepted,
+            "lifecycle": (
+                "PAPER_COMMISSIONING_PRELAUNCH"
+                if name in PAPER_PRELAUNCH_STAGES
+                else "POST_PAPER_LIVE_ELIGIBILITY_EVALUATION"
+            ),
             "next_original_evidence": action,
         })
     return {
@@ -216,6 +229,17 @@ def plan(*, authentic_native_accepted=None, legacy_preflight=None):
         "stages": rows,
         "claimed_external_prerequisites": len(accepted),
         "stages_without_claimed_proof": len(rows) - len(accepted),
+        # These are user-supplied stage claims, NOT native financial proofs.
+        "prelaunch_stage_count": len(PAPER_PRELAUNCH_STAGES),
+        "prelaunch_stages_without_claimed_proof": sum(
+            name not in accepted for name in PAPER_PRELAUNCH_STAGES
+        ),
+        "post_paper_evaluation_stage_count": len(POST_PAPER_VALIDATION_STAGES),
+        "post_paper_evaluation_stages_without_claimed_proof": sum(
+            name not in accepted for name in POST_PAPER_VALIDATION_STAGES
+        ),
+        "months_of_paper_required_before_starting_paper": False,
+        "months_of_paper_required_before_considering_live": True,
         "next_possible_stages": [
             x["stage"] for x in rows
             if x["dependency_ready"] and not x["observed_accepted"]

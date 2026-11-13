@@ -126,3 +126,36 @@ def test_original_qd_candidate_and_provenance_publish_to_actual_native_source_ar
     before=n.ledger.snapshot()
     published=producer.publish_scanner(b['board'],datetime.fromtimestamp(s.now[0],UTC).isoformat())
     assert published['bundles']==[b] and producer.read_current()==published and n.ledger.snapshot()==before
+
+
+
+def test_original_native_handle_bound_capacity_readback_does_not_create_a_successor(
+    archive,
+):
+    s = archive
+    before = s.hashes()
+    report = s.archive.capacity_readonly(
+        horizon_seconds=30 * 127,
+        publication_interval_seconds=30,
+    )
+    assert report["schema"] == "QD_ORIGINAL_NATIVE_SOURCE_CAPACITY_READONLY_V1"
+    assert report["native_revision"] == 1
+    assert report["logical_revision"] == 0
+    assert report["native_remaining_publications"] == 127
+    assert report["within_existing_epoch"] is True
+    assert report["paper_startup_authorized"] is False
+    assert before == s.hashes()
+    publish(s)
+    after = s.hashes()
+    report = s.archive.capacity_readonly(
+        horizon_seconds=90 * 86400,
+        publication_interval_seconds=30,
+    )
+    assert report["native_revision"] == 2
+    assert report["logical_revision"] == 1
+    assert report["native_remaining_publications"] == 126
+    assert report["requires_new_original_source_epoch"] is True
+    assert report["automatic_rollover_verified"] is False
+    assert report["paper_startup_authorized"] is False
+    assert report["live_trading_authorized"] is False
+    assert after == s.hashes()
