@@ -34,7 +34,7 @@ def quote(symbol="MSFT", age=2):
 
 
 @pytest.mark.parametrize("age,fresh", [
-    (-7, False), (-1, False), (0, True), (2, True), (3, True),
+    (-7, False), (-1, False), (0, False), (2, True), (3, True),
     (4, False), (5, False), (6, False), (10_000, False),
 ])
 def test_bounded_independent_utc_never_grants_paper_quote(age, fresh):
@@ -566,6 +566,92 @@ def test_data_only_owned_rest_refuses_unissued_precise_clock_proof(
             owner=original, clock=clock, runtime_id="test-owned",
             release_digest="a"*64, symbols=("MSFT",),
             opener=opener,
+            credential_reader=lambda _: Credentials(
+                "DATA_ONLY_DUMMY", "DATA_ONLY_DUMMY"
+            ),
+        )
+    assert len(opener.requests) == 1
+
+
+
+class LegacyR21Clock:
+    """Actual selected R21 clock API: original verified whole-second UTC only."""
+
+    def require_operational(self, runtime_id):
+        if runtime_id != "test-owned":
+            raise ValueError("LEGACY_ORIGINAL_RUNTIME_ID_REFUSED")
+        return self
+
+    def sample(self):
+        return {
+            "schema": "QD_AUTO_NATIVE_CLOCK_V4",
+            "utc": NOW,
+            "monotonic_ns": 22_000_000_000,
+            "uncertainty_ms": 139,
+            "source": "SIMULATED_TEST_NTP_PEERS",
+        }
+
+    def verify(self, sample):
+        return sample == self.sample()
+
+
+def test_genuine_pinned_r21_legacy_clock_can_observe_without_paper_authority(
+    monkeypatch, test_ports,
+):
+    owner, _ = test_ports
+    owner.origin = {"selected_code_release": iex.LEGACY_SELECTED_R21_SOURCE}
+    monkeypatch.setattr(iex, "NativeVersionSafePaperOperatorClock", LegacyR21Clock)
+    opener = Opener({"MSFT": 2, "AVGO": 4})
+    report = iex.audit_owned_iex(
+        owner=owner, clock=LegacyR21Clock(), runtime_id="test-owned",
+        release_digest=iex.LEGACY_SELECTED_R21_ARTIFACT,
+        symbols=("MSFT", "AVGO"), opener=opener,
+        credential_reader=lambda _: Credentials("DATA_ONLY_DUMMY", "DATA_ONLY_DUMMY"),
+    )
+    assert report["http_get_count"] == 2
+    assert report["fresh_quote_count"] == 1
+    assert all(q["utc_clock_sample_quantization_seconds"] == 1
+               for q in report["quotes"])
+    assert all(q["provider_event_proven_before_sample"] is True
+               for q in report["quotes"])
+    assert report["financial_quote_admission_accepted"] is False
+    assert report["paper_startup_authorized"] is False
+    assert report["live_trading_authorized"] is False
+
+
+@pytest.mark.parametrize("damage", (
+    "wrong_release", "wrong_original", "tampered_sample", "tampered_verify",
+    "partial_precise",
+))
+def test_old_clock_never_falls_back_from_unknown_or_tampered_authority(
+    monkeypatch, test_ports, damage,
+):
+    owner, _ = test_ports
+    owner.origin = {"selected_code_release": iex.LEGACY_SELECTED_R21_SOURCE}
+    class BrokenLegacy(LegacyR21Clock):
+        pass
+    release_digest = iex.LEGACY_SELECTED_R21_ARTIFACT
+    if damage == "wrong_release":
+        release_digest = "a" * 64
+    elif damage == "wrong_original":
+        owner.origin = {"selected_code_release": "f" * 40}
+    elif damage == "tampered_sample":
+        BrokenLegacy.sample = lambda self: {"utc": NOW, "uncertainty_ms": -1}
+    elif damage == "tampered_verify":
+        BrokenLegacy.verify = lambda self, sample: False
+    else:
+        BrokenLegacy.sample_precise = lambda self: {"utc_ns": NOW * 10**9}
+    monkeypatch.setattr(iex, "NativeVersionSafePaperOperatorClock", BrokenLegacy)
+    opener = Opener({"MSFT": 2})
+    with pytest.raises(ValueError, match=(
+        "IEX_NATIVE_UNSELECTED_LEGACY_CLOCK_REFUSED"
+        "|IEX_NATIVE_SELECTED_R21_UTC_VERIFICATION_REFUSED"
+        "|IEX_NATIVE_PRECISE_CLOCK_PARTIAL_INTERFACE_REFUSED"
+    )):
+        iex.audit_owned_iex(
+            owner=owner, clock=BrokenLegacy(), runtime_id="test-owned",
+            release_digest=release_digest,
+            symbols=("MSFT",), opener=opener,
             credential_reader=lambda _: Credentials(
                 "DATA_ONLY_DUMMY", "DATA_ONLY_DUMMY"
             ),

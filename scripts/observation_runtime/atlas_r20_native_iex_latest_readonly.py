@@ -34,6 +34,8 @@ SCHEMA = "ATLAS_R20_NATIVE_IEX_LATEST_NTP_OWNED_READONLY_V1"
 BASE = "https://data.alpaca.markets/v2/stocks/"
 EXACT = re.compile(r"[A-Z][A-Z0-9.-]{0,14}\Z")
 WATCHLIST = ("MSFT", "AVGO", "SCHD", "VTI")
+LEGACY_SELECTED_R21_SOURCE = "119dd8626da32e74bd7f86db9de1c1a8fd2c20ac"
+LEGACY_SELECTED_R21_ARTIFACT = "02c5705e586f92415612c70309bd7051ad76629278f6c22905b056558b602b27"
 MAX_BYTES = 8192
 MAX_GETS = 4
 
@@ -107,7 +109,9 @@ def inspect_quote(
     # Neither path authorizes financial trading, provider rights or NBBO.
     uncertainty_ns = uncertainty_ms * 1_000_000
     upper_age_ns = age_ns + observed_precision_ns + uncertainty_ns
-    lower_age_ns = age_ns - uncertainty_ns if observed_precision_ns == 0 else age_ns
+    # A whole-second UTC cut can overestimate elapsed time by the NTP
+    # uncertainty. Never call an age-zero event proven to predate receipt.
+    lower_age_ns = age_ns - uncertainty_ns
     proven_past = lower_age_ns >= 0
     fresh = proven_past and upper_age_ns <= 5_000_000_000
     return {
@@ -228,27 +232,64 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
             raise ValueError("IEX_NATIVE_HTTP_AUTH_OR_ENTITLEMENT_REFUSED") from None
         except urllib.error.URLError:
             raise ValueError("IEX_NATIVE_NETWORK_OR_TLS_UNAVAILABLE") from None
-        # A high-resolution UTC stamp must be issued by the same native
-        # selected owner and verified before assessing provider event order.
-        # No Windows system clock, client-supplied timestamps, or an
-        # unverified future-looking provider quote may grant freshness.
-        s = clock.sample_precise()
-        if (type(s) is not dict
-                or set(s) != {
-                    "schema", "utc_ns", "monotonic_ns", "uncertainty_ms", "source"
-                }
-                or s.get("schema") != "ATLAS_INDEPENDENT_PRECISE_UTC_V1"
-                or type(s.get("utc_ns")) is not int
-                or type(s.get("uncertainty_ms")) is not int
-                or not 0 <= s["uncertainty_ms"] <= 1000
-                or not clock.verify_precise(s)
-                or owner.verify_still_running() is not True):
-            raise ValueError("IEX_NATIVE_PRECISE_UTC_JOB_VERIFICATION_REFUSED")
+        # R22 selected-original clocks can prove subsecond UTC. The genuine
+        # immutable selected R21 artifact predates that capability: its
+        # separately issued+verified integer-second UTC remains a safe,
+        # conservative *data-only* fallback. Do NOT patch R21 immutable
+        # source, read Windows wall time, or accept a missing precise clock
+        # on an unknown/changed selected release.
+        precise = callable(getattr(clock, "sample_precise", None))
+        verifier = callable(getattr(clock, "verify_precise", None))
+        if precise or verifier:
+            if not (precise and verifier):
+                raise ValueError("IEX_NATIVE_PRECISE_CLOCK_PARTIAL_INTERFACE_REFUSED")
+            s = clock.sample_precise()
+            if (type(s) is not dict
+                    or set(s) != {
+                        "schema", "utc_ns", "monotonic_ns", "uncertainty_ms", "source"
+                    }
+                    or s.get("schema") != "ATLAS_INDEPENDENT_PRECISE_UTC_V1"
+                    or type(s.get("utc_ns")) is not int
+                    or type(s.get("uncertainty_ms")) is not int
+                    or not 0 <= s["uncertainty_ms"] <= 1000
+                    or not clock.verify_precise(s)
+                    or owner.verify_still_running() is not True):
+                raise ValueError("IEX_NATIVE_PRECISE_UTC_JOB_VERIFICATION_REFUSED")
+            observed_ns, uncertainty_ms, precision_ns = (
+                s["utc_ns"], s["uncertainty_ms"], 0
+            )
+        else:
+            if (release_digest != LEGACY_SELECTED_R21_ARTIFACT
+                    or type(getattr(owner, "origin", None)) is not dict
+                    or owner.origin.get("selected_code_release")
+                       != LEGACY_SELECTED_R21_SOURCE):
+                raise ValueError("IEX_NATIVE_UNSELECTED_LEGACY_CLOCK_REFUSED")
+            s = clock.sample()
+            if (type(s) is not dict
+                    or set(s) != {
+                        "schema", "utc", "monotonic_ns", "uncertainty_ms",
+                        "source",
+                    }
+                    or s["schema"] != "QD_AUTO_NATIVE_CLOCK_V4"
+                    or type(s["utc"]) is not int
+                    or s["utc"] <= 0
+                    or type(s["monotonic_ns"]) is not int
+                    or s["monotonic_ns"] <= 0
+                    or type(s["source"]) is not str
+                    or not s["source"]
+                    or type(s["uncertainty_ms"]) is not int
+                    or not 0 <= s["uncertainty_ms"] <= 1000
+                    or not clock.verify(s)
+                    or owner.verify_still_running() is not True):
+                raise ValueError("IEX_NATIVE_SELECTED_R21_UTC_VERIFICATION_REFUSED")
+            observed_ns, uncertainty_ms, precision_ns = (
+                s["utc"] * 1_000_000_000, s["uncertainty_ms"], 1_000_000_000
+            )
         rows.append(inspect_quote(
             packet, symbol=symbol,
-            observed_ns=s["utc_ns"],
-            uncertainty_ms=s["uncertainty_ms"],
-            observed_precision_ns=0,
+            observed_ns=observed_ns,
+            uncertainty_ms=uncertainty_ms,
+            observed_precision_ns=precision_ns,
         ))
     if owner.verify_still_running() is not True:
         raise ValueError("IEX_NATIVE_ORIGINAL_JOB_CHANGED_AT_END")
