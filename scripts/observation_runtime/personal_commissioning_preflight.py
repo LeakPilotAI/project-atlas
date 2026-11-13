@@ -129,7 +129,9 @@ def main():
     # A pre-existing source directory is only a custody location, never an
     # accepted operational QD source publication. Native archive admission
     # requires the independently accepted enrollment/issuer/clock ports.
-    from scripts.observation_runtime.quality_dips_source_inventory import inspect as inspect_qd_source
+    from scripts.observation_runtime.quality_dips_source_inventory import (
+        inspect as inspect_qd_source,
+    )
     source_parent = Path("D:/AtlasCustody/QualityDips")
     source_inventory = inspect_qd_source()
     results.append(check(
@@ -183,7 +185,9 @@ def main():
         "Requires independently supplied native root/file identities and SHA256; "
         "no fallback authorization")
     if activation_record_ordinary and all(value is not None for value in supplied_binding):
-        from scripts.observation_runtime.personal_paper_activation import NativePersonalActivationReader
+        from scripts.observation_runtime.personal_paper_activation import (
+            NativePersonalActivationReader,
+        )
         try:
             reader = NativePersonalActivationReader(
                 root=args.activation_root, native_root=args.activation_native_root,
@@ -259,13 +263,13 @@ def main():
     # Dependencies are explanatory, never synthetic PASS states or permissions.
     next_actions = {
         "OPERATIONAL_QD_SOURCE_PUBLICATION":
-            "Enroll and authenticate an operator-owned local current FORWARD_COLLECTION QD publisher, durable native custody, writer ownership and accepted Stop controls; personal policy does not require an external issuer",
+            "First independently review authentic original research and provider rights; then two original coordination journals, exact preinception READ+INITIALIZE activation and two simulated FS1/FS3 account ACKs; only afterward a distinct postinception CONNECT_APPROVED_DATA activation can initialize the original QD archive and publish the current FORWARD_COLLECTION source. This legacy read-only checker cannot attest native issuer acceptance.",
         "ACTIVATION_RECORD_PRESENT":
             "Obtain operator-approved installed activation record under existing native PersonalPaper custody; do not generate from preflight",
         "ACTIVATION_NATIVE_VERIFIED":
             "Independently bind native activation root/file identities and SHA256; verify operator, policy, release, expiry and technical lease separately",
         "FINANCIAL_INCEPTION":
-            "Only after source and activation acceptance, verify authorized once-only simulated $1000 account inception through native financial readback",
+            "Verify two original initial coordination journals; then a separately accepted PREINCEPTION_COORDINATION_READY activation with exact READ_ONLY+INITIALIZE_SIMULATED_ACCOUNTS permits once-only native $1000 USD / 1000 USDC FS1/FS3 account inceptions. CONNECT_APPROVED_DATA source-archive genesis comes AFTER verified initial inceptions.",
         "RUNTIME_AUTHORIZATION":
             "Verify accepted native runtime grant, market inputs, financial ownership, Control Center Stop and bounded 60-second pilot scope",
     }
@@ -284,7 +288,7 @@ def main():
             "personal_pilot_uses_distinct_auto_native_enrollment_v4": True,
             "manual_only_conflict_applies_to_personal_pilot": False,
             "autonomous_pilot_native_acceptance_verified": False,
-            "next_action": "Verify operator-owned locally accepted QD_AUTO_NATIVE_ENROLLMENT_V4 source publication, native custody, Stop and activation; no external issuer required by personal policy; never translate legacy QD_OP_ENROLLMENT_V1 into autonomous authority",
+            "next_action": "Before any financial native write, review original QD research and source rights. Original native 2-journal scope -> exact READ+INITIALIZE preinception activation -> 2 FS1/FS3 inceptions -> distinct postinception CONNECT_APPROVED_DATA activation -> original source archive genesis + current source issuer -> separate Stop-first paper grant. A locally owned issuer is permitted by personal policy but MUST authenticate its underlying valuation and market inputs; never translate legacy QD_OP_ENROLLMENT_V1 into autonomous authority.",
             "grants_authority": False,
         },
         "financial_mutations": False,
@@ -300,11 +304,24 @@ def main():
         "native_clock_probe": clock_probe,
         "independent_ntp_clock_probe": independent_probe,
         "operator_action_required": (
-            "Review source checkpoint and explicitly authorize native activation "
-            "only after independently accepted research, financial custody, "
-            "writer ownership, and Stop controls are verified"
+            "Review independent original market rights/research and original "
+            "selected Job. The exact two original coordination journals are "
+            "first, preinception READ+INITIALIZE activation then account FS1/FS3, "
+            "followed by a distinct postinception CONNECT_APPROVED_DATA activation "
+            "for QD source archive/publication, and Stop-first PAPER approval last"
         ),
     }
+
+    # The legacy read-only checker intentionally hard-blocks native source
+    # issuance, account inception and runtime grants, even when individual
+    # SOURCE/BRANCH checks pass. The native source installer ALSO needs an
+    # accepted operator activation BEFORE source genesis. Report the executable
+    # dependency sequence separately; never reinterpret a plan as approval.
+    from scripts.observation_runtime.atlas_paper_actual_commissioning_order import plan
+    report["actual_native_commissioning_sequence"] = plan(
+        legacy_preflight=report,
+    )
+    report["this_readonly_preflight_can_issue_financial_acceptance"] = False
 
     if args.json:
         print(json.dumps(report, indent=2))

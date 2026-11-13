@@ -60,7 +60,7 @@ def synthetic_ports(monkeypatch):
         })
     )
     original = object.__new__(RetainedSelectedNativeOwnerPreflight)
-    original._phase = "PREINCEPTION"
+    original._phase = "INITIAL_READBACK_ONLY"
     original._identity = {
         "pid": os.getpid(),
         "creation_filetime": 100,
@@ -112,6 +112,7 @@ def test_original_selected_source_handoff_is_one_shot_native_replay_only(monkeyp
     "disposable", "foreign_release", "fake_clock", "wrong_job_type",
     "wrong_process", "missing_native_owner", "wrong_image",
     "revoked_clock", "bad_selection", "phase",
+    "preinception", "preinception_coordination",
 ])
 def test_no_borrowed_fixture_or_wrong_native_identity_can_publish(monkeypatch, problem):
     f, owner, clock = synthetic_ports(monkeypatch)
@@ -134,6 +135,10 @@ def test_no_borrowed_fixture_or_wrong_native_identity_can_publish(monkeypatch, p
     elif problem == "bad_selection":
         monkeypatch.setattr(worker, "require_version_safe_release_digest",
                             lambda **kwargs: False)
+    elif problem == "preinception":
+        owner._phase = "PREINCEPTION"
+    elif problem == "preinception_coordination":
+        owner._phase = "PREINCEPTION_COORDINATION_READY"
     else:
         owner._phase = "INITIAL_READBACK_PENDING"
     original = copy.deepcopy(f.s.s.files)

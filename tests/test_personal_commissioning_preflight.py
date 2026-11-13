@@ -23,6 +23,12 @@ def test_explicit_reviewed_source_and_dirty_tree_are_separate_checks(monkeypatch
     assert checks['SOURCE_CHECKPOINT'] == ('PASS' if accepted else 'BLOCKED')
     assert checks['TRACKED_SOURCE_UNCHANGED'] == ('BLOCKED' if changed else 'PASS')
     assert report['financial_mutations'] is report['pilot_started'] is False
+    actual = report['actual_native_commissioning_sequence']
+    assert actual['schema'] == 'ATLAS_ORIGINAL_TWO_LANE_FINANCIAL_COMMISSIONING_ORDER_V2'
+    assert actual['source_archive_genesis_requires_postinception_data_activation'] is True
+    assert actual['initial_two_journals_precede_account_activation'] is True
+    assert actual['paper_startup_authorized'] is False
+    assert report['this_readonly_preflight_can_issue_financial_acceptance'] is False
 
 
 @pytest.mark.parametrize('args', [['--expected-source','HEAD'], ['--activation-root',r'C:\other'],

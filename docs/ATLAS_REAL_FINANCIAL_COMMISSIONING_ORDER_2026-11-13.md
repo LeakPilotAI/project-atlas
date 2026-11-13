@@ -1,0 +1,60 @@
+# Atlas — original two-lane commissioning order repaired (2026-11-13)
+
+## Executive finding
+
+The previous personal commissioning preflight was **read-only by design** and unconditionally returned `BLOCKED` for three stages: `OPERATIONAL_QD_SOURCE_PUBLICATION`, `FINANCIAL_INCEPTION`, and `RUNTIME_AUTHORIZATION`. The separate nine-domain desktop checker similarly returns NO_GO with nine independent financial acceptances unverified. **These are not counters that can increase simply by running unit tests or proving an independent source transport.** The preflight presentation order, however, incorrectly suggested that a native QD source must already have been published before operator activation and simulated financial inception.
+
+Original installed Python interfaces reveal the actual **two-account source/account ordering**. It is not permissible to force older false checks to PASS or insert a synthetic activation receipt. Instead, source/personal account onboarding must use the following original specialized authorities, each time-bound to the selected native release, running original Windows Job/process handles, native 5+7 writer identities and an independent UTC clock. Source evidence/rights review is an independent nonfinancial prerequisite.
+
+## Actual staged dependency order
+
+| Stage | Original operational contract |
+|---|---|
+| A — Pre-activation source and provider-rights review | Authenticate original QD research/valuation policy and legitimate free IEX use; separately verify HL historical consensus funding oracle/fees. Research eligibility is NOT native source publication. |
+| B — Original selected-native owner | Retain original selected installed release, Windows Job/process, all 12 distinct native root identities and version-safe independent UTC. Verified **briefly** in R20 source-only tests, but no lasting financial lease. |
+| C — Genuine account enrollment/manifest preparation | Construct exact native 5+7 writer-roster-bound QD USD and HL USDC accounts with 1000 opening units each, original native epochs/roots and fresh independent UTC, in same original process. No fake PID or manifests. |
+| D — Two original preinception coordination journals | Use **`NativeOriginalTwoJournalPreinceptionPermit`**, explicit `INITIALIZE_TWO_COORDINATION_JOURNALS_ONLY` scope, genuine selected original Job, qualified clock, exact journal initial images; ten other native financial roots still EMPTY. No activation yet. |
+| E — Preinception financial account activation | At original owner `PREINCEPTION_COORDINATION_READY`, `personal_activation_commission.retain_activation_writer_guard` requires exactly **`READ_ONLY` + `INITIALIZE_SIMULATED_ACCOUNTS`**. `CONNECT_APPROVED_DATA` and `AUTO_PAPER` cannot be added to this record. |
+| F — Once-only two simulated account inceptions | `personal_selected_two_account_issuer_factory._origination_requirements` independently rechecks original two populated coordination journals, exact same operator record/actions, account manifests and clock; `NativeSelectedTwoAccountSimulatedInception` publishes FS1/FS3 original native QD and HL ACKs and enters `INITIAL_READBACK_ONLY`. No PAPER start. |
+| G — NEW postinception data activation | After verified initial two accounts, issue/read back a **different** scoped activation that allows `CONNECT_APPROVED_DATA`. Do not reuse E's exact two-action record. |
+| H — Original QD source archive genesis | Only after G, `NativePersonalSourceInstallAuthority._check` can verify the accepted operator activation for `CONNECT_APPROVED_DATA`. Then initialize/recheck original native source archive image under its original identity-bound root; no account inception. |
+| I — Original QD current publication | The originally installed `QualityDipsCurrentProducer` needs a genuine operational `QD_CURRENT_RESEARCH_VERIFIED_V1` issuer, authentic source data, current quote/valuation policy, and original archive CAS/ACK. **Currently only synthetic/disposable test issuers exist**, so this remains a critical missing implementation and external evidence. |
+| J — Postinception PAPER/Stop scope | Issue the independently accepted original STOP-FIRST, `AUTO_PAPER`, `SHUTDOWN_FLATTEN` activation after sources and inceptions; G's data-only activation is not itself a PAPER permission. |
+| K — Genuine source/Stop/runtime | Original current QD and HL sources, proven Stop-first ownership and graceful simulated flatten, existing-only native ownership/custody, crash/restart reconciliation. No real-money order. |
+| L — Extended supervised PAPER | Multi-session forward PAPER, actual open-market QD plus Hyperliquid 24/7, durable performance/alerts and fault/Stop soak. This takes real elapsed operational time. |
+
+## Evidence from original code
+
+- `personal_original_preinception_journal_permit.py` expressly says the dedicated preactivation scope breaks the R18 journal/activation deadlock. Its `ACTION` is `INITIALIZE_TWO_COORDINATION_JOURNALS_ONLY`. It cannot initialize financial FS1/FS3, trade, or issue activation.
+- `personal_activation_commission.py` holds the original Job in phase `PREINCEPTION_COORDINATION_READY`, verifies exact actions `READ_ONLY`, `INITIALIZE_SIMULATED_ACCOUNTS`, and requires genuine two original initial financial acknowledgements before allowing postinception action grants.
+- `personal_selected_two_account_issuer_factory.py` also insists on those exact two initialization actions; `personal_selected_two_account_simulated_inception.py` verifies original FS1/FS3 and moves owner into `INITIAL_READBACK_ONLY`.
+- `personal_source_install_authority.py` always verifies `CONNECT_APPROVED_DATA`. That action cannot fit into exact preinception E's record. Therefore source-archive genesis is postinception H, not preinception stage 1.
+- Original personal QD policy allows a genuinely *operator-owned* local issuer, but **the input still requires independently authentic underlying data/provenance, acceptable valuation and provider rights**. The original source issuer is not implemented merely because a test fixture offers a method called `verify_current`.
+- The former `7/12` preflight PASS and `0/9` independent domain statuses are diagnostic snapshots, not an overall completion percentage. The three unconditionally blocked preflight checks were never a dynamically qualified runtime acceptor.
+
+## Actual change
+
+Created `scripts/observation_runtime/atlas_paper_actual_commissioning_order.py` exposing a **pure, no-I/O**, 12-stage dependency graph. It refuses duplicate/unknown names, out-of-order assertions or malformed legacy preflight inputs, records the proper original native authority needed for each stage, and **always returns financial files written false, startup false, and live trading false**—even if a caller falsely claims all stages accepted. This is a planning/reporting component, **not** a financial authority.
+
+Integrated it into `scripts/observation_runtime/personal_commissioning_preflight.py` as the new `actual_native_commissioning_sequence` report field; clarified misleading source/activation/account next-action text without changing ANY of the original 12-check PASS/BLOCKED decisions, custody rules, native protections, financial authorization path, or phase guards. Added unit and preflight integration tests, including cross-references to exact original native action constants. Selected immutable R20 is **not** modified, reselected or elevated.
+
+## Current next material blocker
+
+**Stage A** requires original verified source/market data and permitted valuation policy. Prior genuine selected R20 IEX evidence showed 4 authenticated HTTPS latest IEX reads for MSFT/AVGO/SCHD/VTI, **0/4 fresh**, 1/4 both-sided and 3/4 missing-sided outside market hours. Historical SEC quarter/P/E research and syndicated analyst listings did not independently certify the current QD valuation source. Hyperliquid 24/7 public book observations passed, but original historical settlement-time consensus oracle and native fee/right acceptance remain absent. Technical stage B was briefly observed under original Job/independent NTP, not held as an accepted financial native lease.
+
+Do not open original accounts, start simulated financial trades or claim full PAPER until all stage-specific original native issuers and independent operational acceptance are real. Source-only architecture repair does not replace months-long PAPER performance verification. No account creation, root modification, trading or use of paid data occurs in this change.
+
+Storage: source/docs/tests only under `D:\Work\Project Atlas`. Original existing `D:\AtlasRuntime`, `D:\AtlasCustody`, `D:\AtlasPaper` native identities preserved. Approved post-execution temp cleanup on C: at end.
+
+## Execution evidence and guarded-test disposition
+
+- Existing original selected R20 Python used from `D:\AtlasRuntime\releases\d3c26d8189e4b18c0a88d0b4ebdec48b81838d1a\python\python.exe`; all test temporary storage routed via `Atlas-Use-Project-Storage.ps1` to the main `D:\Work\Project Atlas` root. No native original financial roots or selected immutable release changed.
+- New pure dependency-graph unit tests validate **twelve stages**, no reverse dependencies, no out-of-order stage claims, exact original journal permit and exact preinception account activation actions, the separate postinception data activation, legacy preflight schema integrity, and no PAPER/live grants even with fake complete claims.
+- **Additional actual fail-closed patch:** `atlas_r20_qd_selected_source_worker.py` now permits the QD operational source CAS only when the selected original owner is in `INITIAL_READBACK_ONLY`, which is the state reached after actual two initial account FS1/FS3 readbacks. It rejects `PREINCEPTION` and `PREINCEPTION_COORDINATION_READY` as impossible source-archive-activation phases; test fixtures were changed to exercise postinception only, with explicit earlier-phase refusal tests.
+- New `actual_native_commissioning_sequence` field in `personal_commissioning_preflight.py` provides the correct ordering and actions. The older 12-check outcomes are retained unmodified. `this_readonly_preflight_can_issue_financial_acceptance=false` explicitly prevents treating 7/12 PASS as a financial grant.
+- Focused combined original source, preinception journals, activation, two native account issuers, native source archive and preflight tests: **142 passed** (green). Wider source/activation/native ownership/selected IEX/Hyperliquid and Stop-offline subset: **442 passed, 11 skipped**, Ruff all checked files clean. A separate exploratory broader run encountered the existing test `test_personal_owned_stop_timing.py::test_three_owned_native_shutdowns_include_exit_and_post_exit_readback[1]`, which requires an **AIP06 guarded-session** fixture. This is **not** an unrestricted test; it was not bypassed or included in the green suite and remains a separate guarded verification prerequisite.
+- **Financial effect count remains zero**: 12/12 original financial namespaces expected empty, no real two-journal publication or $1,000 inception, original activation/readback missing, no qualified source issuer, no Start, no live trading. Structural source-only R20 tests were not reinterpreted as account or revenue performance.
+
+## Operational recommendation
+
+Treat this as a corrected original native sequence, not “12 of 12 ready.” The first genuine unresolved prerequisites remain original QD/HL data rights, current source valuation inputs, safe historical consensus settlement oracle, genuine installed source issuer, and a continuously retained original Job/clock/writer structure. The original personal policy permits a local operator-owned issuer, but **there is no operational QD_CURRENT_RESEARCH_VERIFIED_V1 issuer in the source outside of disposable tests**. No amount of editing the legacy read-only status fields can substitute for this or for genuine supervised forward PAPER operation.
