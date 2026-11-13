@@ -30,3 +30,11 @@ This migration is **not complete**, and none of these project instructions autho
 November 12, 2026, read-only native inventory: `D:\AtlasRuntime` ~4.53 GiB across 205,605 scanned entries; `D:\AtlasCustody` and `D:\AtlasPaper` contained directory namespaces but zero files; historical shutdown backup ~2.14 GiB. These are complete bounded local enumerations, not guessed disk sizes. The main repo was larger than the 350,000-entry bounded scan and its reported size is a **partial**, not the total.
 
 C: targeted cleanup: 41 abandoned `atlas-disposable-chrome-????????` temporary test profiles dated November 8 were verified not active, contained no reparse points, and removed, recovering 69,549,895 bytes (~66.33 MiB). Shared pip cache and unrelated data were not touched.
+
+## Mandatory end-of-execution Windows Temp cleanup (added November 12, 2026)
+
+At the **end of every future Atlas development/Commander execution** (once its tool processes have exited), run the project script `scripts/windows/Atlas-Post-Execution-Temp-Cleanup.ps1 -ExecuteVerified`. The script narrowly removes inactive, abandoned Atlas-specific disposable Chrome test profiles from the current Windows user's `C:\Users\...\AppData\Local\Temp`, with strict path, age, activity, link and size bounds. It runs read-only without `-ExecuteVerified`, reports the number/bytes cleaned and skips active profiles. Also verify the development commands used `scripts/windows/Atlas-Use-Project-Storage.ps1` to keep new Atlas temporary data on D: in the first place.
+
+Never delete `C:\Windows`, other users' data, shared pip/VS Code caches, recent/in-use Temp directories, or any financial receipt, selected immutable release, account journal, custody directory, original Stop evidence, or project diagnostics under D:. If a cleanup check refuses, **record the refusal**; do not bypass it or perform broad cleanup.
+
+Cleanup is a **final step after each execution** and is not an alternative to the independent safe migration of the original three D: native directories.
