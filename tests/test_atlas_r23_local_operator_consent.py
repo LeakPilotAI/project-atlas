@@ -176,16 +176,24 @@ def test_original_pin_assignment_is_unique_even_with_duplicate_literal(kind):
             b"decision canonical source hash."
         )
     original = Path(module.__file__).read_bytes()
-    assert original.count(marker) == 2  # Includes a bytes literal in source_hash().
+    # A genuine human approval may already have pinned the installation
+    # assignment; reconstruct the canonical unapproved bytes ONLY in memory.
+    pristine, count = re.subn(
+        rb'(?m)^APPROVAL_PIN = "[0-9a-f]{64}"  # ',
+        b"APPROVAL_PIN = None  # ",
+        original,
+    )
+    assert count in (0, 1)
+    assert pristine.count(marker) == 2  # Includes the source_hash bytes literal.
     assert sum(
         line.rstrip(b"\r\n") == marker
-        for line in original.splitlines(keepends=True)
+        for line in pristine.splitlines(keepends=True)
     ) == 1
     new_line = marker.replace(b" = None  #", b' = "' + b"a" * 64 + b'"  #')
     pinned = local._pin_single_exact_assignment(
-        original, marker, new_line, "R23_EXACT_ASSIGNMENT_REQUIRED",
+        pristine, marker, new_line, "R23_EXACT_ASSIGNMENT_REQUIRED",
     )
-    assert pinned != original
+    assert pinned != pristine
     assert pinned.count(marker) == 1  # The embedded hash-code literal is untouched.
     assert pinned.count(new_line) == 1
     assert module.source_hash() == (

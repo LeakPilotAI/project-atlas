@@ -38,16 +38,28 @@ def test_r23_installer_exactly_bound_to_existing_source_archive_and_r21():
     assert inst.EXPECTED_FILES == 10763
     assert inst.EXPECTED_DIRECTORIES == 915
     assert inst.EXPECTED_BYTES == 265991191
-    assert inst.APPROVAL_PIN is None
+    if inst.APPROVAL_PIN is not None:
+        assert re.fullmatch("[0-9a-f]{64}", inst.APPROVAL_PIN)
+        assert inst.APPROVAL_PIN == hashlib.sha256(inst.APPROVAL.read_bytes()).hexdigest()
 
 
 def test_installer_hash_binds_actual_exact_file_not_a_historical_approval():
     raw = Path(inst.__file__).read_bytes()
-    assert hashlib.sha256(raw).hexdigest() == inst.source_hash()
+    canonical, hits = re.subn(
+        rb'(?m)^APPROVAL_PIN = "[0-9a-f]{64}"  # ',
+        b"APPROVAL_PIN = None  # ", raw,
+    )
+    assert hits in (0, 1)
+    assert hashlib.sha256(canonical).hexdigest() == inst.source_hash()
     assert re.fullmatch("[0-9a-f]{64}", inst.source_hash())
 
 
 def test_no_approval_pin_is_terminal_before_files_or_public_ntp(monkeypatch):
+    # Simulate missing independent decision without touching the real pin/receipt.
+    monkeypatch.setattr(inst, "APPROVAL_PIN", None)
+    preexisting = (
+        inst.TARGET.exists(), inst.RECEIPT.exists(), inst.JOURNAL.exists(),
+    )
     monkeypatch.setattr(
         inst, "frozen_prepared",
         lambda: pytest.fail("Must never prepare actual code in missing-approval mode"),
@@ -58,9 +70,9 @@ def test_no_approval_pin_is_terminal_before_files_or_public_ntp(monkeypatch):
     )
     with pytest.raises(ValueError, match="DISTINCT_SID_OPERATOR_DECISION_REQUIRED"):
         inst.main(["--execute-approved-code-only", "--confirm-scope", inst.SCOPE])
-    assert not inst.TARGET.exists()
-    assert not inst.RECEIPT.exists()
-    assert not inst.JOURNAL.exists()
+    assert (
+        inst.TARGET.exists(), inst.RECEIPT.exists(), inst.JOURNAL.exists(),
+    ) == preexisting
 
 
 @pytest.mark.parametrize("supplied", ("", "YES", "APPROVE_ALL", "INSTALL_AND_TRADE"))
@@ -69,7 +81,8 @@ def test_no_short_or_broad_operator_scope_can_invoke_native_install(supplied):
         inst.main(["--execute-approved-code-only", "--confirm-scope", supplied])
 
 
-def test_test_only_boolean_cannot_substitute_for_separate_operator_approval():
+def test_test_only_boolean_cannot_substitute_for_separate_operator_approval(monkeypatch):
+    monkeypatch.setattr(inst, "APPROVAL_PIN", None)
     with pytest.raises(ValueError, match="DISTINCT_SID_OPERATOR_DECISION_REQUIRED"):
         inst.install(clock=object(), approved=True)
     with pytest.raises(ValueError, match="INSTALL_OPERATOR_APPROVAL_REQUIRED"):
@@ -85,4 +98,9 @@ def test_original_r21_predecessor_cannot_be_relabelled(monkeypatch):
 def test_installer_has_no_preinstalled_or_financial_runtime_effect():
     assert inst.TARGET == Path("D:/AtlasRuntime/releases") / inst.SOURCE
     assert inst.SOURCE != review.R21_SOURCE
-    assert inst.APPROVAL_PIN is None
+    if inst.APPROVAL_PIN is not None:
+        import json
+        decision = json.loads(inst.APPROVAL.read_bytes())
+        assert decision["financial_authority"] is False
+        assert decision["paper_start_authorized"] is False
+        assert decision["live_trading_authorized"] is False

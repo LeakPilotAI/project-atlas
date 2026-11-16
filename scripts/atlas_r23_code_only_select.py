@@ -17,6 +17,17 @@ from pathlib import Path
 from scripts import atlas_r23_code_only_install as install
 from scripts import release_selection as releases
 from scripts.atlas_r13_low_impact_installer import LowImpactEnvelope
+from scripts.atlas_r23_native_recovery import AUDIT_SHA as RECOVERY_AUDIT_SHA
+from scripts.atlas_r23_native_recovery import (
+    RECOVERY_JOURNAL,
+    RECOVERY_RECEIPT,
+)
+from scripts.atlas_r23_native_recovery import (
+    SCHEMA as RECOVERY_SCHEMA,
+)
+from scripts.atlas_r23_native_recovery import (
+    approval_digest as recovery_approval_digest,
+)
 from scripts.build_release_candidate import source_bytes
 from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
 from scripts.observation_runtime.atlas_r17_cpu_budget import NativeR17CpuBudget
@@ -113,7 +124,7 @@ def _receipt_and_journal():
     )
     rows = journal.splitlines()
     if (
-        len(rows) != 2
+        len(rows) not in (2, 3)
         or releases.strict(rows[0]) != {
             "schema": "ATLAS_R23_UNSELECTED_CODE_INSTALL_INTENT_V1",
             "source_commit": install.SOURCE,
@@ -136,12 +147,100 @@ def _receipt_and_journal():
         "artifact_digest": artifact,
     }, "WINDOWS_LOCAL")
     releases.validate_native_install_ack(spec, receipt, journal)
-    if releases.strict(rows[1]) != {
-        "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
-        "receipt_sha256": sha,
-    }:
-        raise ValueError("R23_ORIGINAL_FINAL_INSTALLED_ACK_REFUSED")
+    if len(rows) == 2:
+        if releases.strict(rows[1]) != {
+            "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
+            "receipt_sha256": sha,
+        }:
+            raise ValueError("R23_ORIGINAL_FINAL_INSTALLED_ACK_REFUSED")
+    else:
+        require_exact_original_recovered_install_ack(
+            rows, receipt_sha=sha, artifact=artifact,
+        )
     return spec
+
+
+def require_exact_original_recovered_install_ack(
+    rows, *, receipt_sha, artifact,
+):
+    """Recovery is accepted only with original refusal and new audited proof."""
+    if (
+        type(rows) is not list
+        or len(rows) != 3
+        or releases.strict(rows[1]) != {
+            "stage": "REFUSED_PRESERVE_PARTIAL_NO_RETRY",
+        }
+        or releases.strict(rows[2]) != {
+            "stage": "UNSELECTED_CODE_INSTALL_VERIFIED",
+            "receipt_sha256": receipt_sha,
+        }
+    ):
+        raise ValueError("R23_ORIGINAL_REFUSAL_AND_RECOVERED_ACK_REQUIRED")
+    refused_sha = hashlib.sha256(b"\n".join(rows[:2])).hexdigest()
+    receipt_bytes = source_bytes(
+        RECOVERY_RECEIPT.parent, RECOVERY_RECEIPT.name, maximum_bytes=8192,
+    )
+    proof = releases.strict(receipt_bytes)
+    if (
+        type(proof) is not dict
+        or receipt_bytes != json.dumps(
+            proof, sort_keys=True, allow_nan=False,
+        ).encode()
+        or set(proof) != {
+            "schema", "stage", "source_commit", "source_archive_sha256",
+            "original_partial_native_files_rechecked",
+            "new_native_create_only_files", "final_original_native_files",
+            "final_original_native_directories",
+            "original_refusal_journal_sha256",
+            "independent_original_native_installed_readback",
+            "source_release_artifact_digest", "code_only_release_selected",
+            "financial_authority", "paper_start_authorized",
+            "live_trading_authorized",
+        }
+        or proof["schema"] != RECOVERY_SCHEMA
+        or proof["stage"] != "RECOVERY_FULL_NATIVE_ORIGINAL_READBACK_ACCEPTED"
+        or proof["source_commit"] != install.SOURCE
+        or proof["source_archive_sha256"] != install.ARCHIVE_SHA
+        or proof["original_partial_native_files_rechecked"] != 7910
+        or proof["new_native_create_only_files"] != 2853
+        or proof["final_original_native_files"] != install.EXPECTED_FILES
+        or proof["final_original_native_directories"]
+        != install.EXPECTED_DIRECTORIES
+        or proof["original_refusal_journal_sha256"] != refused_sha
+        or proof["independent_original_native_installed_readback"] is not True
+        or proof["source_release_artifact_digest"] != artifact
+        or any(proof[k] is not False for k in (
+            "code_only_release_selected", "financial_authority",
+            "paper_start_authorized", "live_trading_authorized",
+        ))
+    ):
+        raise ValueError("R23_EXACT_NATIVE_RECOVERY_RECEIPT_REQUIRED")
+    journal_bytes = source_bytes(
+        RECOVERY_JOURNAL.parent, RECOVERY_JOURNAL.name,
+        maximum_bytes=8192,
+    )
+    journal_rows = journal_bytes.splitlines()
+    if (
+        len(journal_rows) != 2
+        or releases.strict(journal_rows[0]) != {
+            "schema": RECOVERY_SCHEMA,
+            "stage": "RECOVERY_INTENT_VERIFY_EXISTING_CREATE_MISSING_ONLY",
+            "original_audit_sha256": RECOVERY_AUDIT_SHA,
+            "original_refusal_sha256": refused_sha,
+            "new_original_root_allowed": False,
+            "financial_authority": False,
+            "selection_allowed": False,
+        }
+        or releases.strict(journal_rows[1]) != {
+            "stage": "RECOVERED_FULL_CODE_ONLY_NATIVE_ACK",
+            "receipt_sha256": receipt_sha,
+        }
+    ):
+        raise ValueError("R23_EXACT_NATIVE_RECOVERY_JOURNAL_REQUIRED")
+    # Bind the recovered release to the distinct, real Windows-local recovery
+    # approval; the old installation decision alone never authorizes recovery.
+    recovery_approval_digest()
+    return True
 
 
 def candidate():
