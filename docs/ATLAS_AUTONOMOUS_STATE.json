@@ -23665,5 +23665,75 @@
     "cleanup-result.json": "2547ac3f3759835e11f502f552b0d1082524be382095bb995dc3e88533bd772e",
     "final-protected-invariants.json": "02d4e137942fbf0b6c7ab89920c8e05962f3a51c095362cf88ff41e511f8e48d"
   }
+},
+  "atlas_deployment_hl_decision_20261116": {
+  "status": "DEPLOYMENT_LOCAL_DECISIONS_MISSING_FINANCIAL_METHODOLOGY_BLOCKED",
+  "source_checkpoint": "485fe99c2d3c758e3c689ba7ca0ced45486c8d8f",
+  "report": "docs/ATLAS_R23_DEPLOYMENT_AND_HL_METHODOLOGY_DECISION_2026-11-16.md",
+  "selected_release": {
+    "artifact_digest": "02c5705e586f92415612c70309bd7051ad76629278f6c22905b056558b602b27",
+    "domain": "WINDOWS_LOCAL",
+    "receipt": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-119dd8626da32e74bd7f86db9de1c1a8fd2c20ac.json",
+    "receipt_sha256": "b097b8f84945d49490bcb31cf330abf4a660651e0fc509fa92890ba9e8e24fcf",
+    "release": "119dd8626da32e74bd7f86db9de1c1a8fd2c20ac",
+    "root": "D:\\AtlasRuntime\\releases\\119dd8626da32e74bd7f86db9de1c1a8fd2c20ac",
+    "schema": "QD_INSTALLED_RELEASE_REFERENCE_V1"
+  },
+  "selected_revision": 20,
+  "selection_head": "73718df3dd9d1f2dc2c588465658376c8123bc22048ca064b82f2c533309a0b0",
+  "native_state_observed_utc": "2026-11-16T15:35:06Z",
+  "r23_installed": false,
+  "r23_approval_present": false,
+  "financial_roots": {
+    "verified": 12,
+    "distinct": true,
+    "empty": 12
+  },
+  "account_inception_performed": false,
+  "r23_local_instruction": "Existing ATLAS-R23-Approve-And-Install.cmd; one instruction given, no approval entered or new interface created.",
+  "public_data_scope": {
+    "id": "HL-PUBLIC-INFO-FIVE-READS-20261116",
+    "sha256": "6959979f43111f9eb7b9e01c845d7d0cb24a901ab26bb72963a88653dc78725c",
+    "operator_answer": "Authorize this one public-data check",
+    "authorization_consumed": true,
+    "general_hold_remains_active": true
+  },
+  "actual_public_data": {
+    "observed_utc": "2026-11-16T15:39:45.375000+00:00",
+    "requests": 5,
+    "weight": 46,
+    "owner_seconds": 5.782,
+    "clock_uncertainty_ms": 139,
+    "peer_difference_ms": 1,
+    "book_ages_ms": {
+      "BTC": 818,
+      "ETH": 818,
+      "SOL": 818
+    },
+    "client_closed": true,
+    "clock_revoked": true,
+    "retained_worker_waited": true,
+    "evidence_files": 18,
+    "entries_including_root": 19,
+    "evidence_bytes": 149202,
+    "next_funding_returned": "2026-11-16T15:00:00Z",
+    "next_funding_reference_accepted": false,
+    "existing_policy_expected_boundary": "2026-11-16T16:00:00Z",
+    "discrepancy_cause": "UNKNOWN; no timestamp adjustment, undocumented fallback or retry"
+  },
+  "methodology": "Review-ready proposed HL-only intrahour pilot; no financial approval; original historical accounting preserved.",
+  "hl_only_source_branch": "Does not query equity quote/calendar; still requires both native accounts, exact source/authority objects and genuine Stop owner.",
+  "financial_source_accepted": false,
+  "paper_running": false,
+  "live_trading_authorized": false,
+  "new_test_suites_run": 0,
+  "validation": "Exact scope, five raw response hashes/lengths, request/deadline/resource totals, native root/selector snapshot and source branch review.",
+  "preserved_test_history": {
+    "python_passed": 807,
+    "python_skipped": 1,
+    "node_passed": 80,
+    "not_new_counts": true
+  },
+  "next": "Complete existing local deployment review if operator chooses; fresh accepted funding-reference/source/methodology and genuine original financial scope required before accounts/pilot. No second public request is authorized."
 }
 }
