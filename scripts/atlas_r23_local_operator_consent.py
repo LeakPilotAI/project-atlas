@@ -103,6 +103,39 @@ def approval_record():
     }
 
 
+def _pin_single_exact_assignment(original, marker, replacement, error):
+    """Change the single actual assignment, never its duplicated source-code literal.
+
+    The installer's source_hash() contains the unpinned marker as a bytes
+    literal. A global .count/.replace incorrectly matches that literal too.
+    Keep every other byte (including CRLF versus LF) unchanged.
+    """
+    if (
+        type(original) is not bytes
+        or type(marker) is not bytes
+        or type(replacement) is not bytes
+        or not marker.startswith(b"APPROVAL_PIN = None  # ")
+        or not replacement.startswith(b'APPROVAL_PIN = "')
+    ):
+        raise ValueError(error)
+    lines = original.splitlines(keepends=True)
+    matches = [
+        index for index, line in enumerate(lines)
+        if line.rstrip(b"\r\n") == marker
+    ]
+    if len(matches) != 1:
+        raise ValueError(error)
+    index = matches[0]
+    suffix = lines[index][len(marker):]
+    if suffix not in (b"", b"\n", b"\r\n"):
+        raise ValueError(error)
+    lines[index] = replacement + suffix
+    changed = b"".join(lines)
+    if changed == original or len(changed) != len(original) + len(replacement) - len(marker):
+        raise ValueError(error)
+    return changed
+
+
 def pin_after_human_action():
     require_visible_local_console()
     preflight()
@@ -114,8 +147,9 @@ def pin_after_human_action():
                + b'"  # Original distinct R23 operator approval; canonical source hash.')
     path = Path(inst.__file__)
     original = path.read_bytes()
-    if original.count(marker) != 1:
-        raise ValueError("R23_LOCAL_CANONICAL_SOURCE_PIN_MARKER_CHANGED")
+    pinned_source = _pin_single_exact_assignment(
+        original, marker, updated, "R23_LOCAL_CANONICAL_SOURCE_PIN_MARKER_CHANGED",
+    )
     # Create-only decision first; any interrupted stage fails the installer closed.
     with inst.APPROVAL.open("xb") as f:
         f.write(raw)
@@ -126,7 +160,7 @@ def pin_after_human_action():
         with tempfile.NamedTemporaryFile(mode="wb", prefix=".atlas-r23-consent-",
                                          suffix=".tmp", dir=path.parent, delete=False) as out:
             tmp = Path(out.name)
-            out.write(original.replace(marker, updated))
+            out.write(pinned_source)
             out.flush()
             os.fsync(out.fileno())
         if path.read_bytes() != original:
@@ -211,8 +245,9 @@ def pin_selection_after_human_action():
     )
     path = Path(selector.__file__)
     original = path.read_bytes()
-    if original.count(marker) != 1:
-        raise ValueError("R23_EXACT_CANONICAL_SELECTION_SOURCE_REQUIRED")
+    pinned_source = _pin_single_exact_assignment(
+        original, marker, updated, "R23_EXACT_CANONICAL_SELECTION_SOURCE_REQUIRED",
+    )
     # Original one-shot decision must already be durable before its source pin.
     # Partial state remains a refusal, not a reason to overwrite or retry.
     with selector.APPROVAL.open("xb") as stream:
@@ -226,7 +261,7 @@ def pin_selection_after_human_action():
             suffix=".tmp", dir=path.parent, delete=False,
         ) as stream:
             temporary = Path(stream.name)
-            stream.write(original.replace(marker, updated))
+            stream.write(pinned_source)
             stream.flush()
             os.fsync(stream.fileno())
         if path.read_bytes() != original:

@@ -153,3 +153,80 @@ def test_failed_native_install_refuses_second_scope_even_if_user_wants(monkeypat
     )
     with pytest.raises(ValueError, match="SUCCESS_REQUIRED_BEFORE_SELECTION"):
         local.main(["--approve-install-and-select"])
+
+
+@pytest.mark.parametrize("kind", ("install", "select"))
+def test_original_pin_assignment_is_unique_even_with_duplicate_literal(kind):
+    """Regression: user actually typed the code-only approval but substring count was 2."""
+    import hashlib
+    import re
+
+    from scripts import atlas_r23_code_only_select as selector
+
+    if kind == "install":
+        module = installer
+        marker = (
+            b"APPROVAL_PIN = None  # Original distinct R23 operator approval; "
+            b"canonical source hash."
+        )
+    else:
+        module = selector
+        marker = (
+            b"APPROVAL_PIN = None  # Distinct R23 one-shot selection user "
+            b"decision canonical source hash."
+        )
+    original = Path(module.__file__).read_bytes()
+    assert original.count(marker) == 2  # Includes a bytes literal in source_hash().
+    assert sum(
+        line.rstrip(b"\r\n") == marker
+        for line in original.splitlines(keepends=True)
+    ) == 1
+    new_line = marker.replace(b" = None  #", b' = "' + b"a" * 64 + b'"  #')
+    pinned = local._pin_single_exact_assignment(
+        original, marker, new_line, "R23_EXACT_ASSIGNMENT_REQUIRED",
+    )
+    assert pinned != original
+    assert pinned.count(marker) == 1  # The embedded hash-code literal is untouched.
+    assert pinned.count(new_line) == 1
+    assert module.source_hash() == (
+        local.EXPECTED_HASH if kind == "install" else local.EXPECTED_SELECTOR_HASH
+    )
+    canonical, n = re.subn(
+        rb"(?m)^APPROVAL_PIN = \"[0-9a-f]{64}\"  # ",
+        b"APPROVAL_PIN = None  # ",
+        pinned,
+    )
+    assert n == 1
+    assert hashlib.sha256(canonical).hexdigest() == module.source_hash()
+    assert Path(module.__file__).read_bytes() == original  # No test mutation.
+
+
+@pytest.mark.parametrize("newline", (b"\n", b"\r\n"))
+def test_assignment_pin_preserves_original_newlines(newline):
+    marker = b"APPROVAL_PIN = None  # Same safe marker."
+    pinned_line = b'APPROVAL_PIN = "' + b"a" * 64 + b'"  # Same safe marker.'
+    original = newline.join((
+        b"# start",
+        marker,
+        b'# reference = b"APPROVAL_PIN = None  # Same safe marker."',
+        b"# end",
+    )) + newline
+    changed = local._pin_single_exact_assignment(
+        original, marker, pinned_line, "R23_EXACT_ASSIGNMENT_REQUIRED",
+    )
+    assert changed == original.replace(marker + newline, pinned_line + newline, 1)
+
+
+@pytest.mark.parametrize("source", (
+    b"no assignment anywhere\n",
+    b"APPROVAL_PIN = None  # Same safe marker.\n" * 2,
+    b" # APPROVAL_PIN = None  # Same safe marker.\n",
+))
+def test_assignment_pin_refuses_missing_duplicate_or_indented_lines(source):
+    with pytest.raises(ValueError, match="R23_EXACT_ASSIGNMENT_REQUIRED"):
+        local._pin_single_exact_assignment(
+            source,
+            b"APPROVAL_PIN = None  # Same safe marker.",
+            b'APPROVAL_PIN = "' + b"a" * 64 + b'"  # Same safe marker.',
+            "R23_EXACT_ASSIGNMENT_REQUIRED",
+        )
