@@ -23511,5 +23511,159 @@
     "node-result.json": "3dc42a7309fbf5da5f9bea47ca85962c87e7a6ff0a017a6b296ef2e476545488",
     "node.stdout": "61e0e040a41858c1bcef4d5d4fd737f2b3677480ee8ca3a08ccf3bb730a6b8f6"
   }
+},
+  "atlas_final_execution_20261116": {
+  "status": "OFFLINE_READONLY_COMPLETE_OPERATIONAL_COMMISSIONING_HELD",
+  "source_head": "7c1836a73550631494aae296ba98f81de94e2f8b",
+  "report": "docs/ATLAS_FINAL_PAPER_EXECUTION_2026-11-16.md",
+  "selected_release": {
+    "artifact_digest": "02c5705e586f92415612c70309bd7051ad76629278f6c22905b056558b602b27",
+    "domain": "WINDOWS_LOCAL",
+    "receipt": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-119dd8626da32e74bd7f86db9de1c1a8fd2c20ac.json",
+    "receipt_sha256": "b097b8f84945d49490bcb31cf330abf4a660651e0fc509fa92890ba9e8e24fcf",
+    "release": "119dd8626da32e74bd7f86db9de1c1a8fd2c20ac",
+    "root": "D:\\AtlasRuntime\\releases\\119dd8626da32e74bd7f86db9de1c1a8fd2c20ac",
+    "schema": "QD_INSTALLED_RELEASE_REFERENCE_V1"
+  },
+  "selected_revision": 20,
+  "selection_head": "73718df3dd9d1f2dc2c588465658376c8123bc22048ca064b82f2c533309a0b0",
+  "r23_source": "96c6b85f76368a69bfd035cbcf3eb05776c21525",
+  "r23_approval": "OPERATOR_EXPLICITLY_KEEP_UNAPPROVED",
+  "r23_installed": false,
+  "provider_checks": "HOLD_NO_RETRY",
+  "financial_namespaces": {
+    "verified": 12,
+    "distinct": true,
+    "empty": 12,
+    "same_identity_after_tests": true
+  },
+  "financial_accounts_initialized": false,
+  "balances": "UNAVAILABLE_NOT_CREATED",
+  "validation": {
+    "profiles": [
+      {
+        "profile": "regression",
+        "passed": 501,
+        "failed": 0,
+        "skipped": []
+      },
+      {
+        "profile": "finish-offline",
+        "passed": 306,
+        "failed": 0,
+        "skipped": [
+          "test_stop_ledger_refuses_symlink_database"
+        ]
+      }
+    ],
+    "distinct_python_case_ids": 808,
+    "python_passed": 807,
+    "python_failed": 0,
+    "python_skipped": 1,
+    "node_passed": 80,
+    "node_failed": 0,
+    "node_skipped": 0,
+    "native_financial_cases_executed": 0,
+    "new_application_tests_added": 0,
+    "test_failures": 0,
+    "outer_timeouts": 0,
+    "reporting_errors": [
+      {
+        "phase": "node tail printing",
+        "kind": "cp1252 UnicodeEncodeError",
+        "node_exit_code": 0,
+        "correction": "ASCII JSON output; no test rerun"
+      },
+      {
+        "phase": "final native invariant diagnostic",
+        "kind": "alternate root spelling refused",
+        "correction": "exact existing accepted backslash path; original guard unchanged; read-only recheck passed"
+      }
+    ]
+  },
+  "clock_observation": {
+    "schema": "ATLAS_FINAL_READONLY_TWO_PEER_NTP_V1",
+    "observed_utc": "2026-11-16T15:06:36Z",
+    "windows_time_modified": false,
+    "financial_authority": false,
+    "installation_performed": false,
+    "qualification_180s_performed": false,
+    "status": "TWO_PEER_READONLY_SAMPLE_ACCEPTED",
+    "evidence": {
+      "schema": "ATLAS_INDEPENDENT_TWO_NTP_CLOCK_V1",
+      "domain": "TWO_PUBLIC_UNAUTHENTICATED_NTP_PEERS",
+      "source": "ATLAS_NTP_V1:time.cloudflare.com+time.google.com",
+      "runtime_id": "atlas-final-readonly-20261116",
+      "bound_ms": 139,
+      "peer_difference_ms": 1,
+      "os_windows_time_service_required": false,
+      "financial_authority": false
+    },
+    "sample": {
+      "schema": "ATLAS_INDEPENDENT_PRECISE_UTC_V1",
+      "utc_ns": 1794841596223798471,
+      "monotonic_ns": 38549109497600,
+      "uncertainty_ms": 139,
+      "source": "ATLAS_NTP_V1:time.cloudflare.com+time.google.com"
+    },
+    "temporary_capability_revoked": true
+  },
+  "native_preflight_seconds": 103.125,
+  "host_resource_admitted": true,
+  "maximum_logical_processors": 2,
+  "cleanup": {
+    "entries_removed": 586,
+    "files_removed": 250,
+    "bytes_removed": 2989925,
+    "original_release_financial_receipts_untouched": true
+  },
+  "discord_config_presence": {
+    "schema": "ATLAS_DISCORD_CONFIGURATION_PRESENCE_ONLY_V1",
+    "env_file": "D:\\Work\\Project Atlas\\backend\\.env",
+    "nonempty_fields": {
+      "DISCORD_OWNER_IDS": true,
+      "DISCORD_CHANNEL_ID": true,
+      "DISCORD_TOKEN": true
+    },
+    "transport_tested": false,
+    "values_printed": false,
+    "financial_provider_fields_loaded": false,
+    "message_sent": false
+  },
+  "discord_delivery_verified": false,
+  "financial_desktop_start_stop_verified": false,
+  "supervised_paper_executed": false,
+  "paper_running": false,
+  "live_trading_authorized": false,
+  "funding_policy_review": "Current official 0.5%/hour wording must be reconciled with historical 4% sanity ceiling and applicable source dates; no historical semantic rewrite or financial method approval performed.",
+  "remaining": [
+    "R23 local exact code-only install and selection decisions (explicitly held)",
+    "Financial HL-first methodology/source rights/budgets and separately resumed provider checks",
+    "Original native Job/5+7 roles/clock/two manifests/current exact financial operator scope",
+    "Two journals, pre-inception activation, once-only USD/USDC inception ACKs, distinct data activation",
+    "Original source acceptance, Stop-first runtime and genuine supervised Start/Stop/restart/monitoring"
+  ],
+  "next": "Respect existing holds; no repeated approval request. When operator changes those decisions, use existing R23 launcher and exact original financial sequence; do not create another release or synthesize authority.",
+  "evidence_sha256": {
+    "native-preflight.json": "9427fbacedaaba434e13fcf95d54ed5b22226a5879437452c90a3648d98d9808",
+    "read_only_preflight-run.json": "dbbc5ac6c91da48303742aa14b073ad620fea0b987ab858cbe046d94ea7811d7",
+    "clock-observation.json": "94ed65256019667d3848e9c5bdf16d830e58611acc2b458802161d8aca3563df",
+    "clock_observation-run.json": "b4e8d6711b1163b09ed0a69805b8fad48fe418c023416213c89ae6f523b487c8",
+    "regression-profile.json": "9f4b88ea48a26783058f6ea0780989903e0608147856218cb254466e3b5c8191",
+    "regression.xml": "8176e6c48d58dd53f0be6a23bd3bfcd4b6150cb35bde03afb9abc5b30caacea9",
+    "regression-run.json": "8aa1555c250382399a7bcdb6e86d4b81aa4fea1817b7f1a03754a38e066dd84c",
+    "finish-offline-profile.json": "85cc41aa4097f5a1d711141cf61c34520d746f22717b4df0fceb122cfbc62d6d",
+    "finish-offline.xml": "85423e8ed76d2e5a6c53857f042025f66edafc0acb87fe69ace811c969dfd55a",
+    "finish_offline-run.json": "9519a92d4c5fe1f2f7cb47fa6521d4641ca0d3d4c6297f12b080fc43a52af734",
+    "node-run.json": "7da68a939f57d48ebfc38111cb2351bd79419c2cf95886c45ae486e9990ad85f",
+    "node.stdout": "be03e0668ff473c2627016727d5fb5c9986e2c468572601ac1320f26e900d7e3",
+    "node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "validation-summary.json": "86ed8f44d6bab10b1cd0a2d603707310b0fe6b370982f34d5bd6edd4b943b1aa",
+    "desktop-links.json": "74d492a62e55185bd954e4287a4610769ed1d2a8151b9dde0ae6b68b7f1235e4",
+    "discord-configuration-presence.json": "0323c1dc961d892baa001920a7b2bb3f84e4f60c636a35e77f9af98f926adbea",
+    "cleanup-before.json": "f84331e04d628c04c77810f98180f613b0652fa7deed0d56893184a0d1004167",
+    "cleanup-result.json": "2547ac3f3759835e11f502f552b0d1082524be382095bb995dc3e88533bd772e",
+    "final-protected-invariants.json": "02d4e137942fbf0b6c7ab89920c8e05962f3a51c095362cf88ff41e511f8e48d"
+  }
 }
 }
