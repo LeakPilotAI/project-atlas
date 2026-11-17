@@ -16,6 +16,59 @@ import ctypes
 import os
 from ctypes import wintypes
 
+
+class NativeFinancialReleaseAdmission:
+    """Retained full release verification BEFORE fresh financial manifests.
+
+    The original NativePersonalReleaseIdentity keeps every verified native
+    file/directory handle. Each use rechecks those bindings, module cohort,
+    actual process and exact current native selector. No cached JSON proof,
+    financial authority, clock, filesystem publication or process launch.
+    """
+    def __init__(self, *, release):
+        from scripts.observation_runtime.personal_release_identity import NativePersonalReleaseIdentity
+        if type(release) is not NativePersonalReleaseIdentity:
+            raise ValueError('FINANCIAL_RELEASE_RETAINED_NATIVE_IDENTITY_REQUIRED')
+        self.release=release
+        self._release=release
+        self._digest=release.artifact_digest
+        self._head=None
+        self._revoked=False
+        self.verify(release_digest=self._digest)
+
+    def verify(self, *, release_digest):
+        from pathlib import Path
+        import sys
+        from scripts.observation_runtime.personal_native_financial_release_origin import validate_origin
+        from scripts.observation_runtime.personal_version_safe_release_clock import (
+            CLOCK_RELATIVE, SELECTOR_NATIVE, admit_version_safe_clock_source,
+        )
+        from scripts.release_selection_store import NativeSelectionStore
+        if self._revoked or self.release is not self._release or release_digest!=self._digest:
+            self._revoked=True
+            raise ValueError('FINANCIAL_RELEASE_RETAINED_ADMISSION_REVOKED')
+        try:
+            held=self.release.verify(release_digest=release_digest)
+            module=Path(__file__).absolute().with_name('personal_activation_commission.py')
+            if module.parents[2]!=self.release.root:
+                raise ValueError('FINANCIAL_RELEASE_RETAINED_SOURCE_COHORT_CONFLICT')
+            store=NativeSelectionStore(root=r'D:\AtlasRuntime\selection',native_root=list(SELECTOR_NATIVE))
+            try:
+                with store.locked():
+                    head,spec=admit_version_safe_clock_source(
+                        source_file=self.release.root/CLOCK_RELATIVE,records=store.records())
+                    origin=validate_origin(module_path=module,executable=Path(sys.executable),
+                                           selected=spec,release_digest=release_digest)
+                if (held['source_commit']!=origin['selected_code_release']
+                        or self._head is not None and head!=self._head):
+                    raise ValueError('FINANCIAL_RELEASE_RETAINED_SELECTION_CHANGED')
+                self._head=head
+                return origin
+            finally:store.close()
+        except BaseException:
+            self._revoked=True
+            raise
+
 from scripts.observation_runtime.atlas_r15_disposable_writer_process_audit import (
     _windows_handle_identity,
 )
@@ -77,7 +130,7 @@ class NativeOriginalSelfJob:
             raise ValueError("ORIGINAL_SELF_JOB_NATIVE_KILL_ON_CLOSE_NOT_HELD")
         return True
 
-    def selected_two_account_owner(self, *, qd, perp, release_digest):
+    def selected_two_account_owner(self, *, qd, perp, release_digest, release_admission=None):
         """Reuses genuine native selected-finance owner admission, never fake."""
         from scripts.observation_runtime.personal_native_financial_release_origin import (
             require_selected_native_origin,
@@ -87,9 +140,14 @@ class NativeOriginalSelfJob:
         )
 
         self.verify()
-        require_selected_native_origin(release_digest=release_digest)
+        if release_admission is None:
+            require_selected_native_origin(release_digest=release_digest)
+        elif (type(release_admission) is not NativeFinancialReleaseAdmission
+                or release_admission.verify(release_digest=release_digest) is None):
+            raise ValueError('ORIGINAL_SELF_JOB_RETAINED_RELEASE_REQUIRED')
         owner = RetainedSelectedNativeOwnerPreflight(
-            child=self.child, qd=qd, perp=perp, release_digest=release_digest)
+            child=self.child, qd=qd, perp=perp, release_digest=release_digest,
+            release_admission=release_admission)
         if (owner._identity != self.identity
                 or owner.verify_still_running() is not True):
             raise ValueError("ORIGINAL_SELF_JOB_SELECTED_WRITER_PROOF_REFUSED")
@@ -102,6 +160,13 @@ class NativeOriginalSelfJob:
         )
         self.verify()
         return NativeRecoveredReadOnlyOwner(original_self_job=self, readback=readback)
+
+    def readonly_recovery_activation_guard(self, *, qd, perp, release_digest, release_admission=None):
+        """Identity-only READ approval guard; no writer/financial authority."""
+        from scripts.observation_runtime.personal_owner_continuity_v2 import NativeReadOnlyRecoveryActivationGuard
+        self.verify()
+        return NativeReadOnlyRecoveryActivationGuard(job=self,qd=qd,perp=perp,
+            release_digest=release_digest,release_admission=release_admission)
 
 
 def create_original_self_job():

@@ -117,14 +117,22 @@ def validate_selected_two_lane_rosters(qd, perp, *, original_process,
 class RetainedSelectedNativeOwnerPreflight:
     """Hold actual selected installed Job and roots; no financial lease method."""
 
-    def __init__(self, *, child, qd, perp, release_digest):
+    def __init__(self, *, child, qd, perp, release_digest, release_admission=None):
         if (os.name != "nt" or type(child) is not ContainedChild
                 or type(child.api) is not WindowsJobAPI
                 or child.closed or not child.job or not child.process):
             raise ValueError("SELECTED_OWNER_EXACT_ORIGINAL_JOB_PROCESS_REQUIRED")
         # This call is non-injectable production admission: native selector and
         # installed Python original Windows-handle readback must succeed first.
-        origin = require_selected_native_origin(release_digest=release_digest)
+        from scripts.observation_runtime.personal_native_original_self_job import NativeFinancialReleaseAdmission
+        if release_admission is None:
+            origin=require_selected_native_origin(release_digest=release_digest)
+        elif type(release_admission) is NativeFinancialReleaseAdmission:
+            origin=release_admission.verify(release_digest=release_digest)
+        else:
+            raise ValueError('SELECTED_OWNER_RETAINED_NATIVE_RELEASE_ADMISSION_REQUIRED')
+        self._release_admission=release_admission
+        self._retained_admission=release_admission
         release = origin["selected_code_release"]
         expected_image = str(
             Path("D:/AtlasRuntime/releases") / release / "python/python.exe")
@@ -179,6 +187,11 @@ class RetainedSelectedNativeOwnerPreflight:
         }
 
     def _verify_original_job(self):
+        admission=getattr(self,'_release_admission',None)
+        if admission is not getattr(self,'_retained_admission',None):
+            raise ValueError('SELECTED_OWNER_RETAINED_RELEASE_ADMISSION_CHANGED')
+        if admission is not None:
+            admission.verify(release_digest=self.release_digest)
         if (self.child.closed or self.child.api is not self.api
                 or self.child.job != self.job or self.child.process != self.process
                 or require_native_version_safe_clock_source(deep=False)

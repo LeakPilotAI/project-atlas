@@ -4,6 +4,7 @@ No issuer, writer re-enrollment, phase restoration, process launch or grants.
 Native use requires this exact module in a separately selected installation.
 """
 from pathlib import Path
+from builtins import ExceptionGroup
 
 from app.services.paper_financial_replay import body, digest, strict
 from app.services.personal_current_pins import PersonalCurrentPins
@@ -80,15 +81,25 @@ def verify_original_account_roots(enrollments, custody_readers=None):
                     raise ValueError('OWNER_V2_NATIVE_ACCOUNT_ROOT_ALIAS')
                 seen.add(identity)
         finally:
+            errors=[]
             for output in outputs.values():
-                output.close()
+                try:output.close()
+                except Exception as exc:errors.append(exc)
+            if errors:
+                raise ExceptionGroup('OWNER_V2_NATIVE_ROOT_HANDLE_CLEANUP_FAILED',errors)
     if len(seen)!=12:
         raise ValueError('OWNER_V2_TWELVE_ORIGINAL_NATIVE_ROOTS_REQUIRED')
     return True
 
 
-def require_installed_continuity_source(release_digest):
-    origin = require_selected_native_origin(release_digest=release_digest)
+def require_installed_continuity_source(release_digest, release_admission=None):
+    from scripts.observation_runtime.personal_native_original_self_job import NativeFinancialReleaseAdmission
+    if release_admission is None:
+        origin=require_selected_native_origin(release_digest=release_digest)
+    elif type(release_admission) is NativeFinancialReleaseAdmission:
+        origin=release_admission.verify(release_digest=release_digest)
+    else:
+        raise ValueError('OWNER_V2_RETAINED_NATIVE_RELEASE_ADMISSION_REQUIRED')
     expected = (Path('D:/AtlasRuntime/releases') / origin['selected_code_release'] /
                 'scripts/observation_runtime/personal_owner_continuity_v2.py')
     if Path(__file__).absolute() != expected:
@@ -96,10 +107,77 @@ def require_installed_continuity_source(release_digest):
     return origin
 
 
+class NativeReadOnlyRecoveryActivationGuard:
+    """Fresh READ_ONLY-record admission, BEFORE current-reader construction.
+
+    This observes native identity/ACL/root metadata only. It makes NO financial
+    integrity, inception, flatness, writer or Start claim. A separate real local
+    READ_ONLY decision and the original activation publisher remain mandatory.
+    Unknown account contents are not accepted by issuing permission to READ
+    them; the subsequent current readers must independently audit/refuse them.
+    """
+    def __init__(self, *, job, qd, perp, release_digest, release_admission=None):
+        from app.services.quality_dips_autonomous_enrollment import validate_enrollment as qvalidate
+        from app.services.perp_operational_contract import validate_enrollment as hvalidate
+        if type(job) is not NativeOriginalSelfJob:
+            raise ValueError('RECOVERY_READ_ACTIVATION_FRESH_NATIVE_SELF_JOB_REQUIRED')
+        origin=require_installed_continuity_source(release_digest,release_admission)
+        from scripts.observation_runtime.personal_version_safe_release_clock import require_native_version_safe_clock_source
+        self._selected_head=require_native_version_safe_clock_source(deep=False)
+        self._origin=origin
+        self._release_admission=release_admission
+        self.job=job
+        self.enrollments={'QUALITY_DIPS':qvalidate(qd),'HYPERLIQUID':hvalidate(perp)}
+        if (qd['release_digest']!=release_digest or perp['release_digest']!=release_digest
+                or qd['account_id']==perp['account_id'] or qd['epoch']==perp['epoch']):
+            raise ValueError('RECOVERY_READ_ACTIVATION_TWO_ORIGINAL_ACCOUNTS_REQUIRED')
+        self.release_digest=release_digest
+        self.identity=strict(body(job.identity))
+        self._ports=job,body(self.enrollments),release_digest,body(self.identity),release_admission
+        self.verify_still_running()
+
+    def verify_still_running(self):
+        from scripts.observation_runtime.personal_existing_native_resource_evidence import inspect_two_lane_native_roots
+        from scripts.observation_runtime.personal_activation_commission import verify_enrollment_native_roots
+        if (self.job is not self._ports[0] or body(self.enrollments)!=self._ports[1]
+                or self.release_digest!=self._ports[2] or body(self.identity)!=self._ports[3]
+                or self._release_admission is not self._ports[4]
+                or self.job.verify() is not True or self.job.identity!=self.identity
+                or observe_self()!=self.identity):
+            raise ValueError('RECOVERY_READ_ACTIVATION_RETAINED_IDENTITY_CHANGED')
+        from scripts.observation_runtime.personal_version_safe_release_clock import require_native_version_safe_clock_source
+        if require_native_version_safe_clock_source(deep=False)!=self._selected_head:
+            raise ValueError('RECOVERY_READ_ACTIVATION_SELECTION_CHANGED')
+        if self._release_admission is not None:
+            require_installed_continuity_source(self.release_digest,self._release_admission)
+        # Existing original path/root inventory, NOT an empty or financial-cut
+        # assertion. No financial control/coordination mutation or acquisition.
+        roots=inspect_two_lane_native_roots()
+        seen=set()
+        for lane,e in self.enrollments.items():
+            verify_enrollment_native_roots(e)
+            for role,resource in e['resources'].items():
+                observed=roots['lanes'][lane]['roots'][role]
+                key=tuple(resource['native_id'])
+                if (observed['native_identity_verified'] is not True or observed['path']!=resource['path']
+                        or observed['native_id']!=resource['native_id'] or key in seen):
+                    raise ValueError('RECOVERY_READ_ACTIVATION_ORIGINAL_NATIVE_ROOT_CONFLICT')
+                seen.add(key)
+        if len(seen)!=12:
+            raise ValueError('RECOVERY_READ_ACTIVATION_TWELVE_DISTINCT_ROOTS_REQUIRED')
+        return True
+
+    def require_exact_roster(self, *, qd, perp):
+        # These remain HISTORICAL enrollment identities, never claimed live.
+        if self.enrollments!={'QUALITY_DIPS':qd,'HYPERLIQUID':perp}:
+            raise ValueError('RECOVERY_READ_ACTIVATION_ORIGINAL_ACCOUNTS_CHANGED')
+        return self.verify_still_running()
+
+
 class NativeTwoAccountCurrentReadback:
     """Capture real existing readers; caller JSON/boolean proofs are not ports."""
 
-    def __init__(self, *, quality_dips, hyperliquid, clock, runtime_id):
+    def __init__(self, *, quality_dips, hyperliquid, clock, runtime_id, release_admission=None):
         if (type(quality_dips) is not PersonalRuntimeCurrent
                 or type(hyperliquid) is not PersonalPerpRuntimeCurrent
                 or type(clock) is not NativeVersionSafePaperOperatorClock
@@ -120,7 +198,11 @@ class NativeTwoAccountCurrentReadback:
                 or qd['release_digest']!=hl['release_digest']):
             raise ValueError('OWNER_V2_DISTINCT_ACCOUNTS_ONE_RELEASE_REQUIRED')
         self.release_digest = qd['release_digest']
-        require_installed_continuity_source(self.release_digest)
+        if release_admission is None:
+            require_installed_continuity_source(self.release_digest)
+        else:require_installed_continuity_source(self.release_digest,release_admission)
+        self._release_admission=release_admission
+        self._retained_admission=release_admission
         self._ports = quality_dips, hyperliquid, clock, runtime_id
         self._enrollments = body(self.enrollments)
         self._release_digest = self.release_digest
@@ -165,6 +247,10 @@ class NativeTwoAccountCurrentReadback:
             raise ValueError('OWNER_V2_QD_CONCRETE_NATIVE_READ_CHAIN_REQUIRED')
 
     def _verify(self):
+        if self._release_admission is not self._retained_admission:
+            raise ValueError('OWNER_V2_RETAINED_RELEASE_ADMISSION_CHANGED')
+        if self._release_admission is not None:
+            require_installed_continuity_source(self.release_digest,self._release_admission)
         if (tuple(self.readers)!=LANES
                 or any(a is not b for a,b in zip(
                     (*self.readers.values(),self.clock,self.runtime_id),self._ports,strict=True))
@@ -271,7 +357,9 @@ class NativeRecoveredReadOnlyOwner:
         if (type(original_self_job) is not NativeOriginalSelfJob
                 or type(readback) is not NativeTwoAccountCurrentReadback):
             raise ValueError('OWNER_V2_FRESH_ORIGINAL_JOB_AND_NATIVE_READBACK_REQUIRED')
-        require_installed_continuity_source(readback.release_digest)
+        admission=getattr(readback,'_release_admission',None)
+        if admission is None:require_installed_continuity_source(readback.release_digest)
+        else:require_installed_continuity_source(readback.release_digest,admission)
         if original_self_job.verify() is not True:
             raise ValueError('OWNER_V2_FRESH_ORIGINAL_JOB_REFUSED')
         if original_self_job.identity!=observe_self():

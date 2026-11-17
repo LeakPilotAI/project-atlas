@@ -28,8 +28,9 @@ from scripts.volume_inspector.resting_order_store import RestingOrderStore
 from scripts.volume_inspector.unified_portfolio_store import PortfolioControlStore
 
 
-def _selected_source(release):
-    origin=require_installed_continuity_source(release)
+def _selected_source(release, release_admission=None):
+    origin=(require_installed_continuity_source(release) if release_admission is None
+            else require_installed_continuity_source(release,release_admission))
     expected=Path('D:/AtlasRuntime/releases')/origin['selected_code_release']/ 'scripts/observation_runtime/personal_writer_generation.py'
     if Path(__file__).absolute()!=expected:
         raise ValueError('WRITER_GENERATION_SELECTED_INSTALLED_SOURCE_REQUIRED')
@@ -207,7 +208,9 @@ class NativeWriterGeneration:
                 or type(approval) is not NativeWriterHandoffReader):
             raise ValueError('WRITER_GENERATION_EXACT_NATIVE_PORTS_REQUIRED')
         r=recovery.readback
-        _selected_source(r.release_digest)
+        admission=getattr(r,'_release_admission',None)
+        if admission is None:_selected_source(r.release_digest)
+        else:_selected_source(r.release_digest,admission)
         q=r.readers['QUALITY_DIPS'].source.ledger
         if (type(q) is not PersonalNativeCoordination or type(q.images) is not NativePersonalCoordinationImages
                 or job.verify() is not True or job.identity!=observe_self()

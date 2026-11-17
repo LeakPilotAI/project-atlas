@@ -210,6 +210,14 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
     # Job-backed financial writer issuer. Do NOT route an unknown successor
     # into the old PID-only historical adapter by default.
     if release_digest not in (R15_ARTIFACT, V7_ARTIFACT, V8_ARTIFACT):
+        from scripts.observation_runtime.personal_owner_continuity_v2 import NativeReadOnlyRecoveryActivationGuard
+        if type(owned_job) is NativeReadOnlyRecoveryActivationGuard:
+            if owned_job.release_digest!=release_digest or actions!=['READ_ONLY']:
+                raise ValueError('ACTIVATION_RECOVERY_BOOTSTRAP_STRICTLY_READ_ONLY')
+            owned_job.require_exact_roster(qd=qd,perp=perp)
+            try:yield owned_job
+            finally:owned_job.require_exact_roster(qd=qd,perp=perp)
+            return
         from scripts.observation_runtime.personal_writer_generation import NativeRecoveredFinancialWriterOwner
         if type(owned_job) is NativeRecoveredFinancialWriterOwner:
             if (owned_job.release_digest!=release_digest
@@ -220,7 +228,12 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
             owned_job.require_financial_fence()
             # The distinct native operator record is still verified/published
             # by the ORIGINAL activation publisher; this guard grants nothing.
-            with owned_job.generation.scope():
+            # Publishing an explicitly approved activation RECORD is not a
+            # financial operation. Do not place clock acquisition/deep native
+            # publication inside the <=5s financial-effect lease. No trading
+            # can be active: require the native flat/drained recovery cut.
+            with owned_job.generation.journal.exclusive():
+                owned_job.generation.recovery.capture()
                 try:yield owned_job
                 finally:
                     owned_job.require_exact_roster(qd=qd,perp=perp)
@@ -327,7 +340,7 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
 def commission(*, root, record_path, policy_path, release_digest, accounts_path,
                expected_clock_source, runtime_id, qd_enrollment_path=None,
                perp_enrollment_path=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4",
-               owned_job=None):
+               owned_job=None, prequalified_clock=None):
     if not all(type(v) is str and v for v in (root, record_path, policy_path,
                                               release_digest, accounts_path,
                                               expected_clock_source, runtime_id)):
@@ -360,7 +373,23 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
     from scripts.observation_runtime.personal_native_financial_release_origin import (
         require_selected_native_origin,
     )
-    require_selected_native_origin(release_digest=release_digest)
+    from scripts.observation_runtime.personal_native_original_self_job import NativeFinancialReleaseAdmission
+    from scripts.observation_runtime.personal_native_selected_owned_job_preflight import RetainedSelectedNativeOwnerPreflight
+    from scripts.observation_runtime.personal_owner_continuity_v2 import NativeReadOnlyRecoveryActivationGuard
+    from scripts.observation_runtime.personal_writer_generation import NativeRecoveredFinancialWriterOwner
+    admission=None
+    if type(owned_job) in (RetainedSelectedNativeOwnerPreflight,NativeReadOnlyRecoveryActivationGuard):
+        admission=getattr(owned_job,'_release_admission',None)
+    elif type(owned_job) is NativeRecoveredFinancialWriterOwner:
+        admission=getattr(owned_job.generation.recovery.readback,'_release_admission',None)
+    if admission is not None:
+        if type(admission) is not NativeFinancialReleaseAdmission:
+            raise ValueError('ACTIVATION_RETAINED_NATIVE_RELEASE_ADMISSION_REQUIRED')
+        admission.verify(release_digest=release_digest)
+    else:
+        if prequalified_clock is not None:
+            raise ValueError('ACTIVATION_PREQUALIFIED_CLOCK_REQUIRES_RETAINED_FULL_RELEASE')
+        require_selected_native_origin(release_digest=release_digest)
     record = read_bounded_activation_input(record_path, role='record')
     policy = read_bounded_activation_input(policy_path, role='policy')
     accounts = read_bounded_activation_input(accounts_path, role='accounts')
@@ -415,7 +444,13 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             release_digest=release_digest, owned_job=owned_job,
             actions=record['actions']) as writers:
         writers.verify_still_running()
-        if clock_profile == V7_NTP_PROFILE:
+        if prequalified_clock is not None:
+            if (clock_profile!=VERSION_SAFE_NTP_PROFILE
+                    or type(prequalified_clock) is not NativeVersionSafePaperOperatorClock):
+                raise ValueError('ACTIVATION_EXACT_PREQUALIFIED_VERSION_SAFE_CLOCK_REQUIRED')
+            prequalified_clock.require_operational(runtime_id)
+            clock=prequalified_clock
+        elif clock_profile == V7_NTP_PROFILE:
             clock = NativeV7PaperOperatorClock(runtime_id=runtime_id)
         elif clock_profile == V8_NTP_PROFILE:
             clock = NativeV8PaperOperatorClock(runtime_id=runtime_id)
@@ -423,6 +458,7 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             clock = NativeVersionSafePaperOperatorClock(runtime_id=runtime_id)
         else:
             clock = LocalWindowsClock(expected_source=expected_clock_source, runtime_id=runtime_id)
+        published=False
         try:
             if clock_profile == VERSION_SAFE_NTP_PROFILE:
                 require_version_safe_release_digest(clock=clock, runtime_id=runtime_id,
@@ -438,9 +474,13 @@ def commission(*, root, record_path, policy_path, release_digest, accounts_path,
             # is UNKNOWN, never successful financial commissioning.
             if release_digest == R15_ARTIFACT:
                 owned_job.require_exact_roster(qd=qd, perp=perp)
+            published=True
             return result
         finally:
-            clock.revoke()
+            # An explicitly borrowed original cohort clock must remain live
+            # for the once-only account ACKs. Its owner revokes it in finally.
+            # Locally constructed clocks retain the original revoke behavior.
+            if prequalified_clock is None or not published:clock.revoke()
 
 
 def main(argv=None):

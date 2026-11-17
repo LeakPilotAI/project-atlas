@@ -1,0 +1,115 @@
+{
+  "schema": "ATLAS_SINGLE_SUCCESSOR_APPLICATION_SCOPE_REVIEW_V1",
+  "starting_source": "1ca20686462e0b9a1a77b0c2d743e77494f08d67",
+  "base_selected_source": "96c6b85f76368a69bfd035cbcf3eb05776c21525",
+  "original_review_manifest_sha256": "7c8f506ad9d2151b37c3110700d77f9d8db01f360c45f643a7b5552ac1c69359",
+  "initial_12_git_module_hashes_verified": {
+    "backend/app/services/personal_writer_generation.py": "971a174fc8551cfacaea8b7f168317cd0e1b38b99243b924e2f2a9629b9d636b",
+    "backend/app/services/quality_dips_autonomous_enrollment.py": "93f67fa95334c08cd3f2d5c5233c73262062c45284ddc061a7ea8e89594b8aec",
+    "scripts/observation_runtime/personal_perp_runtime_current.py": "3303618f8025fad6e8bd7ca38afdb1b52302ca12cf9604a12355b7a11232ac3d",
+    "scripts/observation_runtime/personal_owner_continuity_v2.py": "a47580aa0fc8bb868d8f85d2fce96ed2724cb4957f827bc384477fecfff48948",
+    "scripts/observation_runtime/personal_native_selected_owned_job_preflight.py": "c2d2488f7cf7633370186ec550f2d54011ced2fa4dc43aa239108699f10d1a17",
+    "scripts/observation_runtime/personal_native_original_self_job.py": "dc0ad637ce73c011346da3adffb17b9415c03e19fabbf9cefd64951d413e4395",
+    "scripts/observation_runtime/personal_selected_paper_operation_issuer.py": "4203b012128d0f1da24ad906b216bb67ea5aa3c82cf197dae21a4c054ace8e76",
+    "scripts/observation_runtime/personal_selected_qd_sec_watch_issuer.py": "e8dec0c321c0555d5faa8dea6e644f54a955464a763187fe70830d8819d4bee6",
+    "scripts/observation_runtime/personal_activation_commission.py": "81b8d3cf6f2a35df11586236f2d5a07f4918346868490dc76f4404fe88caf557",
+    "scripts/observation_runtime/personal_writer_generation.py": "5a5ed975aaa1bf339e492365f86d841d43d25ae5a848f786e610d1a27eef7d44",
+    "scripts/observation_runtime/personal_writer_ownership.py": "4e1aeaa0958357c19c6c4e468345a19f75a8dafd1c99ac531d568b51b1878a62",
+    "scripts/observation_runtime/personal_installation_technical.py": "f002408e9960f7af6ba806430d143278b92a2ab3cc976b529032a5df85d1d0b6"
+  },
+  "reviewed_12_current_modules": {
+    "backend/app/services/personal_writer_generation.py": {
+      "sha256": "971a174fc8551cfacaea8b7f168317cd0e1b38b99243b924e2f2a9629b9d636b",
+      "bytes": 8512
+    },
+    "backend/app/services/quality_dips_autonomous_enrollment.py": {
+      "sha256": "93f67fa95334c08cd3f2d5c5233c73262062c45284ddc061a7ea8e89594b8aec",
+      "bytes": 17632
+    },
+    "scripts/observation_runtime/personal_perp_runtime_current.py": {
+      "sha256": "3303618f8025fad6e8bd7ca38afdb1b52302ca12cf9604a12355b7a11232ac3d",
+      "bytes": 14723
+    },
+    "scripts/observation_runtime/personal_owner_continuity_v2.py": {
+      "sha256": "d68d7aa419e3a7ccb3bbb41bb2722e3ef9ac394589e2833e948a5e3c8af74832",
+      "bytes": 23577
+    },
+    "scripts/observation_runtime/personal_native_selected_owned_job_preflight.py": {
+      "sha256": "a4fa6fd43256818fc919345ff1116b7178e2e95c038af386bdc956c5ca6639b6",
+      "bytes": 30888
+    },
+    "scripts/observation_runtime/personal_native_original_self_job.py": {
+      "sha256": "643a39ebf06f148071f31c1ed0440fa2be227dc0e15afa7b62f48a6dd878fe54",
+      "bytes": 11106
+    },
+    "scripts/observation_runtime/personal_selected_paper_operation_issuer.py": {
+      "sha256": "4203b012128d0f1da24ad906b216bb67ea5aa3c82cf197dae21a4c054ace8e76",
+      "bytes": 14318
+    },
+    "scripts/observation_runtime/personal_selected_qd_sec_watch_issuer.py": {
+      "sha256": "e8dec0c321c0555d5faa8dea6e644f54a955464a763187fe70830d8819d4bee6",
+      "bytes": 11895
+    },
+    "scripts/observation_runtime/personal_activation_commission.py": {
+      "sha256": "3915e8d1cd8f34d16af8b577ef3f6b3049f300437c004f45184a8b655686a678",
+      "bytes": 26882
+    },
+    "scripts/observation_runtime/personal_writer_generation.py": {
+      "sha256": "1dee7b0754320a25216646a4b898596b7cf180153e118443eca46850cb0784cb",
+      "bytes": 23462
+    },
+    "scripts/observation_runtime/personal_writer_ownership.py": {
+      "sha256": "4e1aeaa0958357c19c6c4e468345a19f75a8dafd1c99ac531d568b51b1878a62",
+      "bytes": 15321
+    },
+    "scripts/observation_runtime/personal_installation_technical.py": {
+      "sha256": "f002408e9960f7af6ba806430d143278b92a2ab3cc976b529032a5df85d1d0b6",
+      "bytes": 14460
+    }
+  },
+  "changed_within_original_scope": [
+    "scripts/observation_runtime/personal_activation_commission.py",
+    "scripts/observation_runtime/personal_native_original_self_job.py",
+    "scripts/observation_runtime/personal_native_selected_owned_job_preflight.py",
+    "scripts/observation_runtime/personal_owner_continuity_v2.py",
+    "scripts/observation_runtime/personal_writer_generation.py"
+  ],
+  "necessary_corrections": [
+    {
+      "id": "S1",
+      "cause": "Fresh READ_ONLY activation depended on an already recovered writer while current reader/writer recovery needed READ_ONLY activation",
+      "correction": "Exact fresh native self-Job/original-root metadata-only READ_ONLY activation guard; no history acceptance, initializer, data, writer or Start scope"
+    },
+    {
+      "id": "S2",
+      "cause": "Full native release scans and newly constructed NTP clocks occurred after <=5s fresh manifest admission had begun",
+      "correction": "Prepare and retain original NativePersonalReleaseIdentity handles before manifests; typed current-selector/process/module rechecks, explicit borrowed cohort clock. Original windows unchanged; failed publication revokes clock"
+    },
+    {
+      "id": "S3",
+      "cause": "Recovered activation record publication incorrectly held a <=5s financial-effect lease around full publisher/clock work",
+      "correction": "Original activation record path under durable generation mutex and independently flat/drained cut; existing activation expiry checks retained, financial <=5s and complete Stop <=8s unchanged"
+    },
+    {
+      "id": "S4",
+      "cause": "A native root close error could prevent attempts to close the other acquired roots",
+      "correction": "Attempt every acquired root close and refuse with grouped errors; never claim cleanup after a close failure"
+    }
+  ],
+  "packaging": {
+    "mechanism": "UNCHANGED_CANONICAL_build_selected_AND_prepare_install_inputs",
+    "baseline_source_files": 1197,
+    "protected_pin_scripts_absent_from_baseline": [
+      "scripts/atlas_r23_code_only_install.py",
+      "scripts/atlas_r23_code_only_select.py",
+      "scripts/atlas_r23_native_recovery.py"
+    ],
+    "no_reset_staging_or_payload_copy_of_pin_scripts": true,
+    "operator_support_outside_12_application_modules": "scripts/atlas_single_successor_control.py",
+    "operator_support_excluded_from_application_payload": true,
+    "operator_support_reason": "Distinct code-only visible-local install/selection decisions and original copy/readback/store APIs; no old R23 approval reuse"
+  },
+  "financial_parameters_strategy_source_and_risk_semantics_changed": false,
+  "native_financial_qualification_or_installation_executed": false,
+  "provider_hold_and_original_approval_controls_preserved": true
+}
