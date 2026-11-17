@@ -95,6 +95,14 @@ class NativeOriginalSelfJob:
             raise ValueError("ORIGINAL_SELF_JOB_SELECTED_WRITER_PROOF_REFUSED")
         return owner
 
+    def selected_readonly_recovery_owner(self, *, readback):
+        """Fresh self-owned Job; preserve historical writers, never adopt them."""
+        from scripts.observation_runtime.personal_owner_continuity_v2 import (
+            NativeRecoveredReadOnlyOwner,
+        )
+        self.verify()
+        return NativeRecoveredReadOnlyOwner(original_self_job=self, readback=readback)
+
 
 def create_original_self_job():
     """Purely native containment, NOT an origin, issuer, PAPER or account grant.

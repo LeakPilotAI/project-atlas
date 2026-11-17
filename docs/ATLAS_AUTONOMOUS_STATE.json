@@ -23885,4 +23885,191 @@
     "backend/app/services/hyperliquid_forward_flat_paper_policy.py": "b683f4b18c598c5b4dcb4659e00fd2e36c1b2d1029367722ccbc4ab675c7286d"
   }
 }
+,
+  "atlas_original_financial_owner_continuity_20261117": {
+  "schema": "ATLAS_ORIGINAL_FINANCIAL_OWNER_CONTINUITY_SOURCE_REVIEW_V2",
+  "starting_source": "58754e7d2fa108305b72cc11f8fcb31e34bf49e4",
+  "report": "docs/ATLAS_ORIGINAL_FINANCIAL_COMMISSIONING_READINESS_2026-11-17.md",
+  "evidence_root": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-original-owner-readiness-20261117-r01",
+  "status": "SOURCE_ONLY_WARM_CURRENT_HANDOFF_AND_READONLY_RECOVERY_QUALIFIED; FINANCIAL_COMMISSIONING_BLOCKED",
+  "source_only_authorization": {
+    "schema": "ATLAS_CHAT_SOURCE_ONLY_SCOPE_RECORD_V1",
+    "origin": "ACTUAL_USER_CHAT_REPLY",
+    "operator_answer": "Authorize source-only guarded correction",
+    "recorded_utc": "2026-11-17T15:50:50.274996+00:00",
+    "recorded_time_is_not_an_invented_approval_time": true,
+    "source_only_implementation_and_offline_qualification": true,
+    "is_native_operator_record": false,
+    "release_build_or_installation_authorized": false,
+    "financial_writes_authorized": false,
+    "account_creation_authorized": false,
+    "provider_requests_authorized": false,
+    "paper_start_authorized": false,
+    "unchanged_methodology_review_only_sha256": "c933b5c4c428ba2287ba2ad1c04756dcbcdb7f9d10057fdb104214c5f381e16e"
+  },
+  "selected_native": {
+    "source": "96c6b85f76368a69bfd035cbcf3eb05776c21525",
+    "revision": 21,
+    "artifact_sha256": "fcf87dd612b66e5fbbd645462104c968473db218eaa844a18efa682cefdbbae0",
+    "head_sha256": "bca5b25734967c61385c03fa218aafcc6a192613ef85e8d1ea8497b5c2eeb57a",
+    "deep_readback_passed": true,
+    "deep_readback_seconds": 90.188,
+    "final_metadata_preservation": {
+      "financial_writes": false,
+      "provider_requests": 0,
+      "guard_attempts": 1,
+      "status": "PASS_ORIGINAL_STATE_PRESERVED_AFTER_SOURCE_CORRECTION",
+      "selected_revision": 21,
+      "selected_head": "bca5b25734967c61385c03fa218aafcc6a192613ef85e8d1ea8497b5c2eeb57a",
+      "twelve_original_roots_distinct_empty": true,
+      "protected_files_unchanged": 10,
+      "frozen_contract_modules_unchanged": 9,
+      "source_correction_installed": false,
+      "maximum_cpus": 2,
+      "seconds": 2.984
+    },
+    "new_source_installed": false,
+    "rebuild_reinstall_reselection_or_new_release": false
+  },
+  "cpu": {
+    "guard_changed_or_bypassed": false,
+    "original_failed_sample_values": "NOT_RETAINED; historical percentage/process cause UNKNOWN",
+    "actual_interval_host_busy_percent": [
+      18.818,
+      19.658,
+      35.088,
+      22.484,
+      23.851,
+      55.128
+    ],
+    "current_normal_context_process_visibility": {
+      "accessible": 220,
+      "observed": 224
+    },
+    "native_query_handles_closed": 446,
+    "maximum_processors_for_intensive_jobs": 2,
+    "native_preservation_admission_passed": true
+  },
+  "original_blockers_proven": [
+    "INITIAL_READBACK_ONLY continuously invokes strict initial-only namespace reader after inception",
+    "Original financial-owner constructor requires all twelve original roots empty; no cold writer reconstruction",
+    "Existing original QD read-only recovery preserves historical writers but does not admit a financial successor"
+  ],
+  "source_correction": [
+    "Concrete readonly HL current authority and audited FS1/FS3 reader; no missing-pin installation",
+    "Exact native QD/HL two-account readback with coherent cut, preserved genesis ACKs and append-only watermarks",
+    "Explicit original initial-ACK to CURRENT_READBACK_ONLY transition, shared qualified clock and native roots",
+    "Serialized independently admitted financial-operation scope, <=5s, current replay before/after, terminal unknown on failure",
+    "Initial-only operation admission refused; post-inception data guard and QD WATCH preserve action boundaries",
+    "Fresh retained native self-Job readonly recovery; cannot adopt historical writer or pass writer roster"
+  ],
+  "cold_financial_writer_readmission_implemented": false,
+  "genuine_native_correction_acceptance": false,
+  "source_sha256": {
+    "scripts/observation_runtime/personal_perp_runtime_current.py": "3303618f8025fad6e8bd7ca38afdb1b52302ca12cf9604a12355b7a11232ac3d",
+    "scripts/observation_runtime/personal_owner_continuity_v2.py": "6b1ee75c302baa67305707df2bfe725fd5218b762058099f6cc18d2f58b890ce",
+    "scripts/observation_runtime/personal_native_selected_owned_job_preflight.py": "587e182c6d59750137a92787218feff5e134eb5a90ed28c1cccfc9e544235f70",
+    "scripts/observation_runtime/personal_native_original_self_job.py": "dc0ad637ce73c011346da3adffb17b9415c03e19fabbf9cefd64951d413e4395",
+    "scripts/observation_runtime/personal_selected_paper_operation_issuer.py": "0cf1dd56d134f27c5bdef3783621826d3198ec2e0375ca67ad6633fa31af68d9",
+    "scripts/observation_runtime/personal_activation_commission.py": "eb3498e04332baa43be3ba4d0a18ac6d563e087bb23b9028d87d846f2af4dd53",
+    "scripts/observation_runtime/personal_selected_qd_sec_watch_issuer.py": "e9931ccd100d81006fc8bb64b09b6f5e8bc351385050a34bd41341878e06fcae",
+    "tests/test_personal_perp_runtime_current.py": "cb962dd1fec4f05901ab699b2739f1600ada9b07fa6488f992782f6a9c66c8d9",
+    "tests/test_personal_owner_continuity_v2.py": "382447e99cb1697e9b36153445e3ebed8c3480032ad715c41247ddb6ef48bfc5",
+    "tests/test_personal_selected_paper_operation_issuer.py": "3575fceba5f7f786d6baa0129ee0fa38c45585abc0ae007fbdd85f21eec1cb64"
+  },
+  "validation": {
+    "python_passed_distinct": 482,
+    "python_failed": 0,
+    "python_skipped": 0,
+    "python_deselected_native_writing": 1,
+    "python_warning_existing_dependency": 1,
+    "new_python_cases": 58,
+    "python_seconds": 14.35,
+    "bounded_parent_seconds": 20.938,
+    "node_passed": 80,
+    "node_failed": 0,
+    "node_skipped": 0,
+    "node_cancelled": 0,
+    "node_duration_ms": 762.7965,
+    "node_kind": "OFFLINE_ORIGINAL_DASHBOARD_VM",
+    "five_historical_native_launch_cases_not_selected": true,
+    "lint": "NO_CACHE_RUFF_F_PASS_10_CHANGED_PYTHON_FILES",
+    "test_crashes": 0,
+    "test_timeouts": 0,
+    "timed_tracing_audit_hook_combination_enabled": false,
+    "overlapping_intermediate_counts_not_added": true
+  },
+  "financial_status": {
+    "live_original_financial_owner_created": false,
+    "financial_approval_request_ready": false,
+    "twelve_original_namespaces_empty": true,
+    "native_inception_acks": 0,
+    "verified_native_opening_balances": false,
+    "intended_openings_only": {
+      "QUALITY_DIPS": "1000 USD; WATCH_ONLY",
+      "HYPERLIQUID": "1000 USDC"
+    },
+    "financial_activation_issued": false,
+    "financial_or_source_files_written": false,
+    "provider_hold_preserved": true,
+    "provider_requests_this_execution": 0,
+    "source_rights_and_request_budget_accepted": false,
+    "methodology_approval_is_review_only": true,
+    "current_clock_capability_issued": false,
+    "financial_stop_flatten_writable_restart_dashboard_discord_accepted": false,
+    "paper_running": false,
+    "live_money_authorized": false,
+    "b1_c1_d1_e1_and_21_decisions_unchanged": true
+  },
+  "remaining": [
+    "Review source correction; explicit cold financial writer-generation handoff remains unimplemented. Readonly recovery cannot supply it",
+    "Corrected code is absent from frozen R23. No selected replacement, release build or deployment authorized in this execution",
+    "Qualify native current-pin installation, live same-owner C/D/E/F handoff and original <=5s/<=30s windows before irreversible records",
+    "Actual live financial cohort, five/seven writer bindings, exact original manifests/SID/images and distinct native operator scopes",
+    "Original source rights and bounded provider request-budget acceptance; further provider access still held",
+    "Original separate journal/activation/inception ACK/source/Stop-first sequence after genuine approval",
+    "Genuine <=8s financial Stop, durable FLAT/known funding, writable crash recovery, dashboard and real Discord acceptance"
+  ],
+  "next": "Review source-only correction and complete the explicit writer-generation recovery contract. Do not solicit financial approval before supported selected code, a living original owner and exact scoped bindings exist; no release action, financial write or held provider request follows this checkpoint.",
+  "evidence_sha256": {
+    "resource-observation.json": "bc2383dea24647ebf4b22aa5eb3d6c9df27ec8dc5cb9e0e42e4ce652031e0cd2",
+    "resource-observation-normal-context.json": "3d06213a6359eaa99c2467a975f88bf0c3013d79cae10895a4cf2956765d1166",
+    "native_readiness.py": "21b5d9628ce147408ffff1b7f801272644ad60cacf69e58f5f7ac99b5fe9a345",
+    "native-readiness.json": "95ee17f3d8220630542cf91b2a66495b384b99e4f2ddd94885c610a852bd5557",
+    "native-readiness-owner.json": "3d059d529eeeefbe0e411ba94efcdd63a6ad24b4dbb262cac89aa2fe5384d05d",
+    "offline_continuity_proof.py": "9f3009ba57f1b2f74f37e37545e15292778ec07b3581fad8ec801ad6fc8803de",
+    "offline-continuity-proof.json": "184d5527dd9e1845db5fed969c499609e76c24cb53151f9f8014f0d2873e5643",
+    "offline-continuity-proof-v2.json": "184d5527dd9e1845db5fed969c499609e76c24cb53151f9f8014f0d2873e5643",
+    "regression.xml": "db20077cdeb6c19b329d8201fe5befd7c3c1829d749ea6e50e0115c9a9bafe7f",
+    "regression-owner.json": "c535eba57e94a3434275d431f334af27f529e9616a65675f104cb3ee33181fb7",
+    "final_python_validation.py": "59b6fbf3ce43a3055f76304be6f6c4af6c31d1c8e0e50fb0aa196e45b1f9292e",
+    "bound_final_validation.py": "a6b05a4a3f015db8f2da3d24a92d1c1e17a74c9022faddb5ca4d9aef49a17505",
+    "v2-final-validation.xml": "06e2572c843537f62352db21f7b2d607da3441eb03ede0002cd90df1f0ffe7d0",
+    "v2-final-validation.stdout": "b0a8201bd45344d13efb05f745ffa48a0d632996125a3df72e9bef029436b7a9",
+    "v2-final-validation.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "v2-final-validation-owner.json": "d3a3c45937a7207f484b1f28ae29beacd51b2e08c08f909723c7dfd58d74e005",
+    "validation_v2.py": "bbdb57f173fc7dcb2e4529c4a0e6ee522e421d84ad477090b1a4dc8c2ff22aef",
+    "v2-node.stdout": "2128440cf53be4e58e60342a0d798f1e6c5dfc93c4d2e69feaace8dfb2f6e6c7",
+    "v2-node.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "v2-validation-result.json": "b209cf4dbc5a46e675266db6a11bb8e6164e5f91850e90ca28cecabd05cc5e3a",
+    "preservation_after_correction.py": "a1e781388444202dc86d03caa91b3368c268e8fd373ac2d70acdc7be22989a46",
+    "preservation-after-correction.json": "fc1b3767c9b946c61a49b3bc54b2e3b3ce4a280253c2d8a247605fdf786457ad",
+    "preservation-after-correction-owner.json": "a2bab21d1b776bcb46cb37461a50c715720cebe23ffe0ac9303bb16af0ee6088",
+    "source-only-scope-record.json": "ea2ccecc0b863e61349a943e13fad8da5b87e0ddd8742f5ee615d43a29eef87e",
+    "execution-end-cleanup.json": "135846a1a9427f113cd97cb665cd4abb24a69fb57d1508b0f2d66cd7dbf33b54"
+  },
+  "execution_end_cleanup": {
+    "schema": "ATLAS_EXECUTION_END_READONLY_TEMP_OBSERVATION_V1",
+    "normal_windows_terminal": "MADDOG",
+    "readonly_process_pid": 27868,
+    "eligible_profiles": 0,
+    "eligible_bytes": 0,
+    "readonly_process_exited": true,
+    "deletion_enabled_mode": "AUTOMATIC_APPROVAL_REVIEW_REJECTED",
+    "rejection_reason": "Recursive deletion outside explicit authorization; preserve unrelated evidence/untracked files",
+    "deletions_performed": false,
+    "workaround_or_retry": false,
+    "no_cleanup_needed_after_zero_eligible_readonly_result": true
+  }
+}
 }

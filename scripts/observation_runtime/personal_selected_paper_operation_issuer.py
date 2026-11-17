@@ -58,7 +58,7 @@ class NativeSelectedPaperOperationIssuer:
                 or type(qd_source) is not IEXPaperQuotes
                 or type(hl_source) is not HyperliquidCurrentProducer):
             raise ValueError("SELECTED_PAPER_EXACT_NATIVE_JOB_OPERATOR_SOURCES_STOP_REQUIRED")
-        if (owner._phase != "INITIAL_READBACK_ONLY"
+        if (owner._phase != "CURRENT_READBACK_ONLY"
                 or owner.release_digest != operator.enrollment["release_digest"]
                 or owner.release_digest != hl_source.enrollment["release_digest"]
                 or operator.enrollment != qd
@@ -76,6 +76,8 @@ class NativeSelectedPaperOperationIssuer:
                 or stop_owner._runtime.installation is not stop_owner._installation
                 or stop_owner._runtime.grant.get("session_id") != stop_owner.session_id):
             raise ValueError("SELECTED_PAPER_ONE_NATIVE_RELEASE_TWO_ACCOUNTS_STOP_SCOPE_REQUIRED")
+        if owner.require_current_clock(clock=clock, runtime_id=operator.runtime_id) is not True:
+            raise ValueError('SELECTED_PAPER_CURRENT_OWNER_CLOCK_UNVERIFIED')
         self.owner, self.operator, self.clock = owner, operator, clock
         self.stop_owner, self.qd_source, self.hl_source = stop_owner, qd_source, hl_source
         self.qd, self.perp = strict(body(qd)), strict(body(perp))
@@ -95,7 +97,7 @@ class NativeSelectedPaperOperationIssuer:
                      self.stop_owner, self.qd_source, self.hl_source),
                     self._ports, strict=True))
                 or digest([self.qd, self.perp]) != self._account_pins
-                or self.owner._phase != "INITIAL_READBACK_ONLY"
+                or self.owner._phase != "CURRENT_READBACK_ONLY"
                 or self.owner.release_digest != self.qd["release_digest"]
                 or self.owner.release_digest != self.perp["release_digest"]
                 or self.stop_owner.session_id != self._session
@@ -118,6 +120,7 @@ class NativeSelectedPaperOperationIssuer:
             release_digest=self.owner.release_digest,
         )
         self.owner.require_exact_roster(qd=self.qd, perp=self.perp)
+        self.owner.require_current_clock(clock=self.clock, runtime_id=self.operator.runtime_id)
         self.operator.activation("AUTO_PAPER")
         if (self.operator.accounts != {
                 "QUALITY_DIPS": digest(self.qd),
@@ -205,9 +208,10 @@ class NativeSelectedPaperOperationIssuer:
         if not self._lease_lock.acquire(blocking=False):
             raise ValueError("SELECTED_PAPER_FINANCIAL_OPERATION_ALREADY_ACTIVE")
         try:
-            with self._retain_operation_lease(
-                    qd_instrument=qd_instrument, lane=lane) as lease:
-                yield lease
+            with self.owner.financial_operation_scope(self):
+                with self._retain_operation_lease(
+                        qd_instrument=qd_instrument, lane=lane) as lease:
+                    yield lease
         finally:
             self._lease_lock.release()
 

@@ -15,6 +15,8 @@ from __future__ import annotations
 import ctypes
 import ntpath
 import os
+import time
+from contextlib import contextmanager
 from copy import deepcopy
 from ctypes import wintypes
 from pathlib import Path
@@ -151,6 +153,8 @@ class RetainedSelectedNativeOwnerPreflight:
         self._initial_cuts = None
         self._initial_bootstraps = None
         self._initial_coordination = None
+        self._current_readback = None
+        self._current_operation = None
         self.verify_still_running()
 
     def _original_process_identity(self):
@@ -237,11 +241,127 @@ class RetainedSelectedNativeOwnerPreflight:
                 if (verified.get("current") != current
                         or verified.get("financial_startup_authorized") is not False):
                     raise ValueError("SELECTED_OWNER_INITIAL_PUBLICATION_DRIFT")
+        elif self._phase == "CURRENT_READBACK_ONLY":
+            try:
+                self._verify_current_owner(roots)
+            except BaseException:
+                self._phase = 'CURRENT_READBACK_UNKNOWN'
+                raise
+        elif self._phase == 'CURRENT_READBACK_UNKNOWN':
+            raise ValueError('SELECTED_OWNER_CURRENT_UNCERTAIN_RECONCILIATION_REQUIRED')
         else:
             # PENDING is deliberately irrevocable within this owner. A partial
             # two-account inception cannot be retried or assumed completed.
             raise ValueError("SELECTED_OWNER_INITIAL_INCEPTION_UNKNOWN_RECONCILIATION_REQUIRED")
         return True
+
+    def _verify_current_owner(self, roots):
+        from scripts.observation_runtime.personal_owner_continuity_v2 import (
+            NativeTwoAccountCurrentReadback,
+        )
+        if (type(self._current_readback) is not NativeTwoAccountCurrentReadback
+                or self._current_readback.enrollments != {
+                    'QUALITY_DIPS': self._original_qd,
+                    'HYPERLIQUID': self._original_perp}
+                or require_exact_r15_populated_root_identities(
+                    self._original_qd, self._original_perp, roots,
+                    self._native_binding) != self._native_binding):
+            raise ValueError('SELECTED_OWNER_CURRENT_READBACK_BINDING_CHANGED')
+        if self._current_operation is None:
+            self._current_readback.capture()
+        else:
+            issuer, ports, session, started = self._current_operation
+            if (issuer.owner is not self or issuer._ports != ports
+                    or issuer._session != session or issuer._revoke
+                    or not issuer._lease_lock.locked()
+                    or time.monotonic() < started
+                    or time.monotonic()-started > 5):
+                raise ValueError('SELECTED_OWNER_CURRENT_OPERATION_CONTINUITY_LOST')
+
+    def accept_current_readback(self, *, readback):
+        """Read-only V2 transition AFTER genuine two-lane initial ACKs.
+
+        The original initial reader is preserved, never made permissive. The
+        concrete current readers take over continuous FS1/FS3 verification.
+        This is NOT a financial activation, writer lease or startup grant.
+        """
+        from scripts.observation_runtime.personal_owner_continuity_v2 import (
+            NativeTwoAccountCurrentReadback,
+        )
+        if (self._phase != 'INITIAL_READBACK_ONLY'
+                or type(readback) is not NativeTwoAccountCurrentReadback
+                or self._current_readback is not None or self._current_operation is not None
+                or readback.release_digest != self.release_digest
+                or readback.enrollments != {'QUALITY_DIPS':self._original_qd,
+                                           'HYPERLIQUID':self._original_perp}
+                or any(bootstrap.clock is not readback.clock
+                       for bootstrap in self._initial_bootstraps)):
+            raise ValueError('SELECTED_OWNER_CURRENT_HANDOFF_EXACT_ORIGINAL_PORTS_REQUIRED')
+        self.verify_still_running()  # Initial namespace must still be intact.
+        captured = readback.capture()
+        for lane, bootstrap, (_enrollment, initial) in zip(
+                ('QUALITY_DIPS','HYPERLIQUID'), self._initial_bootstraps,
+                self._initial_cuts, strict=True):
+            _original, ack = bootstrap.publication.acknowledged(bootstrap.scope()['operation_id'])
+            current = captured['accounts'][lane]
+            if (current['source'] != initial['source']
+                    or current['reports'] != initial['reports']
+                    or current['genesis_ack_digest'] != digest(ack)
+                    or current['source_revision'] != 0 or current['report_revision'] != 0):
+                raise ValueError('SELECTED_OWNER_CURRENT_HANDOFF_GENESIS_CONFLICT')
+        self._verify_original_job()
+        self._current_readback = readback
+        self._phase = 'CURRENT_READBACK_ONLY'
+        try:
+            self.verify_still_running()
+        except BaseException:
+            self._phase = 'CURRENT_READBACK_UNKNOWN'
+            raise
+        return {'schema':'ATLAS_ORIGINAL_OWNER_CURRENT_HANDOFF_V2',
+                'initial_acks_preserved':True,'current_native_readers_bound':True,
+                'financial_writer_lease_issued':False,'paper_start_authorized':False}
+
+    def require_current_clock(self, *, clock, runtime_id):
+        if (self._phase != 'CURRENT_READBACK_ONLY'
+                or self._current_readback.clock is not clock
+                or self._current_readback.runtime_id != runtime_id):
+            raise ValueError('SELECTED_OWNER_ONE_CURRENT_FINANCIAL_CLOCK_REQUIRED')
+        self.verify_still_running()
+        return True
+
+    @contextmanager
+    def financial_operation_scope(self, issuer):
+        """Keep native identity live during one independently admitted operation.
+
+        Quiescent native replay occurs before and after. The existing financial
+        admission/ACK path owns intermediate PENDING; this owner never pretends
+        those intermediate records are a clean idle cut. Failure is terminal.
+        """
+        from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+            NativeSelectedPaperOperationIssuer,
+        )
+        if (self._phase != 'CURRENT_READBACK_ONLY' or self._current_operation is not None
+                or type(issuer) is not NativeSelectedPaperOperationIssuer
+                or issuer.owner is not self or not issuer._lease_lock.locked()
+                or issuer._revoke):
+            raise ValueError('SELECTED_OWNER_CURRENT_EXACT_SERIAL_OPERATION_REQUIRED')
+        if issuer._verify_base() is not True:
+            raise ValueError('SELECTED_OWNER_CURRENT_OPERATION_AUTHORITY_REFUSED')
+        self.verify_still_running()
+        self._current_operation = issuer, issuer._ports, issuer._session, time.monotonic()
+        try:
+            yield
+            self._verify_original_job()
+            started = self._current_operation[3]
+            if not 0 <= time.monotonic()-started <= 5:
+                raise ValueError('SELECTED_OWNER_CURRENT_OPERATION_EXPIRED')
+            self._current_operation = None
+            self.verify_still_running()
+        except BaseException:
+            self._phase = 'CURRENT_READBACK_UNKNOWN'
+            raise
+        finally:
+            self._current_operation = None
 
     def _require_preinception_coordination_ready(self, roots):
         """Original native images are initial, not PAPER account inceptions.
@@ -393,7 +513,9 @@ class RetainedSelectedNativeOwnerPreflight:
             "native_twelve_original_roots_preinception_verified":
                 self._phase == "PREINCEPTION",
             "native_both_initial_fs1_fs3_readbacks_verified":
-                self._phase == "INITIAL_READBACK_ONLY",
+                self._phase in ("INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY"),
+            "native_current_financial_readback_bound":
+                self._phase == "CURRENT_READBACK_ONLY",
             "owner_inception_phase": self._phase,
             "financial_writer_lease_issued": False,
             "operator_activation_accepted": False,

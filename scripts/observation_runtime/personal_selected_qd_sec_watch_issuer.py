@@ -53,7 +53,7 @@ class NativeSelectedQualityDipsSecWatchIssuer:
             or type(clock) is not NativeVersionSafePaperOperatorClock
             or type(archive) is not NativePersonalResearchArchive
             or type(qd) is not dict or type(perp) is not dict
-            or owner._phase != "INITIAL_READBACK_ONLY"
+            or owner._phase not in ("INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY")
             or owner.release_digest != qd.get("release_digest")
             or owner.release_digest != perp.get("release_digest")
             or archive.enrollment["release_digest"] != owner.release_digest
@@ -79,7 +79,7 @@ class NativeSelectedQualityDipsSecWatchIssuer:
     def _original(self, *, now):
         if (
             type(now) is not int
-            or self.owner._phase != "INITIAL_READBACK_ONLY"
+            or self.owner._phase not in ("INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY")
             or any(a is not b for a, b in zip(
                 (self.owner, self.operator, self.clock, self.archive),
                 self._ports, strict=True,

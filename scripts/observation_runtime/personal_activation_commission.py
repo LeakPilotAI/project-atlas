@@ -258,7 +258,8 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
                      or len(actions) != len(set(actions))
                      or 'INITIALIZE_SIMULATED_ACCOUNTS' in actions)):
             raise ValueError('ACTIVATION_FUTURE_POSTINCEPTION_INIT_REUSE_REFUSED')
-        if (getattr(owned_job, '_phase', None) != 'INITIAL_READBACK_ONLY'
+        accepted_phase = getattr(owned_job, '_phase', None)
+        if (accepted_phase not in ('INITIAL_READBACK_ONLY', 'CURRENT_READBACK_ONLY')
                 or type(getattr(owned_job, '_initial_cuts', None)) is not tuple
                 or len(owned_job._initial_cuts) != 2
                 or type(getattr(owned_job, '_initial_bootstraps', None)) is not tuple
@@ -283,7 +284,7 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
             # Even on publisher exceptions, a disappearing process, changed
             # account root or revoked initial ACK is terminal, never success.
             owned_job.require_exact_roster(qd=qd, perp=perp)
-            if getattr(owned_job, '_phase', None) != 'INITIAL_READBACK_ONLY':
+            if getattr(owned_job, '_phase', None) != accepted_phase:
                 raise ValueError('ACTIVATION_FUTURE_INITIAL_OWNER_PHASE_CHANGED')
         # A verified successor activation-only context is complete. Never
         # fall through to an obsolete R15 or PID-only legacy writer adapter.

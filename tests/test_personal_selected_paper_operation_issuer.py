@@ -5,6 +5,7 @@ inside pytest. They do not establish real selected-release or provider rights.
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 from threading import Event
 from types import SimpleNamespace
 
@@ -40,12 +41,26 @@ def synthetic_port_factory(monkeypatch):
     # This is NOT a real native issuer or real live market data; each nominal
     # production class is deliberately test-replaced for just these fixtures.
     class Owner:
-        _phase = "INITIAL_READBACK_ONLY"
+        # V2 operations require the explicit current-reader handoff. An
+        # initial-only inception proof is no longer an operational owner.
+        _phase = "CURRENT_READBACK_ONLY"
         release_digest = DIGEST
         def require_exact_roster(self, *, qd, perp):
             if getattr(self, "revoke", False):
                 raise ValueError("ORIGINAL_JOB_REVOKED")
             return True
+
+        def require_current_clock(self, *, clock, runtime_id):
+            if runtime_id != 'TEST-R17':
+                raise ValueError('WRONG_CURRENT_RUNTIME_CLOCK')
+            return True
+
+        @contextmanager
+        def financial_operation_scope(self, issuer):
+            assert issuer.owner is self and issuer._lease_lock.locked()
+            self.require_exact_roster(qd=issuer.qd, perp=issuer.perp)
+            yield
+            self.require_exact_roster(qd=issuer.qd, perp=issuer.perp)
 
     class Clock:
         def require_operational(self, runtime_id):
@@ -134,6 +149,13 @@ def test_pure_synthetic_fully_bound_paper_operation_lease_is_temporary(monkeypat
         assert receipt["live_trading_authorized"] is False
         assert receipt["account_inception_authorized"] is False
     assert cap.check() is False
+
+
+def test_initial_only_owner_cannot_bypass_the_current_readback_handoff(monkeypatch):
+    params = synthetic_port_factory(monkeypatch)
+    params['owner']._phase = 'INITIAL_READBACK_ONLY'
+    with pytest.raises(ValueError,match='ONE_NATIVE_RELEASE_TWO_ACCOUNTS_STOP_SCOPE'):
+        issuer.NativeSelectedPaperOperationIssuer(**params)
 
 
 @pytest.mark.parametrize("missing", [
