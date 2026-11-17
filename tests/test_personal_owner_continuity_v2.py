@@ -1,6 +1,7 @@
 """Offline versioned owner-boundary contracts; no native owner/account is made."""
 import copy
 from threading import Lock
+from contextlib import nullcontext
 from types import SimpleNamespace
 
 import pytest
@@ -244,6 +245,12 @@ def warm_model(monkeypatch):
             return {'accounts':accounts}
     monkeypatch.setattr(target,'NativeTwoAccountCurrentReadback',Readback)
     cap=Readback()
+    from scripts.observation_runtime import personal_writer_generation as generations
+    class Generation:
+        def scope(self):return nullcontext()
+        def verify(self):return True
+    monkeypatch.setattr(generations,'NativeWriterGeneration',Generation)
+    owner._writer_generation=Generation()
     return SimpleNamespace(**locals())
 
 

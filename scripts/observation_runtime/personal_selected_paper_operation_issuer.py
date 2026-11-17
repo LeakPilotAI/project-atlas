@@ -30,6 +30,7 @@ from scripts.observation_runtime.personal_local_authority import (
 from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
     RetainedSelectedNativeOwnerPreflight,
 )
+from scripts.observation_runtime.personal_writer_generation import NativeRecoveredFinancialWriterOwner
 from scripts.observation_runtime.personal_version_safe_release_clock import (
     NativeVersionSafePaperOperatorClock,
     require_version_safe_release_digest,
@@ -51,7 +52,7 @@ class NativeSelectedPaperOperationIssuer:
                  qd_source, hl_source, qd, perp):
         # Keep these EXACT class requirements. Inherited or duck-typed ports
         # may otherwise claim a financial source/Job/Stop acceptance they lack.
-        if (type(owner) is not RetainedSelectedNativeOwnerPreflight
+        if (type(owner) not in (RetainedSelectedNativeOwnerPreflight,NativeRecoveredFinancialWriterOwner)
                 or type(operator) is not NativePersonalOperatorAuthority
                 or type(clock) is not NativeVersionSafePaperOperatorClock
                 or type(stop_owner) is not PersonalInstalledPaperStopOwner
@@ -78,6 +79,8 @@ class NativeSelectedPaperOperationIssuer:
             raise ValueError("SELECTED_PAPER_ONE_NATIVE_RELEASE_TWO_ACCOUNTS_STOP_SCOPE_REQUIRED")
         if owner.require_current_clock(clock=clock, runtime_id=operator.runtime_id) is not True:
             raise ValueError('SELECTED_PAPER_CURRENT_OWNER_CLOCK_UNVERIFIED')
+        if owner.require_financial_fence() is not True:
+            raise ValueError('SELECTED_PAPER_DURABLE_WRITER_FENCE_REQUIRED')
         self.owner, self.operator, self.clock = owner, operator, clock
         self.stop_owner, self.qd_source, self.hl_source = stop_owner, qd_source, hl_source
         self.qd, self.perp = strict(body(qd)), strict(body(perp))
@@ -120,6 +123,7 @@ class NativeSelectedPaperOperationIssuer:
             release_digest=self.owner.release_digest,
         )
         self.owner.require_exact_roster(qd=self.qd, perp=self.perp)
+        self.owner.require_financial_fence()
         self.owner.require_current_clock(clock=self.clock, runtime_id=self.operator.runtime_id)
         self.operator.activation("AUTO_PAPER")
         if (self.operator.accounts != {

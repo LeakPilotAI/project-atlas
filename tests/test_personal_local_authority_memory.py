@@ -2,6 +2,7 @@
 import copy
 import os
 from types import SimpleNamespace
+from contextlib import nullcontext
 
 import pytest
 from app.services.paper_financial_replay import body, digest
@@ -112,7 +113,8 @@ def test_native_authority_defaults_to_refusal_without_native_binding():
     with pytest.raises(ValueError): authority_module.NativePersonalOperatorAuthority()
 
 
-def owner(monkeypatch, result=0, enrollment=None, read_only=False, historical_writer=False):
+def owner(monkeypatch, result=0, enrollment=None, read_only=False, historical_writer=False,
+          inception=False, with_fence=None):
     e = copy.deepcopy(fixture().e if enrollment is None else enrollment)
     now, released, closed, waits = [1000], [], [], []
     self_id = {'pid': os.getpid(), 'creation_filetime': 123, 'image': 'D:\\SYNTHETIC-only.exe'}
@@ -143,8 +145,23 @@ def owner(monkeypatch, result=0, enrollment=None, read_only=False, historical_wr
     auth.enrollment, auth.clock = e, lambda: now[0]
     auth.activation = lambda action: {'SYNTHETIC_ACTION': action}
     intent = {'schema': 'SYNTHETIC-INTENT', 'operation_id': 'SYNTHETIC-ONCE'}
+    if with_fence is None:with_fence=not (read_only or historical_writer or inception)
+    generation=None
+    if with_fence:
+        from scripts.observation_runtime import personal_writer_generation as generations
+        class Generation:
+            identity=copy.deepcopy(self_id)
+            enrollments={'QUALITY_DIPS':e}
+            def __init__(self):self.clock=auth.clock
+            def verify(self):return True
+            def scope(self):return nullcontext()
+            def current_roster(self):
+                return {'roles':{'QUALITY_DIPS':{k:{'schema':'QD_OP_PROCESS_ID_V1',**self.identity}
+                                                 for k in e['writers']}}}
+        monkeypatch.setattr(generations,'NativeWriterGeneration',Generation)
+        generation=Generation()
     port = ownership_module.NativePersonalWriterOwnership(enrollment=e, authority=auth,
-                  inception_intent=None if read_only else intent, read_only=read_only)
+                  inception_intent=intent if inception else None, read_only=read_only,generation=generation)
     request = {'scope': 'LOCAL_ENROLLED', 'enrollment': e, 'grant': {'SYNTHETIC': True}}
     return SimpleNamespace(**locals())
 
@@ -154,16 +171,29 @@ def test_exact_self_roster_nested_native_and_inception_lease_closes_handles(monk
     with s.port.lease(s.request, s.now[0]) as outer:
         assert outer.check(outer.snapshot, s.now[0])
         assert outer.snapshot['writers'] == s.e['writers']
+        assert outer.snapshot['original_writers']==s.e['writers']
+        assert outer.snapshot['schema']=='QD_AUTO_NATIVE_OWNERSHIP_V5'
         with s.port.lease(s.request, s.now[0]) as inner:
             assert inner.check(inner.snapshot, s.now[0])
             with pytest.raises(ValueError, match='BEFORE_DRAIN'): s.port.close()
-    context = {'schema': 'PERSONAL_GENESIS_WRITER_V1', 'intent_digest': digest(s.intent),
-               'process': s.port.identity}
-    with s.port.lease(context, s.now[0]) as lease:
-        assert lease.check(context, s.now[0])
     s.port.close()
-    assert len(s.released) == 3 and len(s.closed) == 7
+    assert len(s.released) == 2 and len(s.closed) == 7
     assert all(not values for values in s.files.values())
+    genesis=owner(monkeypatch,inception=True)
+    context={'schema':'PERSONAL_GENESIS_WRITER_V1','intent_digest':digest(genesis.intent),
+             'process':genesis.port.identity}
+    with genesis.port.lease(context,genesis.now[0]) as lease:
+        assert lease.check(context,genesis.now[0])
+    genesis.port.close()
+    assert len(genesis.released)==1 and len(genesis.closed)==7
+
+
+def test_unfenced_original_writer_cannot_receive_a_financial_runtime_lease(monkeypatch):
+    s=owner(monkeypatch,with_fence=False)
+    with pytest.raises(ValueError,match='UNFENCED'),s.port.lease(s.request,s.now[0]):
+        pytest.fail('Unfenced financial writer admitted')
+    assert s.waits==[] and s.released==[]
+    s.port.close()
 
 
 def test_read_only_restart_preserves_historical_writer_and_cannot_admit_operations(monkeypatch):

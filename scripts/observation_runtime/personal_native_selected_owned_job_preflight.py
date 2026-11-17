@@ -155,6 +155,7 @@ class RetainedSelectedNativeOwnerPreflight:
         self._initial_coordination = None
         self._current_readback = None
         self._current_operation = None
+        self._writer_generation = None
         self.verify_still_running()
 
     def _original_process_identity(self):
@@ -329,6 +330,30 @@ class RetainedSelectedNativeOwnerPreflight:
         self.verify_still_running()
         return True
 
+    def bind_writer_generation(self, generation):
+        from scripts.observation_runtime.personal_writer_generation import NativeWriterGeneration
+        if (type(generation) is not NativeWriterGeneration
+                or self._phase!='CURRENT_READBACK_ONLY'
+                or getattr(self,'_writer_generation',None) is not None
+                or generation.job.child is not self.child
+                or generation.identity!=self._identity
+                or generation.recovery.readback is not self._current_readback
+                or generation.enrollments!={'QUALITY_DIPS':self._original_qd,'HYPERLIQUID':self._original_perp}
+                or generation.verify() is not True):
+            raise ValueError('SELECTED_OWNER_EXACT_ORIGINAL_WRITER_GENERATION_REQUIRED')
+        self.verify_still_running()
+        self._writer_generation=generation
+
+    def require_financial_fence(self):
+        from scripts.observation_runtime.personal_writer_generation import (
+            NativeRecoveredFinancialWriterOwner, NativeWriterGeneration,
+        )
+        generation=(self.generation if type(self) is NativeRecoveredFinancialWriterOwner
+                    else getattr(self,'_writer_generation',None))
+        if type(generation) is not NativeWriterGeneration or generation.verify() is not True:
+            raise ValueError('SELECTED_OWNER_UNFENCED_FINANCIAL_WRITER_REFUSED')
+        return True
+
     @contextmanager
     def financial_operation_scope(self, issuer):
         """Keep native identity live during one independently admitted operation.
@@ -348,6 +373,21 @@ class RetainedSelectedNativeOwnerPreflight:
         if issuer._verify_base() is not True:
             raise ValueError('SELECTED_OWNER_CURRENT_OPERATION_AUTHORITY_REFUSED')
         self.verify_still_running()
+        from scripts.observation_runtime.personal_writer_generation import (
+            NativeRecoveredFinancialWriterOwner, NativeWriterGeneration,
+        )
+        generation=(self.generation if type(self) is NativeRecoveredFinancialWriterOwner
+                    else getattr(self,'_writer_generation',None))
+        # Successor owner provides its own generation scope. Original owner
+        # must also hold the same durable fence across the entire operation.
+        if type(generation) is not NativeWriterGeneration:
+            raise ValueError('SELECTED_OWNER_DURABLE_WRITER_FENCE_REQUIRED')
+        with generation.scope():
+            with self._bounded_current_operation(issuer):
+                yield
+
+    @contextmanager
+    def _bounded_current_operation(self, issuer):
         self._current_operation = issuer, issuer._ports, issuer._session, time.monotonic()
         try:
             yield

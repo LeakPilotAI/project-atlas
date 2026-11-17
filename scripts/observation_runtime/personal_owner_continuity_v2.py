@@ -36,7 +36,7 @@ LANES = ('QUALITY_DIPS', 'HYPERLIQUID')
 CURRENT_PHASE = 'CURRENT_READBACK_ONLY'
 
 
-def verify_original_account_roots(enrollments):
+def verify_original_account_roots(enrollments, custody_readers=None):
     """Existing native metadata/ACL checks; unknown control/custody stays closed.
 
     Reuse the six-root identity check without the initial-only FS1/FS3
@@ -50,8 +50,30 @@ def verify_original_account_roots(enrollments):
         try:
             for role, resource in enrollment['resources'].items():
                 outputs[role] = native.w.WindowsOutput(resource['path'])
-            verify_all_native_inception_roots(
-                {'native_enrollment':enrollment}, outputs, native)
+            if custody_readers is None:
+                verify_all_native_inception_roots(
+                    {'native_enrollment':enrollment}, outputs, native)
+            else:
+                # Initial validation stays strict/unchanged. Current custody
+                # permits ONLY the concrete independently replayed store whose
+                # native handle is the ORIGINAL custody root. Control stays empty.
+                from scripts.volume_inspector.resting_order_store import RestingOrderStore
+                from scripts.volume_inspector.unified_portfolio_store import PortfolioControlStore
+                port=custody_readers[lane]
+                expected=PortfolioControlStore if lane=='QUALITY_DIPS' else RestingOrderStore
+                if (type(port) is not expected or port.execution_domain!='LOCAL_ENROLLED'
+                        or str(port.output.root)!=enrollment['resources']['custody']['path']
+                        or native.native.file_identity(port.output.root_handle)!=enrollment['resources']['custody']['native_id']
+                        or port.snapshot()['execution_domain']!='LOCAL_ENROLLED'
+                        or set(outputs)!=set(enrollment['resources'])
+                        or any(Path(outputs['control'].root).iterdir())):
+                    raise ValueError('OWNER_V2_CONCRETE_ORIGINAL_CUSTODY_AUDIT_REQUIRED')
+                for role,output in outputs.items():
+                    output._verify()
+                    resource=enrollment['resources'][role]
+                    if (str(output.root)!=resource['path']
+                            or native.native.file_identity(output.root_handle)!=resource['native_id']):
+                        raise ValueError('OWNER_V2_CURRENT_NATIVE_ROOT_CHANGED')
             for output in outputs.values():
                 identity = tuple(native.native.file_identity(output.root_handle))
                 if identity in seen:
@@ -103,6 +125,16 @@ class NativeTwoAccountCurrentReadback:
         self._enrollments = body(self.enrollments)
         self._release_digest = self.release_digest
         self._water = None
+        self._custody_readers = None
+        self._custody_ports = None
+
+    def bind_custody_readers(self, readers):
+        if self._custody_readers is not None or type(readers) is not dict or set(readers)!=set(LANES):
+            raise ValueError('OWNER_V2_CUSTODY_READER_REBIND_REFUSED')
+        if verify_original_account_roots(self.enrollments,readers) is not True:
+            raise ValueError('OWNER_V2_CURRENT_CUSTODY_AUDIT_MISSING')
+        self._custody_readers=dict(readers)
+        self._custody_ports=tuple(readers[lane] for lane in LANES)
 
     @staticmethod
     def _require_qd_chain(q, clock):
@@ -149,7 +181,13 @@ class NativeTwoAccountCurrentReadback:
             actual_lane, native, _ = validate_personal_inception(reader.bootstrap.enrollment)
             if actual_lane!=lane or native!=self.enrollments[lane]:
                 raise ValueError('OWNER_V2_NATIVE_ACCOUNT_CHANGED')
-        if verify_original_account_roots(self.enrollments) is not True:
+        if self._custody_readers is None:
+            valid=verify_original_account_roots(self.enrollments)
+        else:
+            if tuple(self._custody_readers[lane] for lane in LANES)!=self._custody_ports:
+                raise ValueError('OWNER_V2_CUSTODY_READER_CHANGED')
+            valid=verify_original_account_roots(self.enrollments,self._custody_readers)
+        if valid is not True:
             raise ValueError('OWNER_V2_ORIGINAL_NATIVE_RESOURCE_EVIDENCE_MISSING')
 
     def capture(self):

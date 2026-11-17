@@ -123,6 +123,32 @@ def test_defaults_refuse():
     with pytest.raises(ValueError): NativePersonalTechnicalChecks()
 
 
+@pytest.mark.parametrize('damage',[None,'creation','unaccepted','account','initialization'])
+def test_current_generation_is_distinct_from_historical_writer_in_technical_checks(monkeypatch,damage):
+    from scripts.observation_runtime import personal_writer_generation as generations
+    s=setup(monkeypatch)
+    original=copy.deepcopy(s.s.n)
+    s.process['creation_filetime']+=100
+    class Generation:
+        def __init__(self):
+            self.identity=copy.deepcopy(s.process);self.clock=s.clock
+            self.enrollments={'QUALITY_DIPS':s.s.n};self.ok=True
+        def verify(self):return self.ok
+        def current_roster(self):
+            return {'roles':{'QUALITY_DIPS':{k:{'schema':'QD_OP_PROCESS_ID_V1',**self.identity}
+                                             for k in s.s.n['writers']}}}
+    monkeypatch.setattr(generations,'NativeWriterGeneration',Generation)
+    s.owner.generation=Generation()
+    request={'schema':'ATLAS_PERSONAL_QD_COMPOSITION_V1'}
+    if damage=='creation':s.process['creation_filetime']+=1
+    elif damage=='unaccepted':s.owner.generation.ok=False
+    elif damage=='account':s.owner.generation.enrollments={'QUALITY_DIPS':{}}
+    elif damage=='initialization':request['action']='INITIALIZE_SIMULATED_ACCOUNTS'
+    assert all(s.port.inspect(request).values()) is (damage is None)
+    assert s.s.n==original
+    s.old.db.close()
+
+
 def test_exhausted_verified_store_remains_readable_without_granting_write_capacity(monkeypatch):
     s = setup(monkeypatch)
     s.images._load = lambda: (b'SYNTHETIC_CONFIG_IMAGE', {'revision':128})

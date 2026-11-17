@@ -23,7 +23,8 @@ from scripts.observation_runtime.quality_dips_read_service import observe_self
 
 
 class NativePersonalWriterOwnership:
-    def __init__(self, *, enrollment=None, authority=None, inception_intent=None, ledger=None, read_only=False):
+    def __init__(self, *, enrollment=None, authority=None, inception_intent=None, ledger=None, read_only=False,
+                 generation=None):
         if enrollment is None or type(authority) is not NativePersonalOperatorAuthority:
             raise ValueError('PERSONAL_WRITER_INSTALLED_AUTHORITY_REQUIRED')
         self._lane = ('HYPERLIQUID' if type(enrollment) is dict
@@ -38,6 +39,7 @@ class NativePersonalWriterOwnership:
         if type(read_only) is not bool or read_only and inception_intent is not None:
             raise ValueError('PERSONAL_READ_ONLY_OWNERSHIP_SCOPE')
         self.read_only = self._read_only = read_only
+        self.generation = self._generation = generation
         # Inception may acquire ownership before coordination is installed.
         # Runtime drain always requires the actual existing native ledger.
         self.ledger, self._ledger = ledger, ledger
@@ -49,8 +51,10 @@ class NativePersonalWriterOwnership:
         raw = observe_self()
         self.identity = {'schema': 'QD_OP_PROCESS_ID_V1', **raw}
         if (raw['pid'] != os.getpid() or not raw['image'].startswith('D:\\')
-                or not read_only and any(p != self.identity for p in self.enrollment['writers'].values())):
+                or not read_only and generation is None and any(p != self.identity for p in self.enrollment['writers'].values())):
             raise ValueError('PERSONAL_WRITER_EXACT_SELF_ROSTER_REQUIRED')
+        if generation is not None:
+            self._verify_generation()
         self._identity = body(self.identity)
         try:
             for role, resource in self.enrollment['resources'].items():
@@ -73,10 +77,13 @@ class NativePersonalWriterOwnership:
                     'PERP_AUTO_NATIVE_ENROLLMENT_V1' else 'QUALITY_DIPS')
                 or self.authority is not self._authority
                 or self.read_only is not self._read_only
+                or getattr(self,'generation',None) is not getattr(self,'_generation',None)
                 or body(self.enrollment) != self._enrollment or body(self.identity) != self._identity
                 or body(self.inception_intent) != self._intent
                 or {'schema': 'QD_OP_PROCESS_ID_V1', **observe_self()} != self.identity):
             raise ValueError('PERSONAL_WRITER_CLOSED_UNKNOWN_OR_CHANGED')
+        if getattr(self,'generation',None) is not None:
+            self._verify_generation()
         for role, output in self.outputs.items():
             resource = self.enrollment['resources'][role]
             output._verify()
@@ -156,6 +163,12 @@ class NativePersonalWriterOwnership:
         if set(request) == {'scope', 'enrollment', 'grant'}:
             if request['scope'] != 'LOCAL_ENROLLED' or body(request['enrollment']) != self._enrollment:
                 raise ValueError('PERSONAL_WRITER_NATIVE_SCOPE')
+            if getattr(self,'generation',None) is not None:
+                roster=self.generation.current_roster()
+                return 'AUTO_PAPER',{'schema':'QD_AUTO_NATIVE_OWNERSHIP_V5',
+                    'request_digest':digest(request),'original_writers':e['writers'],
+                    'writers':roster['roles']['QUALITY_DIPS'],'writer_generation':roster,
+                    'resources':e['resources'],'unknown_writers':[]}
             return 'AUTO_PAPER', {'schema': 'QD_AUTO_NATIVE_OWNERSHIP_V4',
                 'request_digest': digest(request), 'writers': e['writers'],
                 'resources': e['resources'], 'unknown_writers': []}
@@ -177,8 +190,33 @@ class NativePersonalWriterOwnership:
                 'resources': read, 'unknown_writers': []}
         raise ValueError('PERSONAL_WRITER_REQUEST_UNSUPPORTED')
 
+    def _verify_generation(self):
+        from scripts.observation_runtime.personal_writer_generation import NativeWriterGeneration
+        g=self.generation
+        if (type(g) is not NativeWriterGeneration or self.read_only
+                or self.inception_intent is not None or g.verify() is not True
+                or g.enrollments.get(self._lane)!=self.enrollment
+                or {'schema':'QD_OP_PROCESS_ID_V1',**g.identity}!=self.identity
+                or g.clock is not self.authority.clock):
+            raise ValueError('PERSONAL_WRITER_EXACT_SUCCESSOR_GENERATION_REQUIRED')
+        return True
+
     @contextmanager
     def lease(self, request, now):
+        request=strict(body(request))
+        action,_snapshot=self._context(request)
+        if action=='AUTO_PAPER':
+            if getattr(self,'generation',None) is None:
+                raise ValueError('PERSONAL_WRITER_UNFENCED_FINANCIAL_LEASE_REFUSED')
+            self._verify_generation()
+            # Lock ordering is generation -> original writer mutex -> image.
+            with self.generation.scope():
+                with self._lease(request,now) as lease:yield lease
+        else:
+            with self._lease(request,now) as lease:yield lease
+
+    @contextmanager
+    def _lease(self, request, now):
         request = strict(body(request))
         with self.lock:
             self._verify()

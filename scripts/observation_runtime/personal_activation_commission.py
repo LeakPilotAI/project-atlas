@@ -210,6 +210,22 @@ def retain_activation_writer_guard(*, qd, perp, release_digest, owned_job=None,
     # Job-backed financial writer issuer. Do NOT route an unknown successor
     # into the old PID-only historical adapter by default.
     if release_digest not in (R15_ARTIFACT, V7_ARTIFACT, V8_ARTIFACT):
+        from scripts.observation_runtime.personal_writer_generation import NativeRecoveredFinancialWriterOwner
+        if type(owned_job) is NativeRecoveredFinancialWriterOwner:
+            if (owned_job.release_digest!=release_digest
+                    or type(actions) is not list or not actions or len(set(actions))!=len(actions)
+                    or 'INITIALIZE_SIMULATED_ACCOUNTS' in actions):
+                raise ValueError('ACTIVATION_RECOVERED_WRITER_NO_INITIALIZATION_OR_IMPLICIT_SCOPE')
+            owned_job.require_exact_roster(qd=qd,perp=perp)
+            owned_job.require_financial_fence()
+            # The distinct native operator record is still verified/published
+            # by the ORIGINAL activation publisher; this guard grants nothing.
+            with owned_job.generation.scope():
+                try:yield owned_job
+                finally:
+                    owned_job.require_exact_roster(qd=qd,perp=perp)
+                    owned_job.require_financial_fence()
+            return
         from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
             RetainedSelectedNativeOwnerPreflight,
         )

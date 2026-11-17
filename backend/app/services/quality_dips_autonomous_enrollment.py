@@ -23,6 +23,48 @@ ROLES = ("source", "projection", "report", "control", "coordination", "custody")
 WRITERS = ("decision", "source", "projection", "report", "coordination")
 
 
+def validate_owned_snapshot(o, request, e):
+    """Versioned evidence from an independently checked ownership LEASE.
+
+    Historical enrollment is immutable. V5 explicitly names the new current
+    role assignment and durable fence instead of claiming old PIDs are alive.
+    This structural validator does not authenticate/mint a generation itself.
+    """
+    if o.get('schema')=='QD_AUTO_NATIVE_OWNERSHIP_V5':
+        exact(o,'QD_AUTO_NATIVE_OWNERSHIP_V5',{'request_digest','original_writers','writers',
+              'writer_generation','resources','unknown_writers'})
+        g=o['writer_generation']
+        if (type(g) is not dict or set(g)!={'schema','generation','fence_digest','original_accounts','roles'}
+                or g['schema']!='ATLAS_NATIVE_CURRENT_WRITER_ROSTER_V1'
+                or type(g['generation']) is not int or g['generation']<0
+                or type(g['original_accounts']) is not dict
+                or set(g['original_accounts'])!={'QUALITY_DIPS','HYPERLIQUID'}
+                or g['original_accounts']['QUALITY_DIPS']!=digest(e)
+                or type(g['roles']) is not dict or set(g['roles'])!={'QUALITY_DIPS','HYPERLIQUID'}
+                or type(o['writers']) is not dict or set(o['writers'])!=set(WRITERS)
+                or g['roles']['QUALITY_DIPS']!=o['writers']
+                or body(o['original_writers'])!=body(e['writers'])):
+            raise ValueError('AUTO_ENROLLMENT_WRITER_GENERATION_CONFLICT')
+        hashed(g['fence_digest'])
+        for v in g['original_accounts'].values():hashed(v)
+        from app.services.perp_operational_contract import WRITERS as HL_WRITERS
+        if set(g['roles']['HYPERLIQUID'])!=set(HL_WRITERS):
+            raise ValueError('AUTO_ENROLLMENT_COMPLETE_CURRENT_WRITER_ROLES_REQUIRED')
+        identities=[]
+        for roles in g['roles'].values():
+            for row in roles.values():process(row);identities.append(body(row))
+        if len(set(identities))!=1:
+            raise ValueError('AUTO_ENROLLMENT_ONE_CURRENT_WRITER_REQUIRED')
+    else:
+        exact(o,'QD_AUTO_NATIVE_OWNERSHIP_V4',{'request_digest','writers','resources','unknown_writers'})
+        if body(o['writers'])!=body(e['writers']):
+            raise ValueError('AUTO_ENROLLMENT_OWNERSHIP_MISMATCH')
+    if (o['request_digest']!=digest(request) or body(o['resources'])!=body(e['resources'])
+            or o['unknown_writers']!=[]):
+        raise ValueError('AUTO_ENROLLMENT_OWNERSHIP_MISMATCH')
+    return True
+
+
 def publication_intent(enrollment):
     """Autonomous inception binding, not a manual bootstrap plan or write grant.
 
@@ -231,18 +273,7 @@ class AutonomousNativeEnrollment:
                     raise ValueError("AUTO_ENROLLMENT_ACCEPTANCE_STALE")
                 with self.ownership.lease(strict(body(request)), now) as owned:
                     o = self._checked(owned, now)
-                    exact(
-                        o,
-                        "QD_AUTO_NATIVE_OWNERSHIP_V4",
-                        {"request_digest", "writers", "resources", "unknown_writers"},
-                    )
-                    if (
-                        o["request_digest"] != digest(request)
-                        or body(o["writers"]) != body(e["writers"])
-                        or body(o["resources"]) != body(e["resources"])
-                        or o["unknown_writers"] != []
-                    ):
-                        raise ValueError("AUTO_ENROLLMENT_OWNERSHIP_MISMATCH")
+                    validate_owned_snapshot(o,request,e)
                     with self.custody.lease(strict(body(request)), now) as current:
                         c = self._checked(current, now)
                         exact(

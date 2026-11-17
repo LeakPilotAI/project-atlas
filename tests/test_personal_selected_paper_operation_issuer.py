@@ -55,6 +55,10 @@ def synthetic_port_factory(monkeypatch):
                 raise ValueError('WRONG_CURRENT_RUNTIME_CLOCK')
             return True
 
+        def require_financial_fence(self):
+            if getattr(self,'fenced',False):raise ValueError('WRITER_GENERATION_FENCED')
+            return True
+
         @contextmanager
         def financial_operation_scope(self, issuer):
             assert issuer.owner is self and issuer._lease_lock.locked()

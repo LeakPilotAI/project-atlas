@@ -26,6 +26,7 @@ from scripts.observation_runtime.personal_local_authority import (
 from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
     RetainedSelectedNativeOwnerPreflight,
 )
+from scripts.observation_runtime.personal_writer_generation import NativeRecoveredFinancialWriterOwner
 from scripts.observation_runtime.personal_research_archive import (
     NativePersonalResearchArchive,
 )
@@ -48,7 +49,7 @@ class NativeSelectedQualityDipsSecWatchIssuer:
 
     def __init__(self, *, owner, operator, clock, archive, qd, perp):
         if (
-            type(owner) is not RetainedSelectedNativeOwnerPreflight
+            type(owner) not in (RetainedSelectedNativeOwnerPreflight,NativeRecoveredFinancialWriterOwner)
             or type(operator) is not NativePersonalOperatorAuthority
             or type(clock) is not NativeVersionSafePaperOperatorClock
             or type(archive) is not NativePersonalResearchArchive

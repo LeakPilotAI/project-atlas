@@ -82,7 +82,7 @@ class NativePersonalTechnicalChecks:
         if lane == 'QUALITY_DIPS':
             validate_autonomous_manifest(manifest)
         elif (lane != 'HYPERLIQUID' or current is not None or engine is not None
-              or ownership.read_only):
+              or ownership.read_only or getattr(ownership,'generation',None) is not None):
             raise ValueError('PERSONAL_HL_FIRST_INCEPTION_ONLY_NO_RUNTIME')
         if (body(enrollment) != body(ownership.enrollment)
                 or body(manifest) != body(ledger.manifest) or release.artifact_digest != enrollment['release_digest']
@@ -171,6 +171,17 @@ class NativePersonalTechnicalChecks:
             if self.ownership.read_only:
                 if request.get('action') != 'READ_ONLY' or process != self.ownership.identity:
                     raise ValueError('PERSONAL_TECHNICAL_READ_ONLY_ACTION')
+            elif getattr(self.ownership,'generation',None) is not None:
+                from scripts.observation_runtime.personal_writer_generation import NativeWriterGeneration
+                generation=self.ownership.generation
+                if (type(generation) is not NativeWriterGeneration
+                        or request.get('action')=='INITIALIZE_SIMULATED_ACCOUNTS'
+                        or generation.verify() is not True
+                        or generation.enrollments.get(lane)!=enrollment
+                        or generation.clock is not self.clock
+                        or generation.identity!={k:v for k,v in process.items() if k!='schema'}
+                        or any(row!=process for row in generation.current_roster()['roles'][lane].values())):
+                    raise ValueError('PERSONAL_TECHNICAL_CURRENT_GENERATION_OR_PROCESS_REFUSED')
             elif any(writer != process for writer in enrollment['writers'].values()):
                 raise ValueError('PERSONAL_TECHNICAL_RELEASE_WRITER_MISMATCH')
             self.ownership._verify()
