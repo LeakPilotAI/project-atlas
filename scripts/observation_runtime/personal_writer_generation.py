@@ -56,6 +56,28 @@ class NativeWriterHandoffReader:
         return value
 
 
+def _verify_terminated_creation_without_image(kernel, handle, previous):
+    """Image lookup may fail after exit; require kernel creation time and signaled exit.
+
+    The previous image is already bound by the original accepted writer
+    generation. Never substitute that claimed image for a live OS observation.
+    """
+    from ctypes import wintypes
+    if kernel.WaitForSingleObject(handle, 0) != 0:
+        raise ValueError('WRITER_HANDOFF_EXIT_SIGNAL_REQUIRED_WITHOUT_IMAGE')
+    kernel.GetProcessTimes.argtypes = [wintypes.HANDLE] + [
+        ctypes.POINTER(wintypes.FILETIME)] * 4
+    kernel.GetProcessTimes.restype = wintypes.BOOL
+    stamps = [wintypes.FILETIME() for _ in range(4)]
+    if not kernel.GetProcessTimes(
+            handle, *(ctypes.byref(stamp) for stamp in stamps)):
+        raise ValueError('WRITER_HANDOFF_TERMINATED_CREATION_TIME_UNAVAILABLE')
+    created = (stamps[0].dwHighDateTime << 32) | stamps[0].dwLowDateTime
+    if created != previous['creation_filetime']:
+        raise ValueError('WRITER_HANDOFF_TERMINATED_PROCESS_IDENTITY_CONFLICT')
+    return True
+
+
 def verify_previous_exited(previous):
     """OpenProcess + complete EnumProcesses; never infer exit from access denial.
 
@@ -68,7 +90,8 @@ def verify_previous_exited(previous):
     if (os.name!='nt' or type(previous) is not dict
             or set(previous)!={'pid','creation_filetime','image'}
             or type(previous['pid']) is not int or previous['pid']<=4
-            or type(previous['creation_filetime']) is not int or previous['creation_filetime']<=0):
+            or type(previous['creation_filetime']) is not int or previous['creation_filetime']<=0
+            or type(previous['image']) is not str or not previous['image'].casefold().startswith('d:\\')):
         raise ValueError('WRITER_HANDOFF_EXACT_PREVIOUS_NATIVE_PROCESS_REQUIRED')
     k=ctypes.WinDLL('kernel32',use_last_error=True)
     ps=ctypes.WinDLL('psapi',use_last_error=True)
@@ -91,15 +114,24 @@ def verify_previous_exited(previous):
             if error!=87 or previous['pid'] in pids:
                 raise ValueError('WRITER_HANDOFF_PREVIOUS_EXIT_UNPROVED')
         else:
-            observed=_windows_handle_identity(handle)
             if k.GetProcessId(handle)!=previous['pid']:
                 raise ValueError('WRITER_HANDOFF_PREVIOUS_HANDLE_CHANGED')
-            if observed['creation_filetime']==previous['creation_filetime']:
-                if (observed['image'].casefold()!=previous['image'].casefold()
-                        or k.WaitForSingleObject(handle,0)!=0):
-                    raise ValueError('WRITER_HANDOFF_PREVIOUS_WRITER_STILL_LIVE_OR_AMBIGUOUS')
-            elif previous['pid'] not in pids:
-                raise ValueError('WRITER_HANDOFF_REUSED_PID_SNAPSHOT_CONFLICT')
+            try:
+                observed=_windows_handle_identity(handle)
+            except ValueError as exc:
+                # QueryFullProcessImageNameW is unavailable for terminated
+                # processes on Windows even while GetProcessTimes still works.
+                # This fallback is ONLY for the known identity-query refusal.
+                if str(exc)!='R15_PROCESS_PARENT_WINDOWS_HANDLE_UNAVAILABLE':
+                    raise
+                _verify_terminated_creation_without_image(k,handle,previous)
+            else:
+                if observed['creation_filetime']==previous['creation_filetime']:
+                    if (observed['image'].casefold()!=previous['image'].casefold()
+                            or k.WaitForSingleObject(handle,0)!=0):
+                        raise ValueError('WRITER_HANDOFF_PREVIOUS_WRITER_STILL_LIVE_OR_AMBIGUOUS')
+                elif previous['pid'] not in pids:
+                    raise ValueError('WRITER_HANDOFF_REUSED_PID_SNAPSHOT_CONFLICT')
         if time.monotonic()-start>1:
             raise ValueError('WRITER_HANDOFF_EXCLUSION_QUERY_EXPIRED')
         return {'previous_owner':previous,'excluded':'ORIGINAL_PROCESS_EXITED_NATIVE_CROSSCHECK'}

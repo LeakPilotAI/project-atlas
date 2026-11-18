@@ -330,7 +330,9 @@ def test_versioned_qd_proof_keeps_historical_enrollment_separate_from_current_ow
 
 
 @pytest.mark.parametrize('value',[None,{}, {'pid':0,'creation_filetime':1,'image':'x'},
-                                  {'pid':True,'creation_filetime':1,'image':'x'}])
+                                  {'pid':True,'creation_filetime':1,'image':'x'},
+                                  {'pid':100,'creation_filetime':1,'image':None},
+                                  {'pid':100,'creation_filetime':1,'image':r'C:\foreign.exe'}])
 def test_previous_process_cannot_be_adopted_from_incomplete_pid_proof(value):
     with pytest.raises(ValueError):target.verify_previous_exited(value)
 
@@ -348,7 +350,7 @@ def native_process_api(monkeypatch):
     """No Win32 calls escape; ctypes only writes into test-owned buffers."""
     api=SimpleNamespace(handle=17,error=0,pids=[OLD['pid']],wait=0,observed={
         'creation_filetime':OLD['creation_filetime'],'image':OLD['image']},
-        enum_ok=True,overflow=False,handle_pid=OLD['pid'],closed=[])
+        enum_ok=True,overflow=False,handle_pid=OLD['pid'],closed=[],times_ok=True)
     class Fn:
         def __init__(self,call):self.call=call
         def __call__(self,*args):return self.call(*args)
@@ -356,8 +358,14 @@ def native_process_api(monkeypatch):
         used._obj.value=size if api.overflow else 4*len(api.pids)
         for i,pid in enumerate(api.pids):values[i]=pid
         return api.enum_ok
+    def native_times(_handle, *stamps):
+        created=api.observed['creation_filetime']
+        stamps[0]._obj.dwLowDateTime=created & 0xffffffff
+        stamps[0]._obj.dwHighDateTime=created >> 32
+        return api.times_ok
     k=SimpleNamespace(OpenProcess=Fn(lambda *_:api.handle),
         GetProcessId=Fn(lambda _:api.handle_pid),WaitForSingleObject=Fn(lambda *_:api.wait),
+        GetProcessTimes=Fn(native_times),
         CloseHandle=Fn(lambda h:(api.closed.append(h) or True)))
     ps=SimpleNamespace(EnumProcesses=Fn(enum))
     monkeypatch.setattr(target.ctypes,'WinDLL',lambda name,**_:k if name=='kernel32' else ps)
@@ -392,6 +400,31 @@ def test_ambiguous_native_previous_owner_never_becomes_exit_proof(native_process
         ticks=iter([0,2]);monkeypatch.setattr(target.time,'monotonic',lambda:next(ticks))
     with pytest.raises(ValueError):target.verify_previous_exited(OLD)
     assert a.closed==([] if not a.handle else [a.handle])
+
+
+@pytest.mark.parametrize('damage',[
+    'none', 'live-process', 'wrong-creation', 'unavailable-creation',
+    'wrong-handle-pid', 'unrelated-image-error',
+])
+def test_terminated_native_image_failure_requires_exact_signaled_filetime(
+        native_process_api, monkeypatch, damage):
+    """Windows refuses QueryFullProcessImageNameW after a genuine process exit."""
+    from scripts.observation_runtime import atlas_r15_disposable_writer_process_audit as audit
+    api=native_process_api
+    if damage=='live-process':api.wait=258
+    elif damage=='wrong-creation':api.observed['creation_filetime']+=1
+    elif damage=='unavailable-creation':api.times_ok=False
+    elif damage=='wrong-handle-pid':api.handle_pid+=1
+    message=('SOME_UNRELATED_IMAGE_ERROR' if damage=='unrelated-image-error'
+             else 'R15_PROCESS_PARENT_WINDOWS_HANDLE_UNAVAILABLE')
+    def missing(_handle):
+        raise ValueError(message)
+    monkeypatch.setattr(audit,'_windows_handle_identity',missing)
+    if damage=='none':
+        assert target.verify_previous_exited(OLD)['previous_owner']==OLD
+    else:
+        with pytest.raises(ValueError):target.verify_previous_exited(OLD)
+    assert api.closed==[api.handle]
 
 
 @pytest.fixture
