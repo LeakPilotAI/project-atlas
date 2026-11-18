@@ -1,0 +1,31 @@
+# Atlas R24 — Original native code-only selection and independent selected-image readback
+
+**November 18, 2026 | Windows MADDOG | Desktop Commander | R24 SELECTED CODE-ONLY | FINANCIAL PAPER OFF / LIVE OFF**
+
+## Actual, genuine result
+Original R24 native installation previously completed and was independently verified as INSTALLED UNSELECTED (10,809 files, 915 directories; original two-CPU and clock safeguards). On November 18 the user independently reviewed the distinct exact Windows visible-console **selection** scope, typed `APPROVE_ONE_ATLAS_R23_TO_R24_CODE_ONLY_SELECTION_NO_FINANCIAL_START`, and received original create-only, operator-SID/source-bound `local-select-decision.json` with SHA-256 **`a25f8c1a98e2dc2dca1d05ef90180c885f5edcc09291f16d1035157bce573b70`**. This decision did not itself select, create accounts, open providers, or start trading.
+
+The separately reviewed original `scripts/atlas_r23_successor_code_only_control.py` (SHA-256 `97326d39e21e94ce3991c2ebeedbcecde622f24abd9c96b9d07ac9a900af258b`) independently re-checked the genuine local decision, original current R23 selected head, original native R24 receipt and all-file identity, frozen source/ZIP, all ten original protected pins, twelve distinct EMPTY financial namespaces, native two-CPU budget, independently qualified 180-second NTP/clock, original host admission, and a single-use selection attempt. The approved **execute-select** completed with **exit code 0** in **215.43 seconds**, returned `SUCCESSOR_SELECTED_CODE_ONLY`, and published the new native selector revision **24**. The exact one-time selection attempt was consumed. The older R23 selector and already consumed install decision remain unmodified; no second install/select was attempted.
+
+### Selected code identity
+- New selected native revision: **24**; selected source commit: `5c3970b7150fd448f5f3c5a25f424687c704a2f9` (the earlier frozen R24 source candidate).
+- Installed immutable code target: `D:\AtlasRuntime\releases\5c3970b7150fd448f5f3c5a25f424687c704a2f9`.
+- Actual installed native artifact digest: `f32cb414c940448e01b76eace2582dcc56717a731d188c8a0405cee03b580397`.
+- Original installed native receipt SHA-256: `9ba9ff992e39c52c7d273442c3b44c10de9d668853f26a958b5c3553789590bb`.
+- New native selection envelope `D:\AtlasRuntime\selection\r0024.json` SHA-256: **`afe5ae7e1e83088e14584cf942f51ba01792c375a5cc50130d1ce48c2c0747ad`**.
+- New selection record original digest (native chain head): **`3090b9bcdd42734f6f6563b63bc097364e41d4c9be439cbfc454cbad4db5ecc2`**.
+- Record revision 24 is `SELECT`, not RESTORE; `previous` is exactly previous revision23 native selection head `90ccd9a9b700c553deaf2c16ce2c3469fd986512c19abbb5815ce47c10dde39e`.
+- Historical selected native revision23 envelope remains SHA-256 `28960b08a8cbca3d5ed8db37369c5aef5a234f45487e1379c67bba2bdc9d3abc`; do not reuse prior R23 approvals or controllers.
+- The original 12 account/source/control/coordinator/projection/report/custody namespace roots remain empty; all ten original protected recovery/source/PIN hashes match; all 3 historical legitimate dirty installer/select/recovery PIN edits remain untouched.
+
+### Independent, actual selected R24 native readback
+A **new, separate process** launched from the **new selected R24 native Python** `-I -B -S`, with exclusively installed R24 source/dependency paths (not the workspace import paths). The installed R24 `require_native_version_safe_clock_source(deep=True)` verified its own original installed image, verified the full native selection chain and exact selected head. A second `NativeInstalledReleaseVerifier().open(spec)` independently reopened the installed 10,809 original file identities and all **915 directories**, and separately checked the original 12 distinct EMPTY financial roots. Original `NativeR17CpuBudget` guarded the process. **Exit 0**, 30.969 seconds, no authority grant. Durable source-only diagnostic: `logs/diagnostics/atlas-single-successor-r23-to-r24-20261118-r01/independent-selected-r24-native-readback.json`, SHA-256 **`b6b1bf613c824e739542b34db603069ef67ce43ea756267ed87211a83921e4d0`**. This proves genuine selected-native readback, not just manifest JSON or a source-unit fixture.
+
+### Actual R24 IEX forward-release compatibility check
+Also ran `scripts.observation_runtime.alpaca_iex_probe.main(['--inspect'])` from **selected R24's own native Python and installed scripts**, not workspace fixtures. **Exit 0** in 15.84 seconds. Reported selected revision **24**, `future_selected_native_source_verified=true`, current nonfinancial research catalog **13,487 symbols**, `private_credentials_accessed=false`, `provider_connected=false`, `provider_authentication_performed=false`, `provider_rights_independently_accepted=false`, `current_executable_quotes_verified=false`, `trading_authorized=false`. This verifies previously corrected future-selected code identity. **It does not prove Alpaca Basic user-account rights or current genuine market quotes**; no credentials or provider network was opened.
+
+## Remaining FULL financial PAPER production blockers
+
+The original `A_PREACTIVATION_ORIGINAL_SOURCE_POLICY` remains unaccepted: **0/3 genuine original E1 source/provider rights, budgets and financial-source economic acceptance** (Alpaca Basic IEX, public Hyperliquid, and Quality Dips research publisher). There are **0/2 actual original simulated financial account inceptions** (proposed 1,000 USD Quality Dips WATCH and 1,000 USDC Hyperliquid PAPER). The original retained five-plus-seven native financial owner, live source issuer/clock/source continuity, FS1/FS3 acknowledgements, actual supervised financial Stop <=8 seconds with durable FLAT/recovery, and supervised first-hour Hyperliquid PAPER pilot remain unaccepted. Existing fake fixtures, public free-tier plans, research roster, the nonfinancial IEX --inspect, code-only selection and generic chat approval grant NONE of these. No live-money order or wallet authority is allowed; manual Start/Stop and local D-only policy remain.
+
+**Outcome: R24 genuine code-only native selection FINISHED and independently verified; financial PAPER production remains NO-GO. No automatic startup or trading, VPS, paid data, C-drive Atlas storage or private credential access was activated by this execution.**
