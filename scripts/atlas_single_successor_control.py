@@ -8,6 +8,7 @@ import argparse
 import ctypes
 import hashlib
 import json
+import math
 import os
 import re
 import sys
@@ -27,6 +28,54 @@ R23_ARTIFACT='fcf87dd612b66e5fbbd645462104c968473db218eaa844a18efa682cefdbbae0'
 R23_HEAD='bca5b25734967c61385c03fa218aafcc6a192613ef85e8d1ea8497b5c2eeb57a'
 
 
+def timing_policy():
+    return {'total_seconds':600,'paced_io_seconds':500,'check_every':32,'pace_every':128,
+        'pause_seconds':0.06,'readback_seconds':180,'terminal_reserve_seconds':30,
+        'minimum_copy_seconds':150,'copy_predecessor_factor':3,'copy_fixed_margin_seconds':15}
+
+
+class ExecutionBudget:
+    """One monotonic origin, including input checks, clock and all cleanup."""
+    def __init__(self):
+        self.started=time.monotonic()
+
+    def remaining(self,*,reserve=0):
+        elapsed=time.monotonic()-self.started
+        if (not math.isfinite(elapsed) or elapsed<0 or not math.isfinite(reserve)
+                or reserve<0 or elapsed+reserve>=600):
+            raise ValueError('SUCCESSOR_TOTAL_DEADLINE_OR_RESERVATION_EXHAUSTED')
+        return 600-elapsed
+
+    def copy_admission(self,plan,predecessor_seconds):
+        if (type(predecessor_seconds) not in (int,float) or not math.isfinite(predecessor_seconds)
+                or predecessor_seconds<=0):
+            raise ValueError('SUCCESSOR_CURRENT_PREDECESSOR_TIMING_REQUIRED')
+        names=plan['names'];deps=plan['dependencies'];runtime=plan['runtime']
+        sizes={name:(deps if name in deps else runtime)[name]['bytes'] for name in names}
+        if any(type(v) is not int or v<0 for v in sizes.values()):
+            raise ValueError('SUCCESSOR_EXACT_COPY_SIZE_REQUIRED')
+        chunks=lambda n:math.ceil(n/65536)
+        calls=(1+len(plan['directories'])+4*len(names)+len(deps)
+               +sum(chunks(sizes[n]) for n in deps)+2*sum(chunks(n) for n in sizes.values())
+               +len(plan['directories'])+1)
+        pacing=(calls//128)*0.06
+        # Conservative scheduling proxy, not native copy acceptance. Slow host
+        # preflight refuses while the local decision is still unused.
+        copy_seconds=max(150,3*predecessor_seconds+pacing+15)
+        self.remaining(reserve=copy_seconds+180+30)
+        return {'copy_reserved_seconds':copy_seconds,'pacing_seconds':pacing,
+                'budget_calls':calls,'readback_reserved_seconds':180,'terminal_reserved_seconds':30}
+
+
+def pacing_envelope():
+    from scripts.atlas_r13_low_impact_installer import LowImpactEnvelope
+    from scripts.atlas_r14_low_impact_installer import CHECK_EVERY,PACE_EVERY,PAUSE_SECONDS,MAX_SECONDS
+    if (CHECK_EVERY,PACE_EVERY,PAUSE_SECONDS,MAX_SECONDS)!=(32,128,0.06,500):
+        raise ValueError('SUCCESSOR_ORIGINAL_R23_PACING_CHANGED')
+    return LowImpactEnvelope(check_every=CHECK_EVERY,pace_every=PACE_EVERY,
+                             pause_seconds=PAUSE_SECONDS,max_seconds=MAX_SECONDS)
+
+
 def checked(path,pin,maximum=8*1024**2):
     path=Path(path)
     raw=source_bytes(path.parent,path.name,maximum_bytes=maximum)
@@ -44,7 +93,7 @@ def proposal(path,pin):
             raise ValueError('SUCCESSOR_REVIEW_ANCESTOR_ALIAS_REFUSED')
     p=releases.strict(checked(path,pin))
     source=p.get('source_commit')
-    if (p.get('schema')!='ATLAS_SINGLE_SUCCESSOR_CODE_ONLY_PROPOSAL_V1'
+    if (p.get('schema')!='ATLAS_SINGLE_SUCCESSOR_CODE_ONLY_PROPOSAL_V2'
             or type(source) is not str or re.fullmatch('[0-9a-f]{40}',source) is None
             or p.get('destination')!=str(Path('D:/AtlasRuntime/releases')/source)
             or p.get('receipt')!=str(ROOT/'logs/diagnostics'/('qd-unselected-release-'+source+'.json'))
@@ -53,6 +102,7 @@ def proposal(path,pin):
             or p.get('previous_spec',{}).get('release')!=R23_SOURCE
             or p.get('previous_spec',{}).get('artifact_digest')!=R23_ARTIFACT
             or p.get('limits')!={'seconds':600,'entries':40000,'bytes':1024**3,'processors':2}
+            or p.get('timing_policy')!=timing_policy()
             or p.get('financial_authority') is not False or p.get('paper_start_authorized') is not False
             or p.get('provider_access') is not False or p.get('automatic_startup') is not False):
         raise ValueError('SUCCESSOR_EXACT_CODE_ONLY_PROPOSAL_REQUIRED')
@@ -145,6 +195,8 @@ def decide(path,pin,kind):
     from scripts.volume_inspector.windows_output import current_sid
     print(json.dumps({'scope':scope,'source':p['source_commit'],'destination':p['destination'],
         'archive_sha256':p['archive_sha256'],'files':p['native_files'],'bytes':p['native_bytes'],
+        'proposal_sha256':pin,'control_source_sha256':p['control_source_sha256'],
+        'timing_policy':p['timing_policy'],'preflight_may_refuse_without_consuming_decision':True,
         'target':target,'financial_authority':False,'paper_start_authorized':False},indent=2))
     if input('Type the entire scope above to approve this ONE code-only action: ').strip()!=scope:
         raise ValueError('SUCCESSOR_LOCAL_OPERATOR_DECLINED')
@@ -174,37 +226,48 @@ def verify_decision(path,pin,p,kind,decision_pin):
 def execute(path,pin,kind,decision_pin):
     # This function is never called by --review or --local-approve-*.
     if kind not in ('install','select'):raise ValueError('SUCCESSOR_EXACT_EXECUTION_KIND_REQUIRED')
-    p=proposal(path,pin);plan=prepared(p);original_state(p)
-    decision=verify_decision(path,pin,p,kind,decision_pin)
-    if kind=='install':installation_target(p['source_commit'],p['receipt'])
-    attempt=Path(path).parent/('local-'+kind+'-attempt.json')
-    write_new_json(attempt,{'decision_sha256':decision_pin,'kind':kind,'status':'SINGLE_USE_CONSUMED'})
+    budget=ExecutionBudget()
+    envelope=pacing_envelope()  # Real constructor validation BEFORE consumption.
     from scripts.observation_runtime.atlas_r17_cpu_budget import NativeR17CpuBudget
     from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
     from scripts.install_version_safe_candidate import _qualify_native_clock_180s
     from scripts.observation_runtime.native_install_host_admission import require_code_install_host_ready
-    from scripts.atlas_r13_low_impact_installer import LowImpactEnvelope
-    identity='successor-code-'+kind+'-'+p['source_commit']
-    started=time.monotonic()
-    with NativeR17CpuBudget() as cpu, LowImpactEnvelope(max_seconds=600) as envelope:
+    journal=None
+    def event(value):
+        with journal.open('ab') as stream:
+            stream.write(b'\n'+json.dumps(value,sort_keys=True,allow_nan=False).encode());stream.flush();os.fsync(stream.fileno())
+    try:
+      with NativeR17CpuBudget() as cpu:
+        p=proposal(path,pin);plan=prepared(p);original_state(p)
+        decision=verify_decision(path,pin,p,kind,decision_pin)
+        if kind=='install':installation_target(p['source_commit'],p['receipt'])
+        attempt=Path(path).parent/('local-'+kind+'-attempt.json')
+        if os.path.lexists(attempt):raise FileExistsError('SUCCESSOR_SINGLE_USE_ALREADY_CONSUMED')
+        identity='successor-code-'+kind+'-'+p['source_commit']
+        budget.remaining(reserve=180+30)
+        predecessor_started=time.monotonic()
         # Keep predecessor native files pinned throughout the attempt; repeated
         # admissions use native selector/root/approval checks, no repeated deep scans.
         with releases.NativeInstalledReleaseVerifier().open(p['previous_spec']):
+            predecessor_seconds=time.monotonic()-predecessor_started
+            budget.remaining(reserve=180+30)
             clock=IndependentNtpClock(runtime_id=identity)
             try:
                 _qualify_native_clock_180s(clock,identity)
-                last=None
+                last=None;phase_reserve=30;paced=False
                 def admission(force=False):
                     nonlocal last
-                    cpu.pulse();envelope.tick()
+                    budget.remaining(reserve=phase_reserve)
+                    cpu.pulse()
+                    if paced:envelope.tick()
                     now=time.monotonic()
-                    if now-started>600:raise ValueError('SUCCESSOR_BOUNDED_EXECUTION_EXPIRED')
                     if force or last is None or now-last>=30:
                         clock.require_operational(identity)
                         if clock.evidence.get('bound_ms',1001)>1000:raise ValueError('SUCCESSOR_CLOCK_UNACCEPTED')
                         original_state(p);verify_decision(path,pin,p,kind,decision_pin)
                         require_code_install_host_ready(Path(p['destination']).parent)
                         last=now
+                    budget.remaining(reserve=phase_reserve)
                     return True
                 admission(force=True)
                 if kind=='select':
@@ -223,20 +286,28 @@ def execute(path,pin,kind,decision_pin):
                                 if len(rows)!=21 or releases.digest(rows[-1])!=p['previous_head']:
                                     raise ValueError('SUCCESSOR_SELECTION_STALE_PREDECESSOR')
                                 clock.require_operational(identity)
+                                budget.remaining(reserve=30)
+                                write_new_json(attempt,{'decision_sha256':decision_pin,'kind':kind,'status':'SINGLE_USE_CONSUMED'})
                                 store.publish(row)
                                 if store.records()[-1]!=row:raise ValueError('SUCCESSOR_SELECTION_ACK_UNKNOWN')
                         finally:store.close()
-                        return {'status':'SUCCESSOR_SELECTED_CODE_ONLY','receipt':row,'financial_authority':False}
-                from scripts.native_install_candidate import _copy_prepared_code
-                journal=Path(p['receipt']).with_suffix('.pending.jsonl')
-                write_new_json(journal,{'schema':'ATLAS_SUCCESSOR_UNSELECTED_CODE_INSTALL_INTENT_V1',
+                        result={'status':'SUCCESSOR_SELECTED_CODE_ONLY','receipt':row,'financial_authority':False}
+                else:
+                  from scripts.native_install_candidate import _copy_prepared_code
+                  allocation=budget.copy_admission(plan,predecessor_seconds)
+                  with envelope:
+                    paced=True
+                    phase_reserve=180+30
+                    admission(force=True)
+                    # Recheck after priority, clock and host admission costs.
+                    budget.remaining(reserve=allocation['copy_reserved_seconds']+phase_reserve)
+                    write_new_json(attempt,{'decision_sha256':decision_pin,'kind':kind,'status':'SINGLE_USE_CONSUMED'})
+                    pending=Path(p['receipt']).with_suffix('.pending.jsonl')
+                    write_new_json(pending,{'schema':'ATLAS_SUCCESSOR_UNSELECTED_CODE_INSTALL_INTENT_V1',
                     'source_commit':p['source_commit'],'archive_sha256':p['archive_sha256'],
                     'target':p['destination'],'financial_authority':False,'selection_allowed':False,'paper_start_authorized':False})
-                def event(value):
-                    with journal.open('ab') as stream:
-                        stream.write(b'\n'+json.dumps(value,sort_keys=True,allow_nan=False).encode());stream.flush();os.fsync(stream.fileno())
-                try:
-                    plan['started']=started
+                    journal=pending
+                    plan['started']=budget.started
                     copied=_copy_prepared_code(destination=Path(p['destination']),archive_sha256=p['archive_sha256'],
                         source_commit=p['source_commit'],prepared=plan,admission=admission)
                     if (len(copied['files'])!=p['native_files'] or len(copied['directories'])!=p['native_directories']
@@ -247,19 +318,26 @@ def execute(path,pin,kind,decision_pin):
                         'directories':copied['directories'],'archive_sha256':p['archive_sha256'],
                         'inventory_sha256':p['source_inventory_sha256'],'selected':False,'financial_effects':False,
                         'provider_connections':False,'operational_acceptance':False}
-                    artifact=releases.digest(receipt['files']);remaining=600-(time.monotonic()-started)
-                    if remaining<40:raise ValueError('SUCCESSOR_INDEPENDENT_READBACK_TIME_UNAVAILABLE')
-                    readback=installed_readback(Path(p['destination']),receipt,artifact,timeout=min(180,remaining-10))
+                    artifact=releases.digest(receipt['files'])
+                    budget.remaining(reserve=180+30)
+                    phase_reserve=30
+                    readback=installed_readback(Path(p['destination']),receipt,artifact,timeout=180)
                     receipt.update(layout=readback['layout'],artifact_digest=artifact)
                     admission(force=True)
                     raw=json.dumps(receipt,sort_keys=True,allow_nan=False).encode()
                     event({'stage':'UNSELECTED_CODE_INSTALL_VERIFIED','receipt_sha256':hashlib.sha256(raw).hexdigest()})
                     write_new_json(Path(p['receipt']),receipt)
-                    return {'status':'SUCCESSOR_INSTALLED_UNSELECTED_CODE_ONLY','artifact_digest':artifact,
-                            'receipt_sha256':hashlib.sha256(raw).hexdigest(),'financial_authority':False}
-                except BaseException:
-                    event({'stage':'REFUSED_PRESERVE_PARTIAL_NO_RETRY'});raise
+                    result={'status':'SUCCESSOR_INSTALLED_UNSELECTED_CODE_ONLY','artifact_digest':artifact,
+                            'receipt_sha256':hashlib.sha256(raw).hexdigest(),'financial_authority':False,
+                            'timing_allocation':allocation}
+                  paced=False
             finally:clock.revoke()
+        budget.remaining()
+      budget.remaining()  # Includes native handle, clock, priority/affinity cleanup.
+      return result
+    except BaseException:
+        if journal is not None:event({'stage':'REFUSED_PRESERVE_PARTIAL_NO_RETRY'})
+        raise
 
 
 def main(argv=None):
@@ -271,7 +349,8 @@ def main(argv=None):
     if args.mode=='review':
         p=proposal(args.proposal,args.proposal_sha256);plan=prepared(p)
         return {'status':'SOURCE_AND_DEPENDENCY_PLAN_ONLY_NO_OPERATIONAL_MUTATION','source_commit':p['source_commit'],
-                'files':len(plan['names']),'bytes':plan['total'],'financial_authority':False}
+                'files':len(plan['names']),'bytes':plan['total'],'financial_authority':False,
+                'timing_policy':p['timing_policy']}
     kind=args.mode.rsplit('-',1)[1]
     if args.mode.startswith('local-approve'):return decide(args.proposal,args.proposal_sha256,kind)
     if not args.decision_sha256:raise ValueError('SUCCESSOR_LOCAL_DECISION_PIN_REQUIRED')
