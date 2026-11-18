@@ -98,10 +98,14 @@ def probe(*, symbol, confirmed_scope, credential_path=None, now=None,
             or SYMBOL.fullmatch(symbol) is None):
         raise ValueError("IEX_REST_EXPLICIT_EXACT_DATA_ONLY_SCOPE_REQUIRED")
     selected = inspect_selected_data_only()
-    # Original R15 remains inspectable only if genuinely selected. Current
-    # R22/R23 are supported only with full native source-image readback;
-    # neither data-only scope nor a source image grants financial authority.
-    if (selected.get("selected_revision") not in (14, 22, 23)
+    # Original R15/R22/R23 historical previews remain valid. Later releases
+    # require the exact installed native source/selection verifier's explicit
+    # future flag; a fabricated revision alone never opens provider keys.
+    revision = selected.get("selected_revision")
+    if (type(revision) is not int
+            or (revision not in (14, 22, 23)
+                and not (24 <= revision <= 64
+                         and selected.get("future_selected_native_source_verified") is True))
             or selected.get("trading_authorized") is not False
             or selected.get("provider_rights_independently_accepted") is not False):
         raise ValueError("IEX_REST_SELECTED_R15_NONFINANCIAL_SCOPE_REQUIRED")

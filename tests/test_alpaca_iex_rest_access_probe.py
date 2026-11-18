@@ -241,6 +241,23 @@ def test_forged_future_r24_inspect_cannot_open_credentials(monkeypatch):
         )
 
 
+def test_selected_future_native_r24_data_scope_only_with_exact_origin_proof(monkeypatch):
+    monkeypatch.setattr(rest, "inspect_selected_data_only", lambda: {
+        "selected_revision": 24, "trading_authorized": False,
+        "provider_rights_independently_accepted": False,
+        "future_selected_native_source_verified": True,
+    })
+    opener = StubOpener(quote(age=42000))
+    result = rest.probe(
+        symbol="MSFT", confirmed_scope=rest.SCOPE, now=1794385732,
+        credential_reader=lambda _: Credentials(
+            "DUMMY_123456789", "DUMMY_123456789"), opener=opener)
+    assert opener.called == 1 and opener.response.closed is True
+    assert result["independent_contract_license_verified"] is False
+    assert result["paper_start_authorized"] is False
+    assert result["live_trading_authorized"] is False
+
+
 def test_r23_provider_rights_forgery_refuses_before_keys(monkeypatch):
     monkeypatch.setattr(rest, "inspect_selected_data_only", lambda: {
         "selected_revision": 23, "trading_authorized": False,

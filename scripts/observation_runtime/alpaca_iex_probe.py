@@ -64,16 +64,39 @@ def _inspect_current_native_source():
             with store.locked():
                 records = store.records()
                 revision = len(records)
-                if (revision not in NATIVE_SELECTED_RELEASES
+                if (not 22 <= revision <= 64
                         or records[-1].get("revision") != revision
                         or releases.digest(records[21]) != R22_HEAD):
-                    raise IEXRefused("IEX_SELECTED_NATIVE_R22_R23_CHAIN_REQUIRED")
-                expected_release, expected_artifact, expected_head, expected_files = (
-                    NATIVE_SELECTED_RELEASES[revision]
-                )
+                    raise IEXRefused("IEX_SELECTED_NATIVE_FORWARD_CHAIN_REQUIRED")
                 selected = releases.validate_spec(
                     records[-1]["selected"], "WINDOWS_LOCAL",
                 )
+                if revision in NATIVE_SELECTED_RELEASES:
+                    expected_release, expected_artifact, expected_head, expected_files = (
+                        NATIVE_SELECTED_RELEASES[revision]
+                    )
+                else:
+                    # A successor's receipt digest does not exist at source
+                    # freeze time. Bind the ACTUAL installed source/interpreter
+                    # to the original verified forward SELECT chain instead.
+                    from scripts.observation_runtime.personal_version_safe_release_clock import (
+                        CLOCK_RELATIVE, RELEASE_PARENT, admit_version_safe_clock_source,
+                    )
+                    release = Path(__file__).absolute().parents[2]
+                    if (releases.digest(records[22]) != R23_HEAD
+                            or release.parent != RELEASE_PARENT
+                            or Path(__file__).absolute() != release /
+                               "scripts/observation_runtime/alpaca_iex_probe.py"
+                            or Path(sys.executable).absolute() != release / "python/python.exe"):
+                        raise IEXRefused("IEX_FUTURE_EXACT_INSTALLED_NATIVE_CODE_REQUIRED")
+                    expected_head, verified_spec = admit_version_safe_clock_source(
+                        source_file=release / CLOCK_RELATIVE, records=records,
+                    )
+                    if verified_spec != selected:
+                        raise IEXRefused("IEX_FUTURE_VERIFIED_SELECTION_MISMATCH")
+                    expected_release, expected_artifact, expected_files = (
+                        release.name, selected["artifact_digest"], None,
+                    )
                 if (selected["release"] != expected_release
                         or selected["artifact_digest"] != expected_artifact
                         or records[-1]["action"] != "SELECT"
@@ -85,8 +108,15 @@ def _inspect_current_native_source():
         cpu.pulse()
         with releases.NativeInstalledReleaseVerifier().open(selected) as receipt:
             if (receipt["artifact_digest"] != expected_artifact
-                    or len(receipt["files"]) != expected_files
-                    or len(receipt["directories"]) != 915):
+                    or receipt["source_commit"] != expected_release
+                    or (len(receipt["files"]) != expected_files
+                        if expected_files is not None
+                        else not 10802 <= len(receipt["files"]) <= 40000)
+                    or (len(receipt["directories"]) != 915
+                        if expected_files is not None
+                        else not 915 <= len(receipt["directories"]) <= 40000)
+                    or receipt.get("financial_effects") is not False
+                    or receipt.get("operational_acceptance") is not False):
                 raise IEXRefused("IEX_SELECTED_NATIVE_INSTALLED_IMAGE_REQUIRED")
         cpu.pulse()
         roots = inspect_two_lane_native_roots()
@@ -112,6 +142,8 @@ def _inspect_current_native_source():
         finally:
             final_store.close()
         cpu.pulse()
+        if revision >= 24:
+            return revision, research["catalog_count"], True
         return revision, research["catalog_count"]
 
 
@@ -233,11 +265,21 @@ def inspect_selected_data_only():
     never claim the obsolete R14 was selected merely because r0013 exists.
     The old R12-only verifier remains available only for pre-R14 deployments.
     """
+    future_selected_native_source_verified = False
     if R23_SELECTED_ENVELOPE.exists() or R22_SELECTED_ENVELOPE.exists():
-        # Historical r0022/r0014 files remain present after later selections.
-        # The native store, NOT file existence, identifies the current release.
-        # Exact original 22/23 chain and immutable selected image are verified.
-        revision, catalog_count = _inspect_current_native_source()
+        # Historical selectors persist. Only the exact native readback can
+        # identify a future selected release, never a fabricated revision.
+        observed = _inspect_current_native_source()
+        if (type(observed) is not tuple or len(observed) not in (2, 3)
+                or type(observed[0]) is not int or type(observed[1]) is not int):
+            raise IEXRefused("IEX_CURRENT_NATIVE_INSPECT_RESULT_REFUSED")
+        revision, catalog_count = observed[:2]
+        future_selected_native_source_verified = (
+            len(observed) == 3 and observed[2] is True and revision >= 24
+        )
+        if (revision not in (22, 23) and
+                not future_selected_native_source_verified):
+            raise IEXRefused("IEX_FUTURE_NATIVE_SOURCE_NOT_VERIFIED")
         qd_published = False
     elif R15_SELECTED_ENVELOPE.exists():
         from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
@@ -301,6 +343,7 @@ def inspect_selected_data_only():
         "status":"REQUIRES_EXPLICIT_DATA_ONLY_SESSION_APPROVAL",
         "selected_revision":revision,
         "source_catalog_symbols":catalog_count,
+        "future_selected_native_source_verified":future_selected_native_source_verified,
         "forward_source_verified":qd_published,
         "provider_authentication_performed":False,
         "private_credentials_accessed":False,
@@ -341,8 +384,13 @@ def main(argv=None, *, credentials_loader=None, feed_factory=IEXFeed):
         # the CURRENT selected native code before any private key bytes or
         # provider transport can be opened. This never grants financial GO.
         selected=inspect_selected_data_only()
-        if (selected.get('selected_revision') not in (12, 13, 14, 22, 23)
-                or selected.get('trading_authorized') is not False):
+        current_revision = selected.get('selected_revision')
+        if (type(current_revision) is not int
+                or (current_revision not in (12, 13, 14, 22, 23)
+                    and not (24 <= current_revision <= 64
+                             and selected.get('future_selected_native_source_verified') is True))
+                or selected.get('trading_authorized') is not False
+                or selected.get('provider_rights_independently_accepted') is not False):
             raise IEXRefused('IEX_PROBE_SELECTED_CODE_PREAUTH_REQUIRED')
         if args.receipt_id is not None:
             from scripts.observation_runtime.atlas_r12_iex_diagnostic_receipt import ID

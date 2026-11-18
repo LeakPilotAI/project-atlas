@@ -392,6 +392,44 @@ def test_r23_selection_supersedes_r22_r15_without_credentials_or_network(
         assert packet[field] is False
 
 
+def test_forward_native_successor_requires_verified_installed_image_before_keys(
+        monkeypatch, tmp_path, capsys):
+    selected = tmp_path / "r0023.json"
+    selected.write_text("native-successor-fixture", encoding="ascii")
+    monkeypatch.setattr(probe, "R23_SELECTED_ENVELOPE", selected)
+    monkeypatch.setattr(probe, "_inspect_current_native_source",
+                        lambda: (24, 13487))
+    rc = probe.main(
+        ["--execute-data-only", "--confirm-scope", probe.SCOPE,
+         "--seconds", "1", "--symbols", "MSFT"],
+        credentials_loader=lambda *_: pytest.fail("FUTURE_KEYS_WITHOUT_PROOF"),
+        feed_factory=lambda *_: pytest.fail("FUTURE_PROVIDER_WITHOUT_PROOF"))
+    assert rc == 1
+    assert json.loads(capsys.readouterr().out) == {
+        "status": "REFUSED", "reason": probe.REASON}
+
+
+def test_forward_native_successor_verified_preview_never_grants_finance(
+        monkeypatch, tmp_path, capsys):
+    selected = tmp_path / "r0023.json"
+    selected.write_text("verified-future-fixture-only", encoding="ascii")
+    monkeypatch.setattr(probe, "R23_SELECTED_ENVELOPE", selected)
+    monkeypatch.setattr(probe, "_inspect_current_native_source",
+                        lambda: (24, 13487, True))
+    rc = probe.main(
+        ["--inspect"],
+        credentials_loader=lambda *_: pytest.fail("FUTURE_KEYS_INSPECT"),
+        feed_factory=lambda *_: pytest.fail("FUTURE_PROVIDER_INSPECT"))
+    assert rc == 0
+    result = json.loads(capsys.readouterr().out)
+    assert result["selected_revision"] == 24
+    assert result["future_selected_native_source_verified"] is True
+    for field in ("provider_connected", "private_credentials_accessed",
+                  "trading_authorized", "provider_rights_independently_accepted",
+                  "current_executable_quotes_verified"):
+        assert result[field] is False
+
+
 def test_forged_r23_source_refuses_no_historical_fallback_or_keys(
         monkeypatch, tmp_path, capsys):
     selected = tmp_path / "r0023.json"
