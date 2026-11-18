@@ -24364,4 +24364,85 @@
   "provider_hold": true,
   "B1_C1_D1_E1_and_21_decisions_preserved": true
 }
+,
+  "atlas_successor_install_safety_refusal_20261117": {
+  "status": "BLOCKED_BEFORE_SINGLE_USE_ATTEMPT_REAL_ENVELOPE_CONTRACT_MISMATCH",
+  "starting_checkpoint": "c44fedf6a1b39662aa59e5f126196db02b5929b3",
+  "report": "docs/ATLAS_SUCCESSOR_INSTALLATION_SAFETY_REVIEW_2026-11-17.md",
+  "evidence_root": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-successor-install-safety-20261117-r01",
+  "source_commit": "2f0fcfd9741b8fd524f2e5921a79998373a689c9",
+  "proposal_sha256": "28e22e70ea03c35724a4fad5229f7ea61f63343b14f6615002250a0cf73dc810",
+  "decision_sha256": "c89bb83e24798750335b211134ce85fe0743ccf7a87d8a2b56de57895e4d475b",
+  "controller_sha256": "935afa325b47a8f2380443b83d90a98a42f59ad95f317f4d63fd15049edd333a",
+  "decision_consumed": false,
+  "installation_attempted": false,
+  "successor_installed": false,
+  "successor_native_receipt_digest": null,
+  "selection_pending": true,
+  "original_selected_revision": 21,
+  "original_financial_roots_distinct_empty": 12,
+  "protected_original_files_unchanged": 10,
+  "three_legitimate_pin_edits_preserved_unstaged": true,
+  "real_constructor_checks": [
+    {
+      "seconds": 600,
+      "result": "REFUSED_IN_CONSTRUCTOR",
+      "reason": "R13_BOUNDED_LOW_RESOURCE_POLICY_REQUIRED"
+    },
+    {
+      "seconds": 590,
+      "result": "CONSTRUCTED_NOT_ENTERED_NO_NATIVE_PRIORITY_CALL"
+    },
+    {
+      "seconds": 500,
+      "result": "CONSTRUCTED_NOT_ENTERED_NO_NATIVE_PRIORITY_CALL"
+    },
+    {
+      "seconds": 591,
+      "result": "REFUSED_IN_CONSTRUCTOR",
+      "reason": "R13_BOUNDED_LOW_RESOURCE_POLICY_REQUIRED"
+    }
+  ],
+  "pacing_analysis": [
+    {
+      "name": "approved_controller_defaults",
+      "check_every": 32,
+      "pace_every": 32,
+      "pause_seconds": 0.06,
+      "budget_calls": 92863,
+      "nominal_minimum_sleep_seconds": 174.06
+    },
+    {
+      "name": "original_r23",
+      "check_every": 32,
+      "pace_every": 128,
+      "pause_seconds": 0.06,
+      "budget_calls": 92863,
+      "nominal_minimum_sleep_seconds": 43.5
+    }
+  ],
+  "historical_timing_forecast_not_native_proof": {
+    "clock_qualification_seconds": 180,
+    "historical_predecessor_deep_seconds": 73.906,
+    "independent_final_readback_reserved_seconds": 180,
+    "terminal_reserve_seconds": 15,
+    "total_seconds": 600,
+    "copy_available_after_historical_predecessor_and_reserves": 151.094,
+    "not_a_native_copy_timing_proof": true
+  },
+  "prior_installation_readiness_superseded": true,
+  "candidate_content_hashes_unchanged": true,
+  "minimum_proposed_change": "Support-only real-envelope configuration, phase/total deadlines, conservative readback reservation and pre-consumption admission; NOT IMPLEMENTED.",
+  "next": "Review source-only support timing repair; do not repeat local install review or execute the unchanged controller. Changed code needs a new proposal-bound local decision; old decision cannot be reused.",
+  "original_financial_and_method_decisions_unchanged": true,
+  "provider_hold": true,
+  "qd_watch_only": true,
+  "paper_running": false,
+  "production": "NO_GO",
+  "evidence_sha256": {
+    "inspect_safety.py": "dded0878fd15ab0a323a8ef7290ff2be74a8399ee423138a7c25447fa86f3fcc",
+    "read-only-safety-result.json": "74003fdfaf5124ff889251306a6d9f9d032d684453dae9175f7dd5e41d63a7a5"
+  },
+  "report_sha256": "3df292012f1fb0177ecac13ef1656deddefc6b09f9d94575501c9b548a25de67"
+}
 }
