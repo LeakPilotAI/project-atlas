@@ -9,7 +9,6 @@ a websocket handshake or a positive research catalog.
 import argparse
 import asyncio
 import json
-import re
 import sys
 from pathlib import Path
 
@@ -17,12 +16,87 @@ REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO))
 sys.path.insert(0, str(REPO / "backend"))
 
-from app.investment.alpaca_iex import Credentials, IEXFeed, IEXRefused, SYMBOL
+from app.investment.alpaca_iex import SYMBOL, Credentials, IEXFeed, IEXRefused
 
 SCOPE = "ALPACA_IEX_QUOTE_OBSERVATION_ONLY_NO_TRADING"
 REASON = "IEX_CONFIGURATION_OR_DATA_UNAVAILABLE"
 R14_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0013.json")
 R15_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0014.json")
+R22_SELECTED_ENVELOPE = Path("D:/AtlasRuntime/selection/r0022.json")
+R22_SOURCE_COMMIT = "2f0fcfd9741b8fd524f2e5921a79998373a689c9"
+R22_ARTIFACT_DIGEST = "5b23187f39316cd4e4d81659fec70758d9db661051604f4d91379938c5e92a51"
+
+
+def _inspect_current_r22_source():
+    """Verify selected immutable R22, D-only original roots and source catalog.
+
+    No credentials, market network or financial authority are created here.
+    Retained native file verification is deliberately complete; an older
+    selection file still being present must not imply it remains selected.
+    """
+    from scripts import release_selection as releases
+    from scripts.observation_runtime.atlas_r12_iex_rotation_plan import (
+        inspect as inspect_research_roster,
+    )
+    from scripts.observation_runtime.atlas_r17_cpu_budget import NativeR17CpuBudget
+    from scripts.observation_runtime.personal_existing_native_resource_evidence import (
+        inspect_two_lane_native_roots,
+    )
+    from scripts.observation_runtime.personal_version_safe_release_clock import (
+        SELECTOR_NATIVE,
+    )
+    from scripts.release_selection_store import NativeSelectionStore
+
+    with NativeR17CpuBudget() as cpu:
+        store = NativeSelectionStore(
+            root=r"D:\AtlasRuntime\selection", native_root=list(SELECTOR_NATIVE)
+        )
+        try:
+            with store.locked():
+                records = store.records()
+                if (len(records) != 22 or records[-1].get("revision") != 22):
+                    raise IEXRefused("IEX_SELECTED_R22_EXACT_NATIVE_CHAIN_REQUIRED")
+                selected = releases.validate_spec(records[-1]["selected"],
+                                                   "WINDOWS_LOCAL")
+                if (selected["release"] != R22_SOURCE_COMMIT
+                        or selected["artifact_digest"] != R22_ARTIFACT_DIGEST):
+                    raise IEXRefused("IEX_SELECTED_R22_SOURCE_ARTIFACT_REQUIRED")
+                selected_head = releases.digest(records[-1])
+        finally:
+            store.close()
+        cpu.pulse()
+        with releases.NativeInstalledReleaseVerifier().open(selected) as receipt:
+            if (receipt["artifact_digest"] != R22_ARTIFACT_DIGEST
+                    or len(receipt["files"]) != 10773
+                    or len(receipt["directories"]) != 915):
+                raise IEXRefused("IEX_SELECTED_R22_INSTALLED_IMAGE_REQUIRED")
+        cpu.pulse()
+        roots = inspect_two_lane_native_roots()
+        if (roots["all_twelve_distinct_and_empty"] is not True
+                or roots["native_root_total"] != 12):
+            raise IEXRefused("IEX_SELECTED_R22_ORIGINAL_ACCOUNT_ROOTS_UNCERTAIN")
+        research = inspect_research_roster()
+        if (research["catalog_count"] <= 0
+                or research["paper_execution_authorized"] is not False
+                or research["provider_rights_accepted"] is not False
+                or research["authenticated_iex_connection"] is not False):
+            raise IEXRefused("IEX_SELECTED_R22_NONFINANCIAL_CATALOG_REQUIRED")
+        # A NativeSelectionStore is one-shot: close() terminally revokes
+        # its native selection handles. Reopen a NEW store for post-readback;
+        # never reuse a closed native selection object.
+        final_store = NativeSelectionStore(
+            root=r"D:\AtlasRuntime\selection", native_root=list(SELECTOR_NATIVE)
+        )
+        try:
+            with final_store.locked():
+                again = final_store.records()
+                if (len(again) != 22 or releases.digest(again[-1])
+                        != selected_head):
+                    raise IEXRefused("IEX_SELECTED_R22_CHANGED_DURING_INSPECT")
+        finally:
+            final_store.close()
+        cpu.pulse()
+        return research["catalog_count"]
 
 
 def request_scope(*, seconds, symbols, execute, confirm_scope):
@@ -101,7 +175,9 @@ def admit_result(data, *, observed_symbols, observed_count, requested_symbols):
         packet['per_symbol_quote_diagnostics'] = per_symbol
     # Reuse current r12 source assessment; accepting a short provider sample
     # must never silently promote any of the nine financial operating gates.
-    from scripts.observation_runtime.atlas_r12_alpaca_source_admission import validate_bounded_iex_probe
+    from scripts.observation_runtime.atlas_r12_alpaca_source_admission import (
+        validate_bounded_iex_probe,
+    )
     verdict=validate_bounded_iex_probe(packet)
     if (verdict.get('paper_execution_authorized') is not False
             or verdict.get('continuous_live_quote_freshness_verified') is not False
@@ -141,7 +217,14 @@ def inspect_selected_data_only():
     never claim the obsolete R14 was selected merely because r0013 exists.
     The old R12-only verifier remains available only for pre-R14 deployments.
     """
-    if R15_SELECTED_ENVELOPE.exists():
+    if R22_SELECTED_ENVELOPE.exists():
+        # The selected native revision 22 supersedes historical r0014.
+        # Verifies actual selected release, intact installed files and all
+        # twelve original empty account roots before any credential access.
+        catalog_count = _inspect_current_r22_source()
+        revision = 22
+        qd_published = False
+    elif R15_SELECTED_ENVELOPE.exists():
         from scripts.observation_runtime.atlas_r15_paper_offline_commissioning import (
             inspect as inspect_r15,
         )
@@ -255,7 +338,9 @@ def main(argv=None, *, credentials_loader=None, feed_factory=IEXFeed):
             seconds=args.seconds,symbols=symbols,credentials=credentials,
             feed_factory=feed_factory))
         if args.receipt_id is not None:
-            from scripts.observation_runtime import atlas_r12_iex_diagnostic_receipt as receipt
+            from scripts.observation_runtime import (
+                atlas_r12_iex_diagnostic_receipt as receipt,
+            )
             # Only a fully admitted, authenticated fresh-quote result reaches
             # this create-once diagnostic path. Never a native QD publication.
             receipt.RECORDS_DIR.mkdir(parents=True,exist_ok=True)

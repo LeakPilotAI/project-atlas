@@ -20,8 +20,10 @@ from datetime import datetime
 from pathlib import Path
 
 from app.investment.alpaca_iex import Credentials
+
 from scripts.observation_runtime.alpaca_iex_probe import (
-    SCOPE, inspect_selected_data_only,
+    SCOPE,
+    inspect_selected_data_only,
 )
 
 SCHEMA = "ATLAS_IEX_REST_SINGLE_LATEST_DATA_ONLY_ACCESS_V1"
@@ -96,7 +98,10 @@ def probe(*, symbol, confirmed_scope, credential_path=None, now=None,
             or SYMBOL.fullmatch(symbol) is None):
         raise ValueError("IEX_REST_EXPLICIT_EXACT_DATA_ONLY_SCOPE_REQUIRED")
     selected = inspect_selected_data_only()
-    if (selected.get("selected_revision") != 14
+    # Original R15 remains inspectable only if genuinely selected. The
+    # latest code-only native revision 22 is now supported by the same
+    # read-only, no-financial-authority source/installed-image preflight.
+    if (selected.get("selected_revision") not in (14, 22)
             or selected.get("trading_authorized") is not False
             or selected.get("provider_rights_independently_accepted") is not False):
         raise ValueError("IEX_REST_SELECTED_R15_NONFINANCIAL_SCOPE_REQUIRED")

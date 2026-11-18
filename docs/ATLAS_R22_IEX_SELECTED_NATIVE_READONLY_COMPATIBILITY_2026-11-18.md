@@ -1,0 +1,45 @@
+# Atlas R22 — current selected Alpaca IEX data-only inspection and REST compatibility repair
+**2026-11-18 | MADDOG Windows 11 | Desktop Commander only | CODE/SOURCE-ONLY**
+
+## Verified result
+**The historical R15-only Alpaca IEX read-only inspection is repaired in the source checkout.** Actual selected R22 inspected successfully without credentials or provider access. The original installed native revision **22 remains completely unchanged**. Financial PAPER and live-money remain **OFF / production NO-GO**.
+
+Source branch before this change: `chatgpt/atlas-rebuild-v1`, checkpoint `281382d6e34a8d19d9038725a4b4e662c5a13907`. Native selected source `2f0fcfd9741b8fd524f2e5921a79998373a689c9`, installed artifact `5b23187f39316cd4e4d81659fec70758d9db661051604f4d91379938c5e92a51`, selector revision22 SHA-256 `9f206300bc243ebe938f4bf729c1eb5f2c239596ebf410b18773bb614c6b60f6`. Three pre-existing uncommitted R23 PIN edits are protected and excluded from this commit.
+
+### Confirmed defect
+`scripts/observation_runtime/alpaca_iex_probe.py::inspect_selected_data_only` originally tested only historical r0014 selection when that record was present. The original selection store is append-only and retains r0014 *after revision 22 was selected*. Real offline inspection of R22 therefore wrongly invoked `atlas_r15_paper_offline_commissioning.inspect()` and raised `R15_OFFLINE_EXACT_SELECTED_14_RECORD_CHAIN_REQUIRED` before reading credentials or connecting. This was not a provider failure.
+
+### Scope of corrective source changes
+- Added **current R22 branch before historical R15/R14/R12**. Reads the original native `NativeSelectionStore` contiguous revision22 chain under its native lock, requires exact pinned selected release and artifact digest, opens original `NativeInstalledReleaseVerifier` and validates all **10,773 files and 915 directories**, inspects all **12 distinct/empty original financial roots**, and rehashes the existing **13,487-symbol** original research catalog through the original 30-symbol roster planner. It then independently **reopens a new selection store** and rechecks the same final head. A closed native selector store is one-shot and must never be reused.
+- Does **not** open credential files, connect to Alpaca, mint source rights, accept a quote, authorize provider budgets, publish current sources, open financial accounts or start PAPER. If a newer rev23 exists or any exact native verification refuses, the inspector refuses without fallback to r0014.
+- The existing `scripts/observation_runtime/alpaca_iex_rest_access_probe.py` now recognizes the **genuine selected R22** as well as historically selected R15 for the same tightly scoped data-only REST preflight. It still requires an explicit single-symbol `ALPACA_IEX_QUOTE_OBSERVATION_ONLY_NO_TRADING` request, independently validated selected source, exact local config path, trading-disabled credentials, HTTPS pinned IEX endpoint, no redirects, bounded body and timeout, never market orders or financial authority. **No REST request was executed** here.
+- Existing historical R12–R15 synthetic tests were isolated from the current native R22 selector. Added R22-priority and no-fallback tests and a fake-transport R22 REST test; original data-only source safety expectations remain. These patches affect the **source checkout only**, and must not be treated as installed selected release behavior until a separately reviewed immutable successor is installed/selected. No new native release was requested or selected now.
+
+## Actual execution and validation
+
+1. Reproduced original real `--inspect` failure under native R22 Python: `R15_OFFLINE_EXACT_SELECTED_14_RECORD_CHAIN_REQUIRED`, before credentials or IEX network.
+2. First repaired native read revealed a real diagnostic adapter bug: closed `NativeSelectionStore` cannot acquire a second lock (`SELECTION_STORE_CLOSED`). Corrected only adapter lifetime/reopen logic, never the original native store/guard.
+3. First test suite **137 passed / 1 failed** because the one direct Windows native subprocess inherited an already 2-CPU-restricted parent, and the original CPU budget guard correctly requires at least four eligible CPUs *before selecting two*. This is a **test-harness scope mismatch**, not evidence of a financial/native program fault. No CPU guard was bypassed or edited.
+4. Ran actual selected installed R22 native `-I -B -S` read-only inspection **separately** with its original CPU budget. Final result **exit 0 in 16.27 seconds**, `selected_revision=22`, `source_catalog_symbols=13487`; all `provider_connected`, `private_credentials_accessed`, `current_executable_quotes_verified`, `provider_rights_independently_accepted`, `trading_authorized`, `forward_source_verified` **FALSE**.
+5. Separate all-fake financial/provider regression after source and safe lint cleanup: **138 passed, 1 deliberately deselected** (the real native subprocess case, executed/verified independently), **0 failed/errors/skipped**. Four test source files were in the focused profile. Exact original test output `logs/diagnostics/atlas-r22-e1-iex-compat-20261118-r01/focused-iex-postlint-junit.xml`.
+6. Ruff scoped check on four modified Python files: **PASS**, with the one pre-existing `TRY004` exception-style recommendation excluded. `git diff --check`: PASS. Safe import ordering/unreferenced imports and explicit subprocess `check=False` were adjusted without changing data-only behavior.
+7. Separate selected native read-only final attestation exit **0**, rechecked all 138 JUnit pass identities, four exact source/test SHA-256 pins, real selector revision22 and source, twelve distinct empty original original account roots, all ten original protected receipt/PIN SHA-256 files. JSON `logs/diagnostics/atlas-r22-e1-iex-compat-20261118-r01/final-readonly-compat-attestation.json` SHA-256 `5c5c01f8fb9c1b96179a1bcfbec9da14d6fcfff9af97fec60ccbbbb8304a4b1b`.
+
+Final modified source/test SHA-256:
+- `scripts/observation_runtime/alpaca_iex_probe.py` `3a24cb4fbc04d85202345c19bf7b9a9f2b03a8c97b47b07806af6dce8ac934e8`
+- `scripts/observation_runtime/alpaca_iex_rest_access_probe.py` `b5bace7de2b4edfcb9959344095b2dfd81fb3b941b7fc47e9a005c387a035296`
+- `tests/test_alpaca_iex_probe_cli.py` `c652d138f9d0367f9d312612e4e1d1deaa0937c7f123d0756b99b628ca6eecfb`
+- `tests/test_alpaca_iex_rest_access_probe.py` `c0b009e4613facf2c1e66c7950c8f1e14e5bc4da2172c5c50e3a13bcd38f1cd7`
+
+### Current publicly documented source capability versus rights acceptance
+Alpaca's current developer documentation shows **Basic/free, real-time IEX single-exchange stock data (not full SIP/NBBO)**, at most **30 WebSocket stock-symbol subscriptions**, subject to the actual account/subscription terms. This establishes a *documented product capability*, not an entitlement for every Atlas source, automated non-display/storage/derived-data use, 13,487 simultaneous current quotations, or true Robinhood execution equivalence. Read the actual current plan/account terms before future use; do not infer legal permission from this report. Official references:
+- https://docs.alpaca.markets/us/docs/about-market-data-api
+- https://docs.alpaca.markets/us/docs/market-data-faq
+- https://docs.alpaca.markets/us/v1.4.2/docs/paper-trading
+
+Earlier historical authenticated IEX data-only tests connected but had **0 fresh executable quotes**; do not promote an ACK to a source issuer. Original three E1 source-rights/provider activation entries remain **0/3 accepted**. This fix does **not** repair other historical **R15-only 30-symbol research survey/cursor** scripts automatically, nor does it add a valid continuous QD source publisher.
+
+## Remaining exact original financial commissioning path
+The one-hour HL-first method acknowledgment is already recorded, unchanged and does not need re-approval. Genuine Stage A E1 requires independent Hyperliquid public operational data and permitted automated simulation/retention/derived use, authentic current funding/fee/settlement model, Alpaca IEX source/account subscription rights and bounded current quote, Quality Dips research/valuation/publisher source rights, and shared controlled budgets. Only after *actual accepted Stage A* and a continuously retained original selected Windows Job/clock/5+7 roles can Atlas prepare new exact original account manifests, seek the separate Windows-local financial journal/activation approvals, publish FS1/FS3 simulated USD/USDC account ACKs, activate postinception provider data, and verify true financial Stop/FLAT ≤8s plus one supervised pilot. Live-money trading remains OFF.
+
+**Final precise state:** source-only R22 IEX selected-preflight defect fixed and tested; original installed R22, selected native selector, 12 original EMPTY financial roots, ten protected SHA-256 identities and three legitimate dirty PIN edits remain unchanged. Source changes require separate immutable release procedure before use. No provider/network subscription, financial API, new account, financial Stop or PAPER action was performed.

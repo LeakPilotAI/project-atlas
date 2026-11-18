@@ -1,13 +1,12 @@
 """Single-read-only-Alpaca-IEX-REST-access tests; never an order."""
 import copy
-import io
 import json
-from datetime import UTC,datetime,timedelta
+from datetime import UTC, datetime
 from email.message import Message
 
 import pytest
-
 from app.investment.alpaca_iex import Credentials
+
 from scripts.observation_runtime import alpaca_iex_rest_access_probe as rest
 
 
@@ -192,3 +191,19 @@ def test_real_rest_mode_requires_scope_and_redacts_errors(capsys):
     row=json.loads(capsys.readouterr().out)
     assert row["status"]=="DATA_ONLY_ENDPOINT_REFUSED"
     assert row["financial_operating_gate_accepted"] is False
+
+def test_selected_r22_readonly_preflight_allows_only_fake_data_scope(monkeypatch):
+    monkeypatch.setattr(rest, "inspect_selected_data_only", lambda: {
+        "selected_revision": 22, "trading_authorized": False,
+        "provider_rights_independently_accepted": False})
+    opener = StubOpener(quote(age=42000))
+    result = rest.probe(
+        symbol="MSFT", confirmed_scope=rest.SCOPE, now=1794385732,
+        credential_reader=lambda _: Credentials(
+            "DUMMY_123456789", "DUMMY_123456789"),
+        opener=opener)
+    assert opener.called == 1 and opener.response.closed is True
+    assert result["http_data_endpoint_responded"] is True
+    assert result["independent_contract_license_verified"] is False
+    assert result["paper_start_authorized"] is False
+    assert result["live_trading_authorized"] is False
