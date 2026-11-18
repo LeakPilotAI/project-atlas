@@ -1,0 +1,82 @@
+{
+  "schema": "ATLAS_PHASED_INSTALL_DESIGN_REVIEW_NOT_EXECUTABLE_V1",
+  "status": "RECOMMENDED_SOURCE_ONLY_REPAIR_REQUIRES_EXPLICIT_APPROVAL",
+  "starting_checkpoint": "59b6ff550ccef2017bb852090090bac31640d3a7",
+  "application_source_unchanged": "2f0fcfd9741b8fd524f2e5921a79998373a689c9",
+  "application_archive_sha256_unchanged": "7036ba930870a58b1029091f3361a8b4b527a997ea9ff1597467fe6a2d2669f1",
+  "destination_unchanged": "D:\\AtlasRuntime\\releases\\2f0fcfd9741b8fd524f2e5921a79998373a689c9",
+  "receipt_unchanged": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-2f0fcfd9741b8fd524f2e5921a79998373a689c9.json",
+  "existing_v2_controller_sha256_unchanged": "6389ebfd3c283fafdf449143410e5a4f81de0e7685642d94109da640ff4444cc",
+  "existing_v2_proposal_sha256_unchanged": "44026303465ddd24c34dbfe6ab3c11f2c9b8af1a297632f828eee8c903104df3",
+  "unused_v2_decision_sha256_unchanged": "133ebe0f2223643d91e630956e72e7a37dede6264cb9bdbf2d8ed89540e2e0b8",
+  "execution_model": "ONE_NEW_LOCAL_INSTALL_DECISION_ONE_PROCESS_ONE_CONTINUOUS_RETAINED_SESSION_TWO_BOUNDED_PHASES",
+  "phase_a": {
+    "maximum_seconds": 600,
+    "writes_to_release_or_install_journal": false,
+    "predecessor_parent_scan_maximum_seconds": 180,
+    "predecessor_installed_child_maximum_seconds": 180,
+    "original_independent_clock_qualification_minimum_seconds": 180,
+    "scope": "Exact inputs/SID/protected roots, both unchanged predecessor checks, continuous retention, clock qualification, fresh boundary checks."
+  },
+  "phase_b": {
+    "maximum_seconds": 600,
+    "paced_io_maximum_seconds": 500,
+    "check_every": 32,
+    "pace_every": 128,
+    "pause_seconds": 0.06,
+    "independent_readback_reserved_and_maximum_seconds": 180,
+    "terminal_total_reserve_seconds": 30,
+    "ack_allowance_inside_io_seconds": 15,
+    "copy_forecast": "max(150,3*current_composite_predecessor_seconds+exact_pacing_seconds+15)",
+    "admit_only_if": "Current remaining IO > copy forecast+180+15 AND current phase remaining > copy forecast+180+30 AND live original boundary checks pass."
+  },
+  "overall_maximum_seconds": 1200,
+  "new_overall_bound_requires_new_execution_approval": true,
+  "existing_v2_600_second_total_not_changed_or_overridden": true,
+  "same_live_owner_and_retained_native_handles_required": true,
+  "serialized_preflight_authority_prohibited": true,
+  "clock_lifetime_seconds_unchanged": 240,
+  "clock_refresh_ns_unchanged": 45000000000,
+  "clock_maximum_uncertainty_ms_unchanged": 1000,
+  "clock_windows_configuration_changes": false,
+  "storage_and_entries_limits_unchanged": {
+    "entries": 40000,
+    "bytes": 1073741824,
+    "logical_processors": 2
+  },
+  "approval_consumption": "After all phase-A and fresh phase-B clock/owner/native/root/selector/decision/host/namespace/budget admissions, immediately before original install intent; no expiry extension or resume.",
+  "failure": "Phase A preserves unused decision. Any consumed/partial/unknown phase B is preserved, never retried/deleted/recovered/selected automatically; owned processes/handles must close and late cleanup cannot pass.",
+  "source_only_approval_scope": [
+    "scripts/atlas_single_successor_control.py",
+    "tests/test_single_successor_control.py",
+    "necessary new review/pin/documentation artifacts only"
+  ],
+  "unchanged_helpers": [
+    "NativeInstalledReleaseVerifier.open",
+    "NativePersonalReleaseIdentity",
+    "installed_readback",
+    "_copy_prepared_code",
+    "LowImpactEnvelope",
+    "IndependentNtpClock"
+  ],
+  "required_offline_tests": [
+    "both unchanged predecessor passes occur once",
+    "same live retained context through both phases",
+    "phase A/B/global deadlines",
+    "real original envelope constructor and cadence",
+    "fresh clock continuity and expired/revoked clock refusal",
+    "exact old/new decision isolation",
+    "no consumption on phase or IO budget shortfall",
+    "slow copy/readback/ACK/cleanup refusal",
+    "exact receipt/ACK and no automatic selection",
+    "no adoption of disk-only preflight evidence"
+  ],
+  "source_changes_authorized_by_this_review": false,
+  "installation_authorized": false,
+  "selection_authorized": false,
+  "financial_authority": false,
+  "provider_access": false,
+  "paper_start_authorized": false,
+  "analysis_result_sha256": "c17acdfab1ee228f1d320a9ae051e375f543d441117f956b030a8c9c31facee5",
+  "native_execution_proof": "NOT_PERFORMED; scheduling examples only, actual copy/readback/cleanup durations unknown."
+}

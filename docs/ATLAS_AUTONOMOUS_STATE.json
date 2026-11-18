@@ -24574,4 +24574,55 @@
   },
   "report_sha256": "72bc9ec0b5e8c5a128d23ac65ad67326d54b200d4496f86e9c7385b4e080b36c"
 }
+,
+  "atlas_native_install_phase_design_review_20261117": {
+  "status": "READ_ONLY_DESIGN_REVIEW_COMPLETE_SOURCE_ONLY_REPAIR_APPROVAL_REQUIRED",
+  "report": "docs/ATLAS_NATIVE_INSTALLATION_TIMING_DESIGN_REVIEW_2026-11-17.md",
+  "review_only_proposal": "docs/ATLAS_PHASED_INSTALL_SOURCE_REPAIR_PROPOSAL_2026-11-17.json",
+  "review_only_proposal_sha256": "9662bbce9831754f1b3bcfa52cea9d186f7378452e161122c130529722d92eda",
+  "recommended_contract": "ONE_NEW_LOCAL_INSTALL_DECISION_ONE_PROCESS_ONE_CONTINUOUS_RETAINED_SESSION_TWO_BOUNDED_PHASES",
+  "proposed_not_authorized_phase_a_seconds": 600,
+  "proposed_not_authorized_phase_b_seconds": 600,
+  "proposed_not_authorized_overall_seconds": 1200,
+  "original_paced_io_cap_seconds": 500,
+  "original_independent_clock_qualification_seconds": 180,
+  "original_independent_readback_seconds": 180,
+  "native_predecessor_composite_measured_seconds": 78.375,
+  "parent_child_split_unknown": true,
+  "no_verification_removed": true,
+  "phase_b_forecast_required_seconds": 503.625,
+  "phase_b_forecast_headroom_seconds": 96.375,
+  "io_forecast_with_ack_seconds": 488.625,
+  "io_cap_headroom_seconds": 11.375,
+  "actual_native_copy_time_unknown": true,
+  "source_code_changed": false,
+  "application_archive_unchanged": true,
+  "v2_decision_unchanged_unused": true,
+  "protected_records_hashes_unchanged": 10,
+  "three_original_pin_edits_preserved_unstaged": true,
+  "native_scans_or_installations": 0,
+  "provider_or_ntp_requests": 0,
+  "offline_analysis_examples_passed": 12,
+  "product_tests_rerun": false,
+  "next": "Explicit source-only controller/tests implementation approval for the reviewed new phase contract; no native execution and no local decision until corrected source/pins are ready.",
+  "paper_running": false,
+  "production": "NO_GO",
+  "provider_hold": true,
+  "qd_watch_only": true,
+  "B1_C1_D1_E1_and_21_decisions_preserved": true,
+  "evidence_sha256": {
+    "analysis_model_source": "4275004435ca1cd39db3c2c14439972c9a51c59ef48cbb7fa0aa4f8d0ea79f7f",
+    "analysis_result": "c17acdfab1ee228f1d320a9ae051e375f543d441117f956b030a8c9c31facee5"
+  },
+  "source_provenance_sha256": {
+    "scripts/atlas_single_successor_control.py": "6389ebfd3c283fafdf449143410e5a4f81de0e7685642d94109da640ff4444cc",
+    "scripts/release_selection.py": "26d605076ff8c6d50ee7ef3b6d6ebbf7819fa2b11cbae5f5b0cbad861fed9da0",
+    "scripts/install_verified_release.py": "bcaea829d5466a293486624a95f689cf02d60e4893ef92a92ce00202c4a78571",
+    "scripts/native_install_candidate.py": "2f5a203f9187b8b7c18d1bb8cd5ce2bf5fe82aecd50ea8b0097c4e37d4a767d0",
+    "scripts/observation_runtime/personal_release_identity.py": "7295bcfc765d50520c144068310933cceac29b43bf3b350e3dec487552337a1c",
+    "scripts/volume_inspector/windows_output.py": "a5bf5a5205176abf603b03dcfd0de66e602f1bd855cdcbc4debf8d4c7e64a107",
+    "scripts/observation_runtime/atlas_independent_ntp_clock.py": "28430d571f64c9b45bbf044a117f6ecc8d7663e38f58ba216547fe67fe0048c8",
+    "scripts/install_version_safe_candidate.py": "a2d309fc1f3759173e8c2a3c2bc4ba3c15bebf784f9b14c811477f5b0893f1c7"
+  }
+}
 }
