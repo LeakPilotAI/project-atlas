@@ -1,11 +1,10 @@
 """Free Alpaca IEX 30-symbol single-session research survey, no money/orders."""
 import asyncio
-import copy
 import json
 
 import pytest
+from app.investment.alpaca_iex import Credentials, IEXFeed
 
-from app.investment.alpaca_iex import Credentials, IEXFeed, IEXRefused
 from scripts.observation_runtime import alpaca_iex_basic_research_batch as batch
 from scripts.observation_runtime.alpaca_equity_catalog import inventory_snapshot
 
@@ -208,3 +207,26 @@ def test_cli_live_mode_requires_specific_scope_without_provider_network(capsys):
     assert row["status"]=="DATA_ONLY_SCOPE_REFUSED"
     assert row["prices_exposed"] is False
     assert row["orders_created"]==0
+
+def test_selected_r22_research_roster_and_report_remain_research_only(monkeypatch):
+    monkeypatch.setattr(batch, "inspect_selected_data_only", lambda: {
+        "selected_revision": 22, "trading_authorized": False,
+        "provider_rights_independently_accepted": False})
+    roster = batch.prepare(scope=batch.SCOPE, offset=0, snapshot=catalog())
+    assert roster["selected_native_release"] == "R22"
+    assert roster["requested_symbol_count"] == 30
+    report = batch.sanitize(roster, sample(roster), seconds=12)
+    assert report["selected_native_release"] == "R22"
+    assert report["current_qualified_market_source"] is False
+    assert report["paper_start_authorized"] is False
+    assert report["raw_quotes_or_prices_published"] is False
+
+
+@pytest.mark.parametrize("revision", [13, 15, 21, 23, True, "22"])
+def test_nonselected_or_unknown_iex_revision_blocks_roster_before_transport(
+        monkeypatch, revision):
+    monkeypatch.setattr(batch, "inspect_selected_data_only", lambda: {
+        "selected_revision": revision, "trading_authorized": False,
+        "provider_rights_independently_accepted": False})
+    with pytest.raises(ValueError, match="EXACT_SELECTED"):
+        batch.prepare(scope=batch.SCOPE, offset=0, snapshot=catalog())

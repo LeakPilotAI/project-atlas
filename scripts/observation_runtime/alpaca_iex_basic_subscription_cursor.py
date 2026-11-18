@@ -16,7 +16,7 @@ from pathlib import Path
 
 from scripts.observation_runtime import alpaca_iex_basic_research_batch as batch
 
-SCHEMA = "ATLAS_IEX_BASIC_SUBSCRIPTION_SURVEY_CURSOR_V1"
+SCHEMA = "ATLAS_IEX_BASIC_SUBSCRIPTION_SURVEY_CURSOR_V2"
 STATUS = "RESEARCH_SUBSCRIPTION_ACK_ONLY_NOT_CURRENT_MARKET_COVERAGE"
 SAFE_BATCH_KEYS = frozenset({
     "schema", "status", "selected_native_release", "catalog_digest",
@@ -58,7 +58,8 @@ def _sealed(record):
 
 
 def _validated(value):
-    keys = {"schema", "status", "generation", "catalog_sha256",
+    keys = {"schema", "status", "generation", "selected_native_release",
+            "catalog_sha256",
             "catalog_count", "pinned_symbols_sha256",
             "last_research_offset", "next_research_offset",
             "total_acknowledged_subscription_symbols",
@@ -71,6 +72,7 @@ def _validated(value):
                 "generation", "catalog_count", "last_research_offset",
                 "next_research_offset", "total_acknowledged_subscription_symbols",
                 "last_quote_messages_received", "last_quote_messages_accepted"))
+            or value["selected_native_release"] not in ("R15", "R22")
             or value["generation"] < 1 or value["catalog_count"] < 1
             or not value["last_research_offset"] < value["next_research_offset"]
             or value["next_research_offset"] > value["catalog_count"]
@@ -134,7 +136,8 @@ def _write_atomic(path, row):
 def _expected(old, roster, pins):
     if old is None:
         return 0
-    if (old["catalog_sha256"] != roster["catalog_sha256"]
+    if (old["selected_native_release"] != roster["selected_native_release"]
+            or old["catalog_sha256"] != roster["catalog_sha256"]
             or old["catalog_count"] != roster["catalog_count"]
             or old["pinned_symbols_sha256"] != _sha(list(pins))):
         raise ValueError("IEX_SURVEY_CATALOG_OR_PINNED_RESEARCH_CHANGED")
@@ -178,7 +181,8 @@ async def resume_one(*, scope, pinned_research_symbols=(), seconds=12,
                 or report.get("pinned_research_symbols_count") !=
                     len(pinned_research_symbols)
                 or report.get("one_websocket_connection_seconds") != seconds
-                or report.get("selected_native_release") != "R15"
+                or report.get("selected_native_release") !=
+                    roster["selected_native_release"]
                 or report.get("status") !=
                     "AUTHENTICATED_30_SYMBOL_DATA_ONLY_OBSERVATION"
                 or report.get("authenticated") is not True
@@ -217,6 +221,7 @@ async def resume_one(*, scope, pinned_research_symbols=(), seconds=12,
             raise ValueError("IEX_SURVEY_SELECTED_OR_CATALOG_CHANGED_DURING_SESSION")
         row = _sealed({
             "schema": SCHEMA, "status": STATUS,
+            "selected_native_release": roster["selected_native_release"],
             "generation": 1 if old is None else old["generation"] + 1,
             "catalog_sha256": roster["catalog_sha256"],
             "catalog_count": roster["catalog_count"],
@@ -264,6 +269,7 @@ def main(argv=None):
                 "schema": SCHEMA, "status": "RESEARCH_ONLY_OFFLINE_RESUME_INSPECTION",
                 "next_research_offset": offset,
                 "saved_generation": 0 if old is None else old["generation"],
+                "selected_native_release": first["selected_native_release"],
                 "data_provider_called": False,
                 "paper_start_authorized": False,
                 "live_money_authorized": False}, sort_keys=True))

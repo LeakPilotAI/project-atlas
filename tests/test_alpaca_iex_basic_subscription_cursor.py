@@ -284,3 +284,56 @@ def test_additional_counter_or_scope_spoof_is_refused(staged, invalid):
     with pytest.raises(ValueError, match="ONLY_EXACT_NONFINANCIAL_ACK"):
         run(observer=observed)
     assert cursor.read_cursor() is None
+
+def test_r22_subscription_receipt_pins_release_without_financial_grant(staged,monkeypatch):
+    monkeypatch.setattr(batch,"inspect_selected_data_only",lambda:{
+        "selected_revision":22,"trading_authorized":False,
+        "provider_rights_independently_accepted":False})
+    first=run()
+    assert first["selected_native_release"]=="R22"
+    saved=cursor.read_cursor()
+    assert saved["selected_native_release"]=="R22"
+    assert saved["financial_source_accepted"] is False
+    assert saved["paper_start_authorized"] is False
+    assert b"SUPER_SECRET" not in staged.read_bytes()
+
+
+def test_r15_research_cursor_cannot_resume_under_r22(staged,monkeypatch):
+    run()
+    previous=staged.read_bytes()
+    assert cursor.read_cursor()["selected_native_release"]=="R15"
+    monkeypatch.setattr(batch,"inspect_selected_data_only",lambda:{
+        "selected_revision":22,"trading_authorized":False,
+        "provider_rights_independently_accepted":False})
+    async def forbidden(**kwargs):
+        pytest.fail("CROSS_RELEASE_DATA_TRANSPORT_MUST_NOT_OPEN")
+    with pytest.raises(ValueError,match="CATALOG_OR_PINNED"):
+        run(observer=forbidden)
+    assert staged.read_bytes()==previous
+    assert not staged.with_suffix(".lock").exists()
+
+
+def test_r22_selected_revision_change_during_observation_does_not_advance(staged,monkeypatch):
+    monkeypatch.setattr(batch,"inspect_selected_data_only",lambda:{
+        "selected_revision":22,"trading_authorized":False,
+        "provider_rights_independently_accepted":False})
+    async def changed(**kwargs):
+        result=await fake_observer(**kwargs)
+        monkeypatch.setattr(batch,"inspect_selected_data_only",lambda:{
+            "selected_revision":14,"trading_authorized":False,
+            "provider_rights_independently_accepted":False})
+        return result
+    with pytest.raises(ValueError,match="CHANGED_DURING_SESSION"):
+        run(observer=changed)
+    assert cursor.read_cursor() is None
+    assert not staged.with_suffix(".lock").exists()
+
+
+def test_old_v1_research_cursor_refused_as_unbound_release(staged):
+    run()
+    saved=json.loads(staged.read_text(encoding="ascii"))
+    saved["schema"]="ATLAS_IEX_BASIC_SUBSCRIPTION_SURVEY_CURSOR_V1"
+    saved.pop("selected_native_release")
+    staged.write_text(json.dumps(saved),encoding="ascii")
+    with pytest.raises(ValueError,match="SCOPE_OR_DIGEST"):
+        cursor.read_cursor()

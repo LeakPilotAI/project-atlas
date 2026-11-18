@@ -14,11 +14,17 @@ import json
 from pathlib import Path
 
 from app.investment.alpaca_iex import Credentials, IEXFeed, IEXRefused
+
 from scripts.observation_runtime.alpaca_iex_probe import (
-    SCOPE, inspect_selected_data_only,
+    SCOPE,
+    inspect_selected_data_only,
 )
 from scripts.observation_runtime.atlas_r12_iex_rotation_plan import (
-    CATALOG, MAX_SYMBOLS, plan as plan_roster,
+    CATALOG,
+    MAX_SYMBOLS,
+)
+from scripts.observation_runtime.atlas_r12_iex_rotation_plan import (
+    plan as plan_roster,
 )
 
 SCHEMA="ATLAS_ALPACA_IEX_BASIC_SINGLE_RESEARCH_BATCH_V1"
@@ -37,7 +43,8 @@ def prepare(*,scope,offset,pinned_research_symbols=(),snapshot=None):
     if scope!=SCOPE:
         raise ValueError("IEX_BASIC_EXPLICIT_DATA_ONLY_SCOPE_REQUIRED")
     src=inspect_selected_data_only()
-    if (src.get("selected_revision")!=14
+    revision=src.get("selected_revision")
+    if (type(revision) is not int or revision not in (14,22)
             or src.get("trading_authorized") is not False
             or src.get("provider_rights_independently_accepted") is not False):
         raise ValueError("IEX_BASIC_EXACT_SELECTED_NO_FINANCIAL_AUTHORITY")
@@ -53,11 +60,15 @@ def prepare(*,scope,offset,pinned_research_symbols=(),snapshot=None):
             or roster["provider_rights_accepted"] is not False
             or roster["paper_execution_authorized"] is not False):
         raise ValueError("IEX_BASIC_RESEARCH_SCOPE_AND_CAPACITY_REFUSED")
-    return roster
+    # Bind this RESEARCH ONLY batch to the current selected release.
+    # Historical R15 and current R22 must never share receipt identity.
+    return {**roster,"selected_native_release":{14:"R15",22:"R22"}[revision]}
 
 
 def sanitize(roster, result, *, seconds):
-    if (type(roster) is not dict or type(result) is not dict
+    if (type(roster) is not dict
+            or roster.get("selected_native_release") not in ("R15","R22")
+            or type(result) is not dict
             or type(result.get("authenticated")) is not bool
             or type(result.get("subscribed")) is not bool
             or type(result.get("fresh_quote_observed_during_connection")) is not bool
@@ -90,7 +101,7 @@ def sanitize(roster, result, *, seconds):
         "status":("AUTHENTICATED_30_SYMBOL_DATA_ONLY_OBSERVATION"
                   if result["authenticated"] and result["subscribed"]
                   else "DATA_ONLY_AUTH_OR_SUBSCRIPTION_UNAVAILABLE"),
-        "selected_native_release":"R15",
+        "selected_native_release":roster["selected_native_release"],
         "catalog_digest":roster["catalog_sha256"],
         "catalog_count":roster["catalog_count"],
         "research_offset":roster["offset"],
