@@ -5,7 +5,7 @@ feed rights, independent contract entitlements, and actual PAPER authority.
 Never persists, exposes, or uses prices to authorize a simulated fill.
 
 --inspect performs no credential or provider I/O. The ONLY network mode
-requires the exact data-only scope and verifies the selected R15 source,
+requires the exact data-only scope and verifies selected R15/R22/R23 source,
 local ALPACA_TRADING_ENABLED=false, pinned data HTTPS host, one stock symbol,
 one GET, no redirects, a bounded response, and no retries.
 """
@@ -98,10 +98,10 @@ def probe(*, symbol, confirmed_scope, credential_path=None, now=None,
             or SYMBOL.fullmatch(symbol) is None):
         raise ValueError("IEX_REST_EXPLICIT_EXACT_DATA_ONLY_SCOPE_REQUIRED")
     selected = inspect_selected_data_only()
-    # Original R15 remains inspectable only if genuinely selected. The
-    # latest code-only native revision 22 is now supported by the same
-    # read-only, no-financial-authority source/installed-image preflight.
-    if (selected.get("selected_revision") not in (14, 22)
+    # Original R15 remains inspectable only if genuinely selected. Current
+    # R22/R23 are supported only with full native source-image readback;
+    # neither data-only scope nor a source image grants financial authority.
+    if (selected.get("selected_revision") not in (14, 22, 23)
             or selected.get("trading_authorized") is not False
             or selected.get("provider_rights_independently_accepted") is not False):
         raise ValueError("IEX_REST_SELECTED_R15_NONFINANCIAL_SCOPE_REQUIRED")
@@ -111,7 +111,7 @@ def probe(*, symbol, confirmed_scope, credential_path=None, now=None,
     # This credentials loader already requires ALPACA_TRADING_ENABLED=false.
     credentials = credential_reader(path)
     if not isinstance(credentials,Credentials):
-        raise ValueError("IEX_REST_VALIDATED_DATA_ONLY_CREDENTIALS_REQUIRED")
+        raise ValueError("IEX_REST_VALIDATED_DATA_ONLY_CREDENTIALS_REQUIRED")  # noqa: TRY004
     url = DATA_BASE + symbol + "/quotes/latest?feed=iex"
     if opener is None:
         opener = urllib.request.build_opener(_NoRedirect(),

@@ -15,14 +15,16 @@ SCRIPT=ROOT/'scripts/observation_runtime/alpaca_iex_probe.py'
 
 @pytest.fixture(autouse=True)
 def simulated_legacy_selector_only_for_unit_tests(monkeypatch, tmp_path):
-    """Historical selection fixtures stay synthetic; installed R22 is never spoofed.
+    """Historical selection fixtures stay synthetic; installed R23 is never spoofed.
 
     Direct CLI subprocesses do not inherit monkeypatches and must inspect
-    the genuine selected revision 22 and its full installed-native source.
+    the genuine selected revision 23 and its full installed-native source.
     """
     from scripts.observation_runtime import atlas_r15_paper_offline_commissioning as r15
     monkeypatch.setattr(probe, 'R22_SELECTED_ENVELOPE',
                         tmp_path / 'historical-unit-selection-has-no-r22')
+    monkeypatch.setattr(probe, 'R23_SELECTED_ENVELOPE',
+                        tmp_path / 'historical-unit-selection-has-no-r23')
     monkeypatch.setattr(r15, 'inspect', lambda: {
         'schema': 'ATLAS_SELECTED_R15_OFFLINE_FINANCIAL_COMMISSIONING_V1',
         'decision': 'NO_GO', 'selected_native_revision': 14,
@@ -163,11 +165,11 @@ def test_unrelated_fresh_symbol_from_forged_callback_refuses():
                            requested_symbols=['MSFT'])
 
 
-def test_actual_offline_inspection_uses_selected_r22_not_credentialed_provider():
+def test_actual_offline_inspection_uses_selected_r23_not_credentialed_provider():
     p=run_cli('--inspect')
     assert p.returncode==0,p.stderr
     data=json.loads(p.stdout)
-    assert data['selected_revision']==22
+    assert data['selected_revision']==23
     assert data['source_catalog_symbols']==13487
     assert data['forward_source_verified'] is False
     assert data['sample_already_verified'] is False
@@ -320,7 +322,8 @@ def test_r22_selection_supersedes_r15_without_keys_or_provider(monkeypatch, tmp_
     selected = tmp_path / "r0022.json"
     selected.write_text("selected-branch-fixture-only", encoding="ascii")
     monkeypatch.setattr(probe, "R22_SELECTED_ENVELOPE", selected)
-    monkeypatch.setattr(probe, "_inspect_current_r22_source", lambda: 13487)
+    monkeypatch.setattr(probe, "_inspect_current_native_source",
+                        lambda: (22, 13487))
     monkeypatch.setattr(r15, "inspect",
                         lambda: pytest.fail("HISTORICAL_R15_MUST_NOT_RUN"))
     monkeypatch.setattr(probe.Credentials, "load",
@@ -345,7 +348,7 @@ def test_r22_native_selection_refusal_never_falls_back_or_opens_keys(
     selected = tmp_path / "r0022.json"
     selected.write_text("selected-branch-fixture-only", encoding="ascii")
     monkeypatch.setattr(probe, "R22_SELECTED_ENVELOPE", selected)
-    monkeypatch.setattr(probe, "_inspect_current_r22_source",
+    monkeypatch.setattr(probe, "_inspect_current_native_source",
                         lambda: (_ for _ in ()).throw(ValueError(
                             "IEX_SELECTED_R22_EXACT_NATIVE_CHAIN_REQUIRED")))
     monkeypatch.setattr(r15, "inspect",
@@ -358,3 +361,77 @@ def test_r22_native_selection_refusal_never_falls_back_or_opens_keys(
     assert rc == 1
     assert json.loads(capsys.readouterr().out) == {
         "status": "REFUSED", "reason": probe.REASON}
+
+
+def test_r23_selection_supersedes_r22_r15_without_credentials_or_network(
+        monkeypatch, tmp_path, capsys):
+    selected = tmp_path / "r0023.json"
+    selected.write_text("r23-branch-unit-marker", encoding="ascii")
+    monkeypatch.setattr(probe, "R23_SELECTED_ENVELOPE", selected)
+    from scripts.observation_runtime import atlas_r15_paper_offline_commissioning as r15
+    monkeypatch.setattr(r15, "inspect",
+                        lambda: pytest.fail("R15_FALLBACK_FORBIDDEN"))
+    monkeypatch.setattr(probe, "_inspect_current_native_source",
+                        lambda: (23, 13487))
+    monkeypatch.setattr(probe.Credentials, "load",
+                        lambda *_: pytest.fail("PRIVATE_KEYS_FORBIDDEN"))
+    rc = probe.main(
+        ["--inspect"],
+        credentials_loader=lambda *_: pytest.fail("CREDENTIALS_FORBIDDEN"),
+        feed_factory=lambda *_: pytest.fail("SOCKET_FORBIDDEN"))
+    packet = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert packet["selected_revision"] == 23
+    assert packet["source_catalog_symbols"] == 13487
+    for field in (
+        "forward_source_verified", "private_credentials_accessed",
+        "provider_connected", "provider_rights_independently_accepted",
+        "current_executable_quotes_verified", "trading_authorized",
+        "sample_already_verified",
+    ):
+        assert packet[field] is False
+
+
+def test_forged_r23_source_refuses_no_historical_fallback_or_keys(
+        monkeypatch, tmp_path, capsys):
+    selected = tmp_path / "r0023.json"
+    selected.write_text("r23-branch-unit-marker", encoding="ascii")
+    monkeypatch.setattr(probe, "R23_SELECTED_ENVELOPE", selected)
+    monkeypatch.setattr(
+        probe, "_inspect_current_native_source",
+        lambda: (_ for _ in ()).throw(IEXRefused(
+            "IEX_SELECTED_NATIVE_SOURCE_ARTIFACT_REQUIRED")),
+    )
+    from scripts.observation_runtime import atlas_r15_paper_offline_commissioning as r15
+    monkeypatch.setattr(r15, "inspect",
+                        lambda: pytest.fail("R15_FALLBACK_FORBIDDEN"))
+    rc = probe.main(
+        ["--execute-data-only", "--confirm-scope", probe.SCOPE,
+         "--seconds", "1", "--symbols", "MSFT"],
+        credentials_loader=lambda *_: pytest.fail("PRIVATE_KEYS_FORBIDDEN"),
+        feed_factory=lambda *_: pytest.fail("PROVIDER_SOCKET_FORBIDDEN"))
+    assert rc == 1
+    assert json.loads(capsys.readouterr().out) == {
+        "status": "REFUSED", "reason": probe.REASON,
+    }
+
+
+def test_r23_selected_code_only_data_probe_stays_nonfinancial_with_mock_feed(
+        monkeypatch, tmp_path, capsys):
+    selected = tmp_path / "r0023.json"
+    selected.write_text("r23-branch-unit-marker", encoding="ascii")
+    monkeypatch.setattr(probe, "R23_SELECTED_ENVELOPE", selected)
+    monkeypatch.setattr(probe, "_inspect_current_native_source",
+                        lambda: (23, 13487))
+    rc = probe.main(
+        ["--execute-data-only", "--confirm-scope", probe.SCOPE,
+         "--seconds", "1", "--symbols", "MSFT"],
+        credentials_loader=lambda *_: dummy_creds(),
+        feed_factory=lambda symbols: StubFeed(symbols))
+    outcome = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    assert outcome["authenticated"] is True
+    assert outcome["subscribed"] is True
+    assert outcome["paper_fill_authorized"] is False
+    assert outcome["live_order_authorized"] is False
+    assert outcome["provider_rights_independently_accepted"] is False
