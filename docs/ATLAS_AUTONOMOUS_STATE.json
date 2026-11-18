@@ -24506,4 +24506,72 @@
     "regression-final-owner.json": "40b04c660bd320aa7dfd56721e777de27346ad4e5931f8639af54b3ee247c2fc"
   }
 }
+,
+  "atlas_v2_successor_native_install_refusal_20261117": {
+  "status": "APPROVED_V2_NATIVE_PREFLIGHT_REFUSED_NO_INSTALLATION_OR_CONSUMPTION",
+  "starting_checkpoint": "74434e48995ca66646502687c74f38554d503ea1",
+  "report": "docs/ATLAS_V2_SUCCESSOR_INSTALLATION_RESULT_2026-11-17.md",
+  "evidence_root": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-successor-v2-native-install-20261117-r01",
+  "proposal_sha256": "44026303465ddd24c34dbfe6ab3c11f2c9b8af1a297632f828eee8c903104df3",
+  "decision_sha256": "133ebe0f2223643d91e630956e72e7a37dede6264cb9bdbf2d8ed89540e2e0b8",
+  "controller_sha256": "6389ebfd3c283fafdf449143410e5a4f81de0e7685642d94109da640ff4444cc",
+  "application_source_unchanged": "2f0fcfd9741b8fd524f2e5921a79998373a689c9",
+  "archive_sha256_unchanged": "7036ba930870a58b1029091f3361a8b4b527a997ea9ff1597467fe6a2d2669f1",
+  "controller_invocations": 1,
+  "installation_attempt_consumed": false,
+  "installed": false,
+  "native_artifact_digest": null,
+  "native_receipt_sha256": null,
+  "new_operational_entries": 0,
+  "new_operational_bytes": 0,
+  "reason": "SUCCESSOR_TOTAL_DEADLINE_OR_RESERVATION_EXHAUSTED",
+  "actual_diagnostic": {
+    "predecessor_seconds": 78.375,
+    "phase_reserve": 30,
+    "last_clock_evidence": {
+      "schema": "ATLAS_INDEPENDENT_TWO_NTP_CLOCK_V1",
+      "domain": "TWO_PUBLIC_UNAUTHENTICATED_NTP_PEERS",
+      "source": "ATLAS_NTP_V1:time.cloudflare.com+time.google.com",
+      "runtime_id": "successor-code-install-2f0fcfd9741b8fd524f2e5921a79998373a689c9",
+      "bound_ms": 139,
+      "peer_difference_ms": 1,
+      "os_windows_time_service_required": false,
+      "financial_authority": false
+    },
+    "clock_revoked_after_unwind": true,
+    "total_elapsed_after_unwind": 263.40700000000015,
+    "copy_seconds": 293.625,
+    "pacing": 43.5,
+    "elapsed": 263.21900000000005,
+    "reserve": 503.625
+  },
+  "invocation_seconds": 263.422,
+  "remaining_at_admission_seconds": 336.781,
+  "required_remaining_seconds": 503.625,
+  "clock_revoked": true,
+  "last_clock_bound_ms": 139,
+  "last_peer_difference_ms": 1,
+  "selected_revision": 21,
+  "original_financial_roots_distinct_empty": 12,
+  "protected_records_unchanged": 10,
+  "three_legitimate_pin_edits_preserved_unstaged": true,
+  "selection_review_not_generated": true,
+  "next": "Do not retry or repeat local consent. Resolve measured timing/verification shortfall in a separately reviewed plan; no changed controller, deadline, release or selection is authorized by this refusal.",
+  "paper_running": false,
+  "production": "NO_GO",
+  "provider_hold": true,
+  "qd_watch_only": true,
+  "B1_C1_D1_E1_and_21_decisions_preserved": true,
+  "evidence_sha256": {
+    "preflight.py": "fcc66a73531168700bfc6e2b486403df38edd21b617958c5eaa04e3783a4f6c7",
+    "preflight-result.json": "aa32b7a70a61ff6807d5ccdf0b9da8ae08135df92ef97ae069759713539c4d75",
+    "run_once.py": "2f0443218b930bdcba9e1f6cefb76828e4b137ecbcfc000f23b6467cd582299f",
+    "controller-invocation.json": "b1e89bfbba2f88223d4c885f5d7bf9003eaf3c28e1d77dcca0e044a9a486ef4a",
+    "controller-refusal.json": "a5ab25988c5c6721330212dc09ca454d1e2d8cc008d9f051453e13b87fb0ae8e",
+    "controller-exit.json": "3e87d15a821fddc57f04a1f1e5c4dea6361ab4d1708d891bf96873a8ac1cc803",
+    "verify_outcome.py": "ef6c0ebfe9aa8beffb8409931c8ba6dc188e0d81122c4a3d75d004f6242c9214",
+    "post-verification.json": "2bacb53fae010a3a27b3d8d17b03e78098dc18c26ea75a9275a2979a1e7dea7b"
+  },
+  "report_sha256": "72bc9ec0b5e8c5a128d23ac65ad67326d54b200d4496f86e9c7385b4e080b36c"
+}
 }
