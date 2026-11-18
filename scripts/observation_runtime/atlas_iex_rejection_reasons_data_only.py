@@ -89,6 +89,26 @@ class CountOnlyIEXRejectionDiagnostic(IEXFeed):
             symbol: {reason: 0 for reason in REASON_CODES}
             for symbol in self.symbols
         }
+        # Historical source ACK evidence only; never restore native
+        # connection/authentication after original disconnect.
+        self._observed_authenticated = False
+        self._observed_subscribed = False
+
+    def receive(self, raw):
+        """Remember only native ACK milestones, never source frames/headers.
+
+        The original receive() is the only data/entitlement state machine.
+        Its disconnect clears current auth/subscription booleans, so a final
+        refusal must not reconstruct those milestones from provider guesses.
+        """
+        try:
+            return super().receive(raw)
+        finally:
+            with self.lock:
+                if self.authenticated:
+                    self._observed_authenticated = True
+                if self.subscribed:
+                    self._observed_subscribed = True
 
     def _quote(self, message):
         try:
@@ -134,3 +154,109 @@ class CountOnlyIEXRejectionDiagnostic(IEXFeed):
                     sum(row.values()) != item["rejected"]):
                 raise ValueError("IEX_COUNT_ONLY_ORIGINAL_REJECTION_TOTAL_MISMATCH")
         return report
+
+# This allowlist contains only original local data-only transport state labels.
+# Never export original provider exception strings, headers or raw frames.
+SAFE_NATIVE_FEED_ERROR_CODES = frozenset({
+    "IEX_AUTH_FAILED",
+    "IEX_NOT_AUTHENTICATED",
+    "IEX_AUTH_TIMEOUT",
+    "IEX_SYMBOL_LIMIT",
+    "IEX_CONNECTION_LIMIT",
+    "IEX_ENTITLEMENT_FAILED",
+    "IEX_SLOW_CLIENT",
+    "IEX_SERVER_ERROR",
+    "IEX_PROTOCOL_REFUSED",
+    "IEX_SUBSCRIPTION_MISMATCH",
+    "IEX_MALFORMED_MESSAGE",
+    "IEX_TRANSPORT_UNAVAILABLE",
+    "IEX_READONLY_CONSUMER_REFUSED",
+    "IEX_BOUNDED_PROBE_COMPLETE",
+    "IEX_DISCONNECTED",
+    "IEX_RECONNECTING",
+})
+
+
+def refusal_safe_snapshot(feed):
+    """Sanitize an original R24 probe that has ended, even on REFUSED.
+
+    A missing feed is UNKNOWN, not an invented zero quote count. This is
+    diagnostic accounting only and NEVER reclassifies a refused session.
+    """
+    if feed is None:
+        return {
+            "feed_instantiated": False,
+            "original_auth_ack_observed": None,
+            "original_subscription_ack_observed": None,
+            "last_native_error_code": "NOT_OBSERVED",
+            "per_symbol_quote_diagnostics": None,
+            "per_symbol_rejection_reason_counts": None,
+            "observations_conclusive": False,
+        }
+    if type(feed) is not CountOnlyIEXRejectionDiagnostic:
+        raise TypeError("IEX_REFUSAL_SAFE_ORIGINAL_FEED_CLASS_REQUIRED")
+    if feed.run_lock.locked():
+        raise ValueError("IEX_REFUSAL_SAFE_FEED_STILL_RUNNING")
+    with feed.lock:
+        per_symbol = {}
+        reasons = {}
+        for symbol in sorted(feed.symbols):
+            received = feed.quote_messages_seen[symbol]
+            accepted = feed.quote_messages_accepted[symbol]
+            rejected = feed.quote_messages_rejected[symbol]
+            reason_row = dict(feed._reason_counts[symbol])
+            if (any(type(x) is not int or x < 0 or x > 10**7
+                    for x in (received, accepted, rejected, *reason_row.values()))
+                    or received != accepted + rejected
+                    or sum(reason_row.values()) != rejected
+                    or set(reason_row) != set(REASON_CODES)):
+                raise ValueError("IEX_REFUSAL_SAFE_NATIVE_COUNTS_MISMATCH")
+            per_symbol[symbol] = {
+                "received": received,
+                "accepted": accepted,
+                "rejected": rejected,
+            }
+            reasons[symbol] = reason_row
+        error = (feed.error if type(feed.error) is str
+                 and feed.error in SAFE_NATIVE_FEED_ERROR_CODES
+                 else "REDACTED_OR_UNKNOWN_NATIVE_FEED_ERROR")
+        auth = feed._observed_authenticated
+        sub = feed._observed_subscribed
+        if sub and not auth:
+            raise ValueError("IEX_REFUSAL_SAFE_SUBSCRIPTION_WITHOUT_AUTH")
+    return {
+        "feed_instantiated": True,
+        "original_auth_ack_observed": auth,
+        "original_subscription_ack_observed": sub,
+        "last_native_error_code": error,
+        "per_symbol_quote_diagnostics": per_symbol,
+        "per_symbol_rejection_reason_counts": reasons,
+        "observations_conclusive": False,
+    }
+
+
+def preserve_original_probe_refusal(original_response, feed):
+    """Record limited source diagnostics while retaining original refusal.
+
+    Call ONLY after an original selected native R24 probe has returned
+    nonzero; a generic original refusal must never become data authorization.
+    """
+    if (type(original_response) is not dict
+            or original_response != {
+                "status": "REFUSED",
+                "reason": "IEX_CONFIGURATION_OR_DATA_UNAVAILABLE",
+            }):
+        raise ValueError("IEX_REFUSAL_SAFE_UNRECOGNIZED_PROBE_RESPONSE")
+    return {
+        "schema": "ATLAS_IEX_ORIGINAL_REFUSAL_SAFE_COUNTS_V1",
+        "status": "ORIGINAL_SELECTED_R24_DATA_ONLY_PROBE_REFUSED",
+        "original_probe_refused": True,
+        "count_only_diagnostics": refusal_safe_snapshot(feed),
+        "raw_quote_frames_retained": False,
+        "credentials_retained": False,
+        "account_data_rights_accepted": False,
+        "operational_source_accepted": False,
+        "financial_accounts_created": False,
+        "financial_paper_authorized": False,
+        "live_money_authorized": False,
+    }

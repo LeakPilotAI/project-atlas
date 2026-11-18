@@ -232,3 +232,182 @@ async def test_original_source_only_probe_with_rejection_reason_adapter():
     assert observed["paper_fill_authorized"] is False
     assert data["live_order_authorized"] is False
     assert "100.01" not in json.dumps(data)
+
+def test_refusal_snapshot_before_feed_exists_is_unknown_not_false_zero():
+    from scripts.observation_runtime.atlas_iex_rejection_reasons_data_only import (
+        preserve_original_probe_refusal,
+    )
+
+    result = preserve_original_probe_refusal(
+        {"status": "REFUSED", "reason": "IEX_CONFIGURATION_OR_DATA_UNAVAILABLE"},
+        None,
+    )
+    diagnostic = result["count_only_diagnostics"]
+    assert diagnostic["feed_instantiated"] is False
+    assert diagnostic["per_symbol_quote_diagnostics"] is None
+    assert diagnostic["original_auth_ack_observed"] is None
+    assert result["financial_paper_authorized"] is False
+
+
+def test_refusal_snapshot_rejects_unsafe_original_success_or_untrusted_reason():
+    from scripts.observation_runtime.atlas_iex_rejection_reasons_data_only import (
+        preserve_original_probe_refusal,
+    )
+
+    for message in (
+        {"status": "SUCCESS", "reason": "IEX_CONFIGURATION_OR_DATA_UNAVAILABLE"},
+        {"status": "REFUSED", "reason": "secret data accidentally included"},
+        {"status": "REFUSED", "reason": "IEX_CONFIGURATION_OR_DATA_UNAVAILABLE",
+         "headers": "Authorization secret"},
+    ):
+        with pytest.raises(ValueError, match="UNRECOGNIZED_PROBE_RESPONSE"):
+            preserve_original_probe_refusal(message, None)
+
+
+def test_refusal_snapshot_redacts_arbitrary_native_error_text():
+    from scripts.observation_runtime.atlas_iex_rejection_reasons_data_only import (
+        refusal_safe_snapshot,
+    )
+
+    f = ready()
+    f.disconnect("Authorization: private provider token")
+    report = refusal_safe_snapshot(f)
+    assert report["last_native_error_code"] == "REDACTED_OR_UNKNOWN_NATIVE_FEED_ERROR"
+    assert "private" not in json.dumps(report).lower()
+    assert report["per_symbol_quote_diagnostics"]["AVGO"]["received"] == 0
+
+
+def test_refusal_snapshot_rejects_unsafe_nonreconciled_counts_and_running_feed():
+    from scripts.observation_runtime.atlas_iex_rejection_reasons_data_only import (
+        refusal_safe_snapshot,
+    )
+
+    f = ready()
+    send(f, quote(c=["H"]))
+    with f.lock:
+        f._reason_counts["AVGO"]["NON_REGULAR_QUOTE_CONDITION"] = 0
+    with pytest.raises(ValueError, match="NATIVE_COUNTS_MISMATCH"):
+        refusal_safe_snapshot(f)
+
+
+@pytest.mark.parametrize(
+    ("frames", "expected_auth", "expected_sub", "native_code", "reasons"),
+    [
+        ([{"T":"error", "code":402}], False, False, "IEX_AUTH_FAILED", 0),
+        ([{"T":"success", "msg":"authenticated"},
+          {"T":"subscription", "quotes":["SPY"]}],
+         True, False, "IEX_SUBSCRIPTION_MISMATCH", 0),
+        ([{"T":"success", "msg":"authenticated"},
+          {"T":"subscription", "quotes":["AVGO","SPY"]},
+          quote("AVGO", c=["H"]),
+          quote("AVGO", bs=0)],
+         True, True, "IEX_BOUNDED_PROBE_COMPLETE", 2),
+    ],
+    ids=["auth-refused","subscription-mismatch","only-rejected-AVGO-frames"],
+)
+def test_real_original_selected_probe_refusal_retains_reason_counts_offline(
+    monkeypatch, capsys, frames, expected_auth, expected_sub, native_code, reasons,
+):
+    """The *original* R24 main refuses; our added opt-in reporter saves counts."""
+    import asyncio
+    import io
+    import types
+    from contextlib import asynccontextmanager, redirect_stdout
+    from types import SimpleNamespace
+
+    from app.investment.alpaca_iex import URL, Credentials
+
+    from scripts.observation_runtime import alpaca_iex_probe as original_probe
+    from scripts.observation_runtime.atlas_iex_rejection_reasons_data_only import (
+        preserve_original_probe_refusal,
+    )
+
+    class NoNetworkSocket:
+        def __init__(self):
+            self.request = SimpleNamespace(
+                headers={"Host": "stream.data.alpaca.markets"}, path="/v2/iex",
+            )
+            self.sent = []
+            self.frames = [json.dumps([f]) for f in frames]
+
+        async def send(self, payload):
+            data = json.loads(payload)
+            self.sent.append({"action": data["action"]})  # no key ever stored
+
+        async def recv(self):
+            if self.frames:
+                return self.frames.pop(0)
+            await asyncio.sleep(.005)
+            raise TimeoutError
+
+    socket = NoNetworkSocket()
+
+    @asynccontextmanager
+    async def no_network_connect(url, **kwargs):
+        assert url == URL and kwargs["logger"].disabled
+        yield socket
+
+    created = []
+
+    def feed_factory(symbols):
+        assert symbols == ["AVGO", "SPY"]
+        assert not created
+        feed = CountOnlyIEXRejectionDiagnostic(
+            symbols, clock=lambda: BASE_SECONDS + .5,
+        )
+        async def run_with_no_network(self, credentials, **kwargs):
+            return await IEXFeed.run(
+                self, credentials, connect=no_network_connect, **kwargs,
+            )
+        feed.run = types.MethodType(run_with_no_network, feed)
+        created.append(feed)
+        return feed
+
+    # This monkeypatch is TEST-ONLY and never changes installed original R24.
+    monkeypatch.setattr(
+        original_probe, "inspect_selected_data_only",
+        lambda: {
+            "selected_revision": 24,
+            "future_selected_native_source_verified": True,
+            "trading_authorized": False,
+            "provider_rights_independently_accepted": False,
+        },
+    )
+    capture = io.StringIO()
+    with redirect_stdout(capture):
+        exitcode = original_probe.main(
+            ["--execute-data-only", "--confirm-scope", original_probe.SCOPE,
+             "--seconds", "1", "--symbols", "AVGO", "SPY"],
+            credentials_loader=lambda ignored: Credentials(
+                "SYNTHETIC_LOCAL_KEY", "SYNTHETIC_LOCAL_SECRET",
+            ),
+            feed_factory=feed_factory,
+        )
+    assert exitcode == 1  # selected ORIGINAL R24 probe itself refused
+    original_response = json.loads(capture.getvalue())
+    assert len(created) == 1
+    sanitized = preserve_original_probe_refusal(original_response, created[0])
+    data = sanitized["count_only_diagnostics"]
+    assert data["original_auth_ack_observed"] is expected_auth
+    assert data["original_subscription_ack_observed"] is expected_sub
+    assert data["last_native_error_code"] == native_code
+    assert data["per_symbol_quote_diagnostics"]["AVGO"]["rejected"] == reasons
+    assert sum(data["per_symbol_rejection_reason_counts"]["AVGO"].values()) == reasons
+    assert data["per_symbol_quote_diagnostics"]["SPY"]["received"] == 0
+    assert sanitized["original_probe_refused"] is True
+    assert sanitized["financial_paper_authorized"] is False
+    assert sanitized["live_money_authorized"] is False
+    encoded = json.dumps(sanitized, sort_keys=True)
+    assert "SYNTHETIC_LOCAL_KEY" not in encoded
+    assert "SYNTHETIC_LOCAL_SECRET" not in encoded
+    assert BASE_STAMP not in encoded
+    assert "100.01" not in encoded
+    assert "stream.data.alpaca.markets" not in encoded
+    assert not capsys.readouterr().out
+    if reasons:
+        assert data["per_symbol_rejection_reason_counts"]["AVGO"][
+            "NON_REGULAR_QUOTE_CONDITION"
+        ] == 1
+        assert data["per_symbol_rejection_reason_counts"]["AVGO"][
+            "INVALID_QUOTE_SIZE_SHARES"
+        ] == 1
