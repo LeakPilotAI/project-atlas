@@ -29,24 +29,57 @@ R23_HEAD='bca5b25734967c61385c03fa218aafcc6a192613ef85e8d1ea8497b5c2eeb57a'
 
 
 def timing_policy():
-    return {'total_seconds':600,'paced_io_seconds':500,'check_every':32,'pace_every':128,
+    # New, separately approved two-phase contract. Never reinterpret a V2 decision.
+    return {'phase_a_seconds':600,'phase_b_seconds':600,'overall_seconds':1200,
+        'paced_io_seconds':500,'check_every':32,'pace_every':128,
         'pause_seconds':0.06,'readback_seconds':180,'terminal_reserve_seconds':30,
-        'minimum_copy_seconds':150,'copy_predecessor_factor':3,'copy_fixed_margin_seconds':15}
+        'io_ack_reserve_seconds':15,'minimum_copy_seconds':150,
+        'copy_predecessor_factor':3,'copy_fixed_margin_seconds':15}
 
 
 class ExecutionBudget:
-    """One monotonic origin, including input checks, clock and all cleanup."""
+    """One monotonic invocation; A and B each have their own nonrenewable 600s cap."""
     def __init__(self):
         self.started=time.monotonic()
+        if not math.isfinite(self.started):
+            raise ValueError('SUCCESSOR_MONOTONIC_ORIGIN_REQUIRED')
+        self.last=self.started
+        self.phase_b_started=None
 
     def remaining(self,*,reserve=0):
-        elapsed=time.monotonic()-self.started
-        if (not math.isfinite(elapsed) or elapsed<0 or not math.isfinite(reserve)
-                or reserve<0 or elapsed+reserve>=600):
-            raise ValueError('SUCCESSOR_TOTAL_DEADLINE_OR_RESERVATION_EXHAUSTED')
-        return 600-elapsed
+        now=time.monotonic()
+        if (type(now) not in (int,float) or not math.isfinite(now)
+                or now<self.last or type(reserve) not in (int,float)
+                or not math.isfinite(reserve) or reserve<0):
+            raise ValueError('SUCCESSOR_MONOTONIC_OR_RESERVATION_INVALID')
+        self.last=now
+        phase_origin=self.started if self.phase_b_started is None else self.phase_b_started
+        phase_elapsed=now-phase_origin
+        overall_elapsed=now-self.started
+        if (phase_elapsed+reserve>=600 or overall_elapsed+reserve>=1200):
+            raise ValueError('SUCCESSOR_PHASE_OR_TOTAL_DEADLINE_OR_RESERVATION_EXHAUSTED')
+        return min(600-phase_elapsed,1200-overall_elapsed)
 
-    def copy_admission(self,plan,predecessor_seconds):
+    def begin_installation(self):
+        if self.phase_b_started is not None:
+            raise ValueError('SUCCESSOR_INSTALL_PHASE_CANNOT_RESTART')
+        self.remaining()
+        self.phase_b_started=self.last  # Same original living process; no saved phase-A permit.
+        return self.phase_b_started
+
+    def io_remaining(self,envelope,*,reserve=0):
+        self.remaining()
+        now=envelope.monotonic()
+        started=envelope.started
+        if (self.phase_b_started is None or started is None
+                or type(now) not in (int,float) or not math.isfinite(now)
+                or type(started) not in (int,float) or not math.isfinite(started)
+                or now<started or type(reserve) not in (int,float)
+                or not math.isfinite(reserve) or reserve<0 or now-started+reserve>=500):
+            raise ValueError('SUCCESSOR_PACED_IO_DEADLINE_OR_RESERVATION_EXHAUSTED')
+        return 500-(now-started)
+
+    def copy_admission(self,plan,predecessor_seconds,envelope):
         if (type(predecessor_seconds) not in (int,float) or not math.isfinite(predecessor_seconds)
                 or predecessor_seconds<=0):
             raise ValueError('SUCCESSOR_CURRENT_PREDECESSOR_TIMING_REQUIRED')
@@ -59,12 +92,12 @@ class ExecutionBudget:
                +sum(chunks(sizes[n]) for n in deps)+2*sum(chunks(n) for n in sizes.values())
                +len(plan['directories'])+1)
         pacing=(calls//128)*0.06
-        # Conservative scheduling proxy, not native copy acceptance. Slow host
-        # preflight refuses while the local decision is still unused.
         copy_seconds=max(150,3*predecessor_seconds+pacing+15)
         self.remaining(reserve=copy_seconds+180+30)
+        self.io_remaining(envelope,reserve=copy_seconds+180+15)
         return {'copy_reserved_seconds':copy_seconds,'pacing_seconds':pacing,
-                'budget_calls':calls,'readback_reserved_seconds':180,'terminal_reserved_seconds':30}
+                'budget_calls':calls,'readback_reserved_seconds':180,'terminal_reserved_seconds':30,
+                'io_ack_reserved_seconds':15}
 
 
 def pacing_envelope():
@@ -93,7 +126,7 @@ def proposal(path,pin):
             raise ValueError('SUCCESSOR_REVIEW_ANCESTOR_ALIAS_REFUSED')
     p=releases.strict(checked(path,pin))
     source=p.get('source_commit')
-    if (p.get('schema')!='ATLAS_SINGLE_SUCCESSOR_CODE_ONLY_PROPOSAL_V2'
+    if (p.get('schema')!='ATLAS_SINGLE_SUCCESSOR_CODE_ONLY_PROPOSAL_V3'
             or type(source) is not str or re.fullmatch('[0-9a-f]{40}',source) is None
             or p.get('destination')!=str(Path('D:/AtlasRuntime/releases')/source)
             or p.get('receipt')!=str(ROOT/'logs/diagnostics'/('qd-unselected-release-'+source+'.json'))
@@ -101,7 +134,7 @@ def proposal(path,pin):
             or p.get('previous_head')!=R23_HEAD
             or p.get('previous_spec',{}).get('release')!=R23_SOURCE
             or p.get('previous_spec',{}).get('artifact_digest')!=R23_ARTIFACT
-            or p.get('limits')!={'seconds':600,'entries':40000,'bytes':1024**3,'processors':2}
+            or p.get('limits')!={'seconds':1200,'entries':40000,'bytes':1024**3,'processors':2}
             or p.get('timing_policy')!=timing_policy()
             or p.get('financial_authority') is not False or p.get('paper_start_authorized') is not False
             or p.get('provider_access') is not False or p.get('automatic_startup') is not False):
@@ -226,8 +259,8 @@ def verify_decision(path,pin,p,kind,decision_pin):
 def execute(path,pin,kind,decision_pin):
     # This function is never called by --review or --local-approve-*.
     if kind not in ('install','select'):raise ValueError('SUCCESSOR_EXACT_EXECUTION_KIND_REQUIRED')
-    budget=ExecutionBudget()
-    envelope=pacing_envelope()  # Real constructor validation BEFORE consumption.
+    budget=ExecutionBudget()  # Phase A begins at real function entry.
+    envelope=pacing_envelope()  # Real constructor validated before any attempt.
     from scripts.observation_runtime.atlas_r17_cpu_budget import NativeR17CpuBudget
     from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
     from scripts.install_version_safe_candidate import _qualify_native_clock_180s
@@ -246,20 +279,23 @@ def execute(path,pin,kind,decision_pin):
         identity='successor-code-'+kind+'-'+p['source_commit']
         budget.remaining(reserve=180+30)
         predecessor_started=time.monotonic()
-        # Keep predecessor native files pinned throughout the attempt; repeated
-        # admissions use native selector/root/approval checks, no repeated deep scans.
-        with releases.NativeInstalledReleaseVerifier().open(p['previous_spec']):
+        # Same living parent/native release handles retain exact predecessor custody
+        # across the two phases; no serialized preflight receipt can replace them.
+        with releases.NativeInstalledReleaseVerifier().open(p['previous_spec']) as predecessor_receipt:
             predecessor_seconds=time.monotonic()-predecessor_started
             budget.remaining(reserve=180+30)
             clock=IndependentNtpClock(runtime_id=identity)
             try:
                 _qualify_native_clock_180s(clock,identity)
-                last=None;phase_reserve=30;paced=False
+                budget.remaining(reserve=30)
+                last=None;phase_reserve=30;io_reserve=0;paced=False
                 def admission(force=False):
                     nonlocal last
                     budget.remaining(reserve=phase_reserve)
                     cpu.pulse()
-                    if paced:envelope.tick()
+                    if paced:
+                        envelope.tick()
+                        budget.io_remaining(envelope,reserve=io_reserve)
                     now=time.monotonic()
                     if force or last is None or now-last>=30:
                         clock.require_operational(identity)
@@ -268,6 +304,7 @@ def execute(path,pin,kind,decision_pin):
                         require_code_install_host_ready(Path(p['destination']).parent)
                         last=now
                     budget.remaining(reserve=phase_reserve)
+                    if paced:budget.io_remaining(envelope,reserve=io_reserve)
                     return True
                 admission(force=True)
                 if kind=='select':
@@ -293,21 +330,40 @@ def execute(path,pin,kind,decision_pin):
                         finally:store.close()
                         result={'status':'SUCCESSOR_SELECTED_CODE_ONLY','receipt':row,'financial_authority':False}
                 else:
-                  from scripts.native_install_candidate import _copy_prepared_code
-                  allocation=budget.copy_admission(plan,predecessor_seconds)
+                  from scripts.native_install_candidate import _copy_prepared_code, _verify_namespace
+                  # Still in A, with the SAME retained predecessor context.
+                  def native_boundary():
+                      budget.remaining(reserve=30)
+                      cpu.pulse()
+                      clock.require_operational(identity)
+                      return True
+                  _verify_namespace(Path(p['previous_spec']['root']),
+                      {row['path'] for row in predecessor_receipt['files']},
+                      {row['path'] for row in predecessor_receipt['directories']},
+                      native_boundary)
+                  admission(force=True)
+                  installation_target(p['source_commit'],p['receipt'])
+                  budget.remaining(reserve=30)
+                  # B starts exactly once, not by resetting A, the global clock,
+                  # predecessor retention, or the qualified NTP capability.
+                  budget.begin_installation()
                   with envelope:
                     paced=True
                     phase_reserve=180+30
+                    io_reserve=180+15
                     admission(force=True)
-                    # Recheck after priority, clock and host admission costs.
+                    allocation=budget.copy_admission(plan,predecessor_seconds,envelope)
+                    # Recheck after real priority, clock and host admission costs.
+                    admission(force=True)
                     budget.remaining(reserve=allocation['copy_reserved_seconds']+phase_reserve)
+                    budget.io_remaining(envelope,reserve=allocation['copy_reserved_seconds']+io_reserve)
                     write_new_json(attempt,{'decision_sha256':decision_pin,'kind':kind,'status':'SINGLE_USE_CONSUMED'})
                     pending=Path(p['receipt']).with_suffix('.pending.jsonl')
                     write_new_json(pending,{'schema':'ATLAS_SUCCESSOR_UNSELECTED_CODE_INSTALL_INTENT_V1',
                     'source_commit':p['source_commit'],'archive_sha256':p['archive_sha256'],
                     'target':p['destination'],'financial_authority':False,'selection_allowed':False,'paper_start_authorized':False})
                     journal=pending
-                    plan['started']=budget.started
+                    plan['started']=budget.phase_b_started
                     copied=_copy_prepared_code(destination=Path(p['destination']),archive_sha256=p['archive_sha256'],
                         source_commit=p['source_commit'],prepared=plan,admission=admission)
                     if (len(copied['files'])!=p['native_files'] or len(copied['directories'])!=p['native_directories']
@@ -320,13 +376,18 @@ def execute(path,pin,kind,decision_pin):
                         'provider_connections':False,'operational_acceptance':False}
                     artifact=releases.digest(receipt['files'])
                     budget.remaining(reserve=180+30)
+                    budget.io_remaining(envelope,reserve=180+15)
                     phase_reserve=30
+                    io_reserve=15
+                    clock.require_operational(identity)
                     readback=installed_readback(Path(p['destination']),receipt,artifact,timeout=180)
                     receipt.update(layout=readback['layout'],artifact_digest=artifact)
                     admission(force=True)
                     raw=json.dumps(receipt,sort_keys=True,allow_nan=False).encode()
                     event({'stage':'UNSELECTED_CODE_INSTALL_VERIFIED','receipt_sha256':hashlib.sha256(raw).hexdigest()})
                     write_new_json(Path(p['receipt']),receipt)
+                    budget.io_remaining(envelope)
+                    budget.remaining(reserve=30)
                     result={'status':'SUCCESSOR_INSTALLED_UNSELECTED_CODE_ONLY','artifact_digest':artifact,
                             'receipt_sha256':hashlib.sha256(raw).hexdigest(),'financial_authority':False,
                             'timing_allocation':allocation}

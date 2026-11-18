@@ -81,7 +81,7 @@ def execution_model(tmp_path,monkeypatch):
     from scripts import release_selection_store as selectors
     from scripts import release_selection as releases
     p={'source_commit':'f'*40,'destination':str(tmp_path/'candidate'),'receipt':str(tmp_path/'receipt.json'),
-       'previous_spec':{'OFFLINE_PREDECESSOR':True},'archive_sha256':'a'*64,
+       'previous_spec':{'OFFLINE_PREDECESSOR':True,'root':str(tmp_path/'predecessor')},'archive_sha256':'a'*64,
        'source_inventory_sha256':'b'*64,'native_files':1,'native_directories':1}
     rows=[{'OFFLINE_REVISION':i} for i in range(21)]
     p['previous_head']=releases.digest(rows[-1])
@@ -90,7 +90,11 @@ def execution_model(tmp_path,monkeypatch):
     class Cpu:
         def __enter__(self):return self
         def __exit__(self,*_):pass
-        def pulse(self):events.append('CPU_PULSE')
+        def pulse(self):
+            events.append('CPU_PULSE')
+            if failure[0]=='io-pre-admission-delay' and kernel.priority==0x40:
+                now[0]+=160
+                failure[0]='io-pre-admission-delay-observed'
     # Keep the REAL constructor, priority lifecycle, cadence and deadline checks.
     real_envelope=pacing.LowImpactEnvelope
     class Kernel:
@@ -100,6 +104,7 @@ def execution_model(tmp_path,monkeypatch):
         def SetPriorityClass(self,_,priority):
             self.priority=priority;events.append(('PRIORITY',priority))
             if failure[0]=='priority' and priority==0x40:return 0
+            if failure[0]=='io-priority-delay' and priority==0x40:now[0]+=160
             return 1
     kernel=Kernel()
     def wait(seconds):now[0]+=seconds;events.append(('PACED_SLEEP',seconds))
@@ -116,11 +121,12 @@ def execution_model(tmp_path,monkeypatch):
         @contextmanager
         def open(self,s):
             events.append(('INDEPENDENT_NATIVE_READ_DOUBLE',deepcopy(s)))
-            now[0]+=80 if failure[0]=='slow-predecessor' else 16
-            try:yield {}
+            now[0]+=(450 if failure[0]=='slow-predecessor' else 140 if failure[0]=='expensive-predecessor' else 16)
+            events.append('PREDECESSOR_RETAINED')
+            try:yield {'files':[{'path':'offline.py'}],'directories':[{'path':'.'}]}
             finally:
                 events.append('PREDECESSOR_HANDLES_CLOSED')
-                if failure[0]=='cleanup-timeout':now[0]=601
+                if failure[0]=='cleanup-timeout':now[0]=1201
                 if failure[0]=='cleanup':raise OSError('OFFLINE_CLOSE_FAILED')
     class Store:
         def __init__(self,**_):pass
@@ -135,29 +141,33 @@ def execution_model(tmp_path,monkeypatch):
         path=str(path)
         if path in writes:raise FileExistsError('OFFLINE_SINGLE_USE_ALREADY_CONSUMED')
         writes[path]=deepcopy(value)
+        if failure[0]=='ack-late' and path==p['receipt']:now[0]=796
         # Exercise real durable test-journal append/read, not any native path.
         if path.endswith('.pending.jsonl'):
             from pathlib import Path
             Path(path).write_text(json.dumps(value))
     def copy(**kwargs):
-        events.append('COPY_CALLED');assert kwargs['admission']() is True
+        events.append('COPY_CALLED');assert kwargs['admission']() is True; assert 'LIVE_PREDECESSOR_NAMESPACE_BOUNDARY' in events and 'PREDECESSOR_HANDLES_CLOSED' not in events
         for _ in range(128):assert kwargs['admission']() is True
+        if failure[0]=='mid-copy-clock':
+            failure[0]='clock'
+            kwargs['admission'](force=True)
         if failure[0]=='copy':raise OSError('OFFLINE_COPY_UNKNOWN')
-        if failure[0]=='deadline':now[0]=601
-        if failure[0]=='copy-reserve':now[0]=391;kwargs['admission']()
+        if failure[0]=='deadline':now[0]=1201
+        if failure[0]=='copy-reserve':now[0]=650;kwargs['admission']()
         return {'files':[{'path':'offline.py','bytes':1,'sha256':'a'*64,'id':[1,2,3]}],
                 'directories':[{'path':'.','id':[1,2,4]}],
                 'retained_handles_after_close':1 if failure[0]=='handles' else 0}
     def readback(*_,**kwargs):
         events.append('READBACK_CALLED')
         assert kwargs['timeout']==180
-        if failure[0]=='readback-deadline':now[0]=571
+        if failure[0]=='readback-deadline':now[0]=790
         if failure[0]=='readback':raise OSError('OFFLINE_READBACK_UNKNOWN')
         return {'layout':{'OFFLINE_LAYOUT':True}}
     monkeypatch.setattr(control,'proposal',lambda *_:p)
     plan={'names':['offline.py'],'directories':[],'runtime':{'offline.py':{'bytes':1}},'dependencies':{}}
     def prepared(_):
-        if failure[0]=='slow-inputs':now[0]+=250
+        if failure[0]=='slow-inputs':now[0]+=450
         return deepcopy(plan)
     monkeypatch.setattr(control,'prepared',prepared)
     monkeypatch.setattr(control,'original_state',lambda _:True)
@@ -170,10 +180,19 @@ def execution_model(tmp_path,monkeypatch):
     monkeypatch.setattr(pacing,'LowImpactEnvelope',envelope)
     monkeypatch.setattr(pacing,'_selector_unchanged',lambda:events.append('HISTORICAL_SELECTOR_CHECK'))
     monkeypatch.setattr(ntp,'IndependentNtpClock',Clock)
-    def qualify(*_):now[0]+=300 if failure[0]=='slow-clock' else 180
+    def qualify(*_):now[0]+=580 if failure[0]=='slow-clock' else 180
     monkeypatch.setattr(clock_install,'_qualify_native_clock_180s',qualify)
     monkeypatch.setattr(host,'require_code_install_host_ready',lambda _:True)
     monkeypatch.setattr(copier,'_copy_prepared_code',copy)
+    def namespace(root,files,directories,bound):
+        assert str(root)==p['previous_spec']['root']
+        assert files=={'offline.py'} and directories=={'.'}
+        assert events.count('PREDECESSOR_RETAINED')>events.count('PREDECESSOR_HANDLES_CLOSED')
+        if failure[0]=='slow-namespace':now[0]+=420
+        if failure[0]=='namespace':raise ValueError('OFFLINE_NAMESPACE_SUBSTITUTION')
+        assert bound() is True
+        events.append('LIVE_PREDECESSOR_NAMESPACE_BOUNDARY')
+    monkeypatch.setattr(copier,'_verify_namespace',namespace)
     monkeypatch.setattr(releases,'NativeInstalledReleaseVerifier',Verifier)
     monkeypatch.setattr(selectors,'NativeSelectionStore',Store)
     path=str(tmp_path/'proposal.json')
@@ -259,15 +278,18 @@ def test_real_envelope_rejects_600_and_validates_original_500_without_native_ent
 def test_total_clock_failure_refuses(elapsed,monkeypatch):
     now=[0.0];monkeypatch.setattr(control.time,'monotonic',lambda:now[0])
     budget=control.ExecutionBudget();now[0]=elapsed
-    with pytest.raises(ValueError,match='TOTAL_DEADLINE'):budget.remaining()
+    with pytest.raises(ValueError,match='DEADLINE|MONOTONIC'):budget.remaining()
 
 
 def test_full_final_readback_and_cleanup_are_reserved_before_copy(execution_model):
     m=execution_model
     budget=control.ExecutionBudget()
     m.now[0]=240
-    with pytest.raises(ValueError,match='RESERVATION_EXHAUSTED'):
-        budget.copy_admission(m.plan,16)
+    budget.begin_installation()
+    m.now[0]=490
+    with control.pacing_envelope() as envelope:
+        with pytest.raises(ValueError,match='RESERVATION_EXHAUSTED'):
+            budget.copy_admission(m.plan,16,envelope)
     assert not m.writes
 
 
@@ -283,24 +305,24 @@ def test_new_proposal_cannot_reuse_old_decision_even_with_same_application(monke
 
 
 @pytest.mark.parametrize('damage',[None,'old-schema','wrong-controller','short-readback','long-total','fast-pacing'])
-def test_real_v2_proposal_validation_requires_exact_corrected_contract(tmp_path,monkeypatch,damage):
+def test_real_v3_proposal_validation_requires_exact_phased_contract(tmp_path,monkeypatch,damage):
     import hashlib
     from pathlib import Path
     monkeypatch.setattr(control,'ROOT',tmp_path)
     directory=tmp_path/'logs/diagnostics/atlas-single-successor-offline-review'
     directory.mkdir(parents=True)
-    p={'schema':'ATLAS_SINGLE_SUCCESSOR_CODE_ONLY_PROPOSAL_V2','source_commit':'f'*40,
+    p={'schema':'ATLAS_SINGLE_SUCCESSOR_CODE_ONLY_PROPOSAL_V3','source_commit':'f'*40,
        'destination':str(Path('D:/AtlasRuntime/releases')/('f'*40)),
        'receipt':str(tmp_path/'logs/diagnostics'/('qd-unselected-release-'+'f'*40+'.json')),
        'control_source_sha256':hashlib.sha256(Path(control.__file__).read_bytes()).hexdigest(),
        'previous_head':control.R23_HEAD,'previous_spec':{'release':control.R23_SOURCE,'artifact_digest':control.R23_ARTIFACT},
-       'limits':{'seconds':600,'entries':40000,'bytes':1024**3,'processors':2},
+       'limits':{'seconds':1200,'entries':40000,'bytes':1024**3,'processors':2},
        'timing_policy':control.timing_policy(),'financial_authority':False,'paper_start_authorized':False,
        'provider_access':False,'automatic_startup':False}
     if damage=='old-schema':p['schema']='ATLAS_SINGLE_SUCCESSOR_CODE_ONLY_PROPOSAL_V1'
     elif damage=='wrong-controller':p['control_source_sha256']='0'*64
     elif damage=='short-readback':p['timing_policy']['readback_seconds']=40
-    elif damage=='long-total':p['timing_policy']['total_seconds']=601
+    elif damage=='long-total':p['timing_policy']['overall_seconds']=1201
     elif damage=='fast-pacing':p['timing_policy']['pause_seconds']=0.01
     path=directory/'proposal.json';raw=json.dumps(p).encode();path.write_bytes(raw)
     pin=hashlib.sha256(raw).hexdigest()
@@ -320,4 +342,69 @@ def test_current_predecessor_elapsed_must_be_genuine_positive_measurement(execut
     m=execution_model;budget=control.ExecutionBudget()
     for bad in (0,-1,True,None,float('nan'),float('inf')):
         with pytest.raises(ValueError,match='CURRENT_PREDECESSOR_TIMING'):
-            budget.copy_admission(m.plan,bad)
+            budget.copy_admission(m.plan,bad,None)
+
+
+@pytest.mark.parametrize('failure',['slow-namespace','namespace','expensive-predecessor','io-pre-admission-delay'])
+def test_phased_native_boundary_and_budget_refuse_before_consumption(execution_model,failure):
+    m=execution_model;m.failure[0]=failure
+    with pytest.raises((ValueError,OSError)):
+        control.execute(m.path,'a'*64,'install','b'*64)
+    assert m.writes=={} and 'COPY_CALLED' not in m.events
+    assert m.events[-2:]==['CLOCK_REVOKED','PREDECESSOR_HANDLES_CLOSED']
+    assert len(m.rows)==21
+
+
+@pytest.mark.parametrize('failure',['mid-copy-clock','ack-late'])
+def test_phased_clock_and_ack_failure_preserve_original_journal(execution_model,failure):
+    m=execution_model;m.failure[0]=failure
+    with pytest.raises(ValueError):
+        control.execute(m.path,'a'*64,'install','b'*64)
+    from pathlib import Path
+    rows=Path(m.p['receipt']).with_suffix('.pending.jsonl').read_text().splitlines()
+    assert json.loads(rows[-1])['stage']=='REFUSED_PRESERVE_PARTIAL_NO_RETRY'
+    assert 'PREDECESSOR_HANDLES_CLOSED'==m.events[-1] and len(m.rows)==21
+
+
+def test_two_phase_budget_has_separate_real_origins_and_cannot_restart(execution_model):
+    m=execution_model
+    budget=control.ExecutionBudget()
+    m.now[0]=263.219
+    assert budget.remaining()>300
+    b_origin=budget.begin_installation()
+    assert b_origin==263.219
+    assert budget.remaining()>599
+    with pytest.raises(ValueError,match='CANNOT_RESTART'):
+        budget.begin_installation()
+    m.now[0]=862
+    assert 0<budget.remaining()<2
+    m.now[0]=863.219
+    with pytest.raises(ValueError,match='DEADLINE'):
+        budget.remaining()
+
+
+def test_unqualified_or_restarted_io_scope_is_never_accepted(execution_model):
+    m=execution_model
+    budget=control.ExecutionBudget()
+    with control.pacing_envelope() as envelope:
+        with pytest.raises(ValueError,match='PACED_IO'):
+            budget.io_remaining(envelope)
+        budget.begin_installation()
+        m.now[0]=500
+        with pytest.raises(ValueError,match='PACED_IO'):
+            budget.io_remaining(envelope)
+    with pytest.raises(ValueError,match='PACED_IO'):
+        budget.io_remaining(envelope)
+
+
+def test_phased_forecast_accepts_actual_measured_v2_preflight_with_fresh_b(execution_model):
+    m=execution_model
+    budget=control.ExecutionBudget()
+    m.now[0]=263.219
+    budget.begin_installation()
+    with control.pacing_envelope() as envelope:
+        allocation=budget.copy_admission(m.plan,78.375,envelope)
+        assert allocation['copy_reserved_seconds']>=250.125
+        assert allocation['readback_reserved_seconds']==180
+        assert allocation['terminal_reserved_seconds']==30
+        assert allocation['io_ack_reserved_seconds']==15
