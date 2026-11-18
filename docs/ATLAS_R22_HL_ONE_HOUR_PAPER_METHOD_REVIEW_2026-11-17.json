@@ -1,0 +1,86 @@
+{
+  "schema": "ATLAS_R22_HL_INITIAL_INTRAHOUR_PAPER_METHOD_REVIEW_V1",
+  "status": "METHOD_PROPOSAL_FOR_HUMAN_REVIEW_ONLY_NOT_SOURCE_OR_FINANCIAL_ACCEPTANCE",
+  "source_worktree_commit": "d9ac7d79f8cb39788f63f6a14a42f56be744846e",
+  "native_selected_revision": 22,
+  "native_release_source": "2f0fcfd9741b8fd524f2e5921a79998373a689c9",
+  "native_artifact_digest": "5b23187f39316cd4e4d81659fec70758d9db661051604f4d91379938c5e92a51",
+  "native_selector_sha256": "9f206300bc243ebe938f4bf729c1eb5f2c239596ebf410b18773bb614c6b60f6",
+  "original_source_planner": "scripts/observation_runtime/atlas_paper_actual_commissioning_order.py",
+  "original_two_account_pilot": {
+    "QUALITY_DIPS": {"currency": "USD", "simulated_cash": "1000", "mode": "WATCH_ONLY_NO_QD_FINANCIAL_ORDERS"},
+    "HYPERLIQUID": {"currency": "USDC", "simulated_cash": "1000", "mode": "SINGLE_SUPERVISED_PAPER_ONLY"},
+    "simulation_not_real_funding": true
+  },
+  "pilot_method": {
+    "name": "HL_ONE_HOUR_STOP_BEFORE_FUNDING_SINGLE_SESSION",
+    "instrument_allowlist": ["BTC", "ETH", "SOL"],
+    "initial_max_positions": 3,
+    "initial_max_notional_usdc_per_position": "100",
+    "leverage_ceiling": "2",
+    "max_holding_seconds": 1200,
+    "clock_source": "ATLAS_INDEPENDENT_TWO_NTP_REAL_WINDOWS_ONLY",
+    "clock_max_uncertainty_ms": 1000,
+    "entry_requires_original_real_native_flat_and_current_source": true,
+    "entry_requires_original_selected_native_operation_issuer": true,
+    "full_utc_hour_candidate_start_second_with_test_139ms_uncertainty": 32,
+    "full_utc_hour_candidate_last_second_with_test_139ms_uncertainty": 2097,
+    "native_stop_request_seconds_before_funding": 480,
+    "original_durable_flat_receipt_must_arrive_seconds_before_funding": 300,
+    "stop_scope": "SHUTDOWN_FLATTEN",
+    "one_supervised_hour_only": true,
+    "automatic_restart": false,
+    "stop_receipt_required_even_if_no_trades": true,
+    "unknown_position_or_close_requires_refusal": true,
+    "missing_settlement_evidence_assume_zero_funding": false
+  },
+  "hypothetical_paper_cost_not_wallet_entitlement": {
+    "assumed_taker_bps_per_side": "10",
+    "assumed_slippage_bps_per_side": "5",
+    "observed_original_public_fee_floor_maker_bps": "1.5",
+    "observed_original_public_fee_floor_taker_bps": "4.5",
+    "account_specific_fee_tier_known": false,
+    "model_requires_explicit_financial_policy_approval_before_use": true
+  },
+  "original_installed_code_pins": {
+    "backend/app/services/hyperliquid_forward_flat_paper_policy.py": "b683f4b18c598c5b4dcb4659e00fd2e36c1b2d1029367722ccbc4ab675c7286d",
+    "backend/app/services/hyperliquid_intrahour_stop_supervisor.py": "71d3af562561234aa7fe33e98d7298184adfb5febb0ff196370620c3d3c2ec2e"
+  },
+  "original_e1_provider_rights": {
+    "ALPACA_IEX": "UNACCEPTED_WATCH_ONLY_STILL_REQUIRES_SOURCE_POLICY_FOR_ORIGINAL_SOURCE_GENESIS",
+    "HYPERLIQUID_PUBLIC": "UNACCEPTED_NOT_LICENSED_FOR_OPERATIONAL_AUTOMATED_SIMULATION_YET",
+    "QUALITY_DIPS_RESEARCH_PUBLICATION": "UNACCEPTED_SOURCE_RIGHTS_AND_ISSUER_MISSING",
+    "rights_or_entitlement_inferred_from_public_endpoints": false,
+    "approved_request_budget_or_stream_reconnect": false,
+    "accepted_funding_history_settlement_oracle": false,
+    "accepted_future_next_funding_reference": false
+  },
+  "historical_real_evidence": {
+    "first_consumed_public_observation": "2026-11-16",
+    "second_consumed_public_observation_local": "2026-11-17",
+    "second_original_receipt_sha256": "b50dc95e41b988d5802072d8d1ed89320cd43853af4bbbf64a3d59bfd92eb5c3",
+    "second_independent_readback_sha256": "fff1caeb2aab98834cf6f0c95fb5b768e2ee0e050d184e27b3440e9c3a86fc81",
+    "three_stale_funding_references": true,
+    "original_three_books_verified": true,
+    "authorization_consumed_no_retry": true
+  },
+  "model_review_scope_phrase": "ACKNOWLEDGE_ATLAS_HL_SINGLE_HOUR_FLAT_FIRST_PAPER_METHOD_REVIEW_ONLY",
+  "operator_decision_present": false,
+  "operator_method_review_only": true,
+  "native_financial_writer_approval": false,
+  "native_two_account_initial_journals_authorized": false,
+  "native_account_inceptions_authorized": false,
+  "native_paper_start_authorized": false,
+  "provider_data_connect_authorized": false,
+  "automatic_model_grant_from_operator_acknowledgment": false,
+  "live_money_trading_authorized": false,
+  "next_requirements": [
+    "Independent original E1 rights, consent, retention and rate-budget acceptance for provider and QD WATCH sources",
+    "Separate original Stage A financial methodology acceptance and source-cost validation",
+    "Fresh genuine retained selected native Job and 5+7 roles with operational clock",
+    "One-time original simultaneous two-account manifest and local financial journal approval",
+    "Separate original exact READ_ONLY plus INITIALIZE_SIMULATED_ACCOUNTS activation and two FS1/FS3 account inception ACKs",
+    "Separate postinception CONNECT_APPROVED_DATA source authority, then current source and writer-generation/Stop-first fences",
+    "Actual original <=8-second native SHUTDOWN_FLATTEN Stop and durable FLAT; supervisory pilot with dashboard and Discord"
+  ]
+}
