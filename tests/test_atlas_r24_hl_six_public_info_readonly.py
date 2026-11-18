@@ -200,3 +200,66 @@ def test_injected_synthetic_funding_time_no_rights_grant():
     assert sample["historical_settlement_oracle_accepted"] is False
     assert sample["financial_accounts_initialized"] is False
     assert sample["paper_start_authorized"] is False
+
+
+def test_original_optional_provider_hourly_interval_is_accepted_but_not_a_grant():
+    # Actual November 18 public HlPerp replies included an extra
+    # fundingIntervalHours: 1. Correct schema handling still MUST demand
+    # a genuinely future hour, independent of the field's mere presence.
+    rows=data()
+    for i in (1,5):
+        payload=json.loads(rows[i]["raw_json"])
+        for coin, venues in payload:
+            if coin in hl.SYMBOLS:
+                for name, facts in venues:
+                    if name=="HlPerp":
+                        facts["fundingIntervalHours"]=1
+        replace_raw(rows[i],payload)
+    out=hl.inspect_exact_six(frames=rows,ntp_uncertainty_ms=139)
+    assert out["status"]=="SIX_GENUINE_PUBLIC_INFO_RAW_OBSERVATIONS_STRUCTURALLY_VALID_ONLY"
+    assert out["paper_start_authorized"] is False
+    assert out["provider_data_rights_accepted"] is False
+    assert out["historical_settlement_oracle_accepted"] is False
+
+
+@pytest.mark.parametrize("interval", [0,2,-1,True,1.0,"1",None])
+def test_optional_hl_interval_must_be_exact_integer_one(interval):
+    rows=data()
+    payload=json.loads(rows[1]["raw_json"])
+    payload[0][1][0][1]["fundingIntervalHours"]=interval
+    replace_raw(rows[1],payload)
+    with pytest.raises(ValueError,match="HL_R24_ORIGINAL_HLPERP_FUNDING_SCHEMA_REFUSED"):
+        hl.inspect_exact_six(frames=rows,ntp_uncertainty_ms=139)
+
+
+def test_extra_undocumented_hl_fields_still_refused():
+    rows=data()
+    payload=json.loads(rows[1]["raw_json"])
+    payload[0][1][0][1]["fundingIntervalHours"]=1
+    payload[0][1][0][1]["pretendAuthorization"]=True
+    replace_raw(rows[1],payload)
+    with pytest.raises(ValueError,match="HL_R24_ORIGINAL_HLPERP_FUNDING_SCHEMA_REFUSED"):
+        hl.inspect_exact_six(frames=rows,ntp_uncertainty_ms=139)
+
+
+def test_original_provider_interval_does_not_override_past_funding_timestamp():
+    rows=data()
+    payload=json.loads(rows[1]["raw_json"])
+    payload[0][1][0][1]["fundingIntervalHours"]=1
+    payload[0][1][0][1]["nextFundingTime"]=HOUR-hl.HOUR_MS
+    replace_raw(rows[1],payload)
+    with pytest.raises(ValueError,match="HL_R24_ORIGINAL_HLPERP_NEXT_FUNDING_STALE_OR_INCONSISTENT"):
+        hl.inspect_exact_six(frames=rows,ntp_uncertainty_ms=139)
+
+
+@pytest.mark.parametrize("gap_ms,passes",[(9996,False),(9999,False),(10000,True),(10001,True)])
+def test_two_prediction_utc_spacing_boundary_is_strict(gap_ms,passes):
+    rows=data()
+    rows[5]["started_ms"]=rows[1]["observed_ms"]+gap_ms
+    rows[5]["observed_ms"]=rows[5]["started_ms"]+100
+    if passes:
+        assert hl.inspect_exact_six(frames=rows,ntp_uncertainty_ms=139)[
+            "paper_start_authorized"] is False
+    else:
+        with pytest.raises(ValueError,match="HL_R24_SECOND_PREDICTION_SAMPLE_TOO_SOON"):
+            hl.inspect_exact_six(frames=rows,ntp_uncertainty_ms=139)

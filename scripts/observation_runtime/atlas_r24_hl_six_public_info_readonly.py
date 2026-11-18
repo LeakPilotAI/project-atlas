@@ -78,8 +78,17 @@ def _forecast(body, *, observed_ms, uncertainty_ms):
         if len(hits) != 1:
             raise ValueError("HL_R24_ORIGINAL_HLPERP_FORECAST_MISSING_OR_DUPLICATE")
         value = hits[0]
-        if (type(value) is not dict or set(value) != {
-                "fundingRate", "nextFundingTime"}
+        # Original provider observations can include an optional explicit
+        # fundingIntervalHours. Accept ONLY the observed hourly value; do
+        # not relax the independent future-hour freshness requirement.
+        if (type(value) is not dict
+                or set(value) not in (
+                    {"fundingRate", "nextFundingTime"},
+                    {"fundingRate", "nextFundingTime", "fundingIntervalHours"},
+                )
+                or ("fundingIntervalHours" in value and
+                    (type(value["fundingIntervalHours"]) is not int
+                     or value["fundingIntervalHours"] != 1))
                 or type(value["fundingRate"]) is not str
                 or type(value["nextFundingTime"]) is not int):
             raise ValueError("HL_R24_ORIGINAL_HLPERP_FUNDING_SCHEMA_REFUSED")
