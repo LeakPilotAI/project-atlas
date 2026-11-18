@@ -24445,4 +24445,65 @@
   },
   "report_sha256": "3df292012f1fb0177ecac13ef1656deddefc6b09f9d94575501c9b548a25de67"
 }
+,
+  "atlas_successor_controller_repair_v2_20261117": {
+  "status": "SOURCE_ONLY_CONTROL_REPAIR_QUALIFIED_REPLACEMENT_LOCAL_REVIEW_READY",
+  "report": "docs/ATLAS_SUCCESSOR_CONTROLLER_REPAIR_V2_2026-11-17.md",
+  "pins": "docs/ATLAS_SUCCESSOR_CONTROLLER_REPAIR_V2_PINS_2026-11-17.json",
+  "source_repair_commit": "c6446aa98632a2a283b1d2cc7660522b9418fe9f",
+  "control_source_sha256": "6389ebfd3c283fafdf449143410e5a4f81de0e7685642d94109da640ff4444cc",
+  "application_source_unchanged": "2f0fcfd9741b8fd524f2e5921a79998373a689c9",
+  "application_archive_sha256": "7036ba930870a58b1029091f3361a8b4b527a997ea9ff1597467fe6a2d2669f1",
+  "proposal_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-single-successor-control-repair-20261117-r01\\proposal.json",
+  "proposal_sha256": "44026303465ddd24c34dbfe6ab3c11f2c9b8af1a297632f828eee8c903104df3",
+  "local_review_command": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-single-successor-control-repair-20261117-r01\\Review-Successor-Install-V2.cmd",
+  "review_command_sha256": "55342bfca46f58c636706933be762750924de90f669a5160260f0d5b93a69b74",
+  "timing_policy": {
+    "check_every": 32,
+    "copy_fixed_margin_seconds": 15,
+    "copy_predecessor_factor": 3,
+    "minimum_copy_seconds": 150,
+    "pace_every": 128,
+    "paced_io_seconds": 500,
+    "pause_seconds": 0.06,
+    "readback_seconds": 180,
+    "terminal_reserve_seconds": 30,
+    "total_seconds": 600
+  },
+  "offline_python": {
+    "passed": 171,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 4,
+    "warnings": 0,
+    "controller_cases": 44,
+    "new_controller_cases": 25
+  },
+  "node_rerun": false,
+  "protected_records_unchanged": 10,
+  "three_original_pin_edits_preserved_unstaged": true,
+  "original_install_decision_unchanged_unused": "c89bb83e24798750335b211134ce85fe0743ccf7a87d8a2b56de57895e4d475b",
+  "selected_revision": 21,
+  "original_financial_roots_distinct_empty": 12,
+  "new_native_receipt_digest": null,
+  "installation_or_selection_executed": false,
+  "provider_or_ntp_requests": 0,
+  "next": "Visible Windows-local V2 INSTALL review creates a NEW decision only. Then separately authorize exact installation. Never reuse the original proposal/decision; selection remains independently gated.",
+  "paper_running": false,
+  "production": "NO_GO",
+  "provider_hold": true,
+  "qd_watch_only": true,
+  "B1_C1_D1_E1_and_21_decisions_preserved": true,
+  "evidence_sha256": {
+    "validate.py": "dee201a745bcc547d8a16986c22eb18f80a9d22484dedfd181b0f4b0871dda7e",
+    "bound.py": "307a92e13e1af1442bb1d2e728a41bf22610485eb76351c3de4937efe6cdbc1f",
+    "focused.xml": "4ea7658e4b21dd4107913e990483918cfe4c6f7063192704173b2a8a6b29bae4",
+    "focused.stdout": "1c9adea542b729537380a49d9755f2751454f0a17a9ffd14c0351210039a7519",
+    "regression-final.xml": "dfab4ca3c58808122ffeb168a8faef1d88b3bb2780e138b8956bfce10f22876c",
+    "regression-final.stdout": "6392eacf93f6d7c4273c13f08cfe6b6150a33b09f3d58f9593aa78db111f2f8b",
+    "regression-final.stderr": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "regression-final-result.json": "e290c4d7e0021d108db4b9b1db5bb4a497a612197226065309320253baefc733",
+    "regression-final-owner.json": "40b04c660bd320aa7dfd56721e777de27346ad4e5931f8639af54b3ee247c2fc"
+  }
+}
 }
