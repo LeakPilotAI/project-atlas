@@ -1,0 +1,90 @@
+{
+  "account_inceptions_authorized": false,
+  "autopaper_or_auto_restart_authorized": false,
+  "financial_source_accepted": false,
+  "historical_user_method_acknowledgment_only": true,
+  "license_authority_created": false,
+  "live_money_authorized": false,
+  "observed_date": "2026-11-18",
+  "original_e1_provider_acceptance_count": 0,
+  "paper_start_authorized": false,
+  "provider_budget_authorized": false,
+  "provider_connection_authorized": false,
+  "provider_request_approved": false,
+  "provider_requests_executed": 0,
+  "providers": [
+    {
+      "documented_historical_api_calls_per_minute": 200,
+      "documented_price_usd_per_month": 0,
+      "documented_product": "ALPACA_TRADING_API_BASIC_IEX_SINGLE_EXCHANGE",
+      "documented_websocket_symbol_limit": 30,
+      "id": "ALPACA_IEX",
+      "official_public_reference_urls": [
+        "https://docs.alpaca.markets/us/docs/about-market-data-api",
+        "https://s3.amazonaws.com/files.alpaca.markets/disclosures/library/TermsAndConditions.pdf",
+        "https://www.iex.io/resources/trading/fee-schedule",
+        "https://www.iex.io/resources/trading/market-data"
+      ],
+      "proposed_atlas_shared_max_requests_per_second": 2,
+      "proposed_atlas_shared_max_symbols": 30,
+      "proposed_atlas_shared_max_ws_connections": 1,
+      "review_required": [
+        "actual enrolled Basic account plan, credentials, correct IEX feed entitlement",
+        "retail/personal noncommercial and IEX non-display automated research rights",
+        "local display, retention, derivation and provider agreement scope",
+        "exact shared request budget and continuously current real source",
+        "single-exchange IEX is NOT SIP/NBBO/full-market quote or guaranteed trade fill"
+      ]
+    },
+    {
+      "documented_default_other_info_weight": 20,
+      "documented_l2book_weight": 2,
+      "documented_max_ws_connections": 10,
+      "documented_product": "HYPERLIQUID_PUBLIC_READONLY_INFO_WS_NOT_ORDERS",
+      "documented_rest_aggregate_weight_per_minute": 1200,
+      "id": "HYPERLIQUID_PUBLIC",
+      "official_public_reference_urls": [
+        "https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api",
+        "https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits",
+        "https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees",
+        "https://hyperliquid.gitbook.io/hyperliquid-docs/trading/funding"
+      ],
+      "proposed_atlas_automatic_retries": 0,
+      "proposed_atlas_shared_max_rest_weight_per_minute": 100,
+      "proposed_atlas_shared_max_ws_connections": 1,
+      "review_required": [
+        "actual application-appropriate permitted local automated use and data retention",
+        "complete source rights, account/location applicability and concurrency ownership",
+        "fresh funding future reference or explicitly reviewed conservative flat-first policy",
+        "independent actual fee and settlement-oracle provenance; no account fee tier inferred",
+        "real book/queue/sequence and source recovery; never exchange/orders"
+      ]
+    },
+    {
+      "documented_product": "SEC_EDGAR_FREE_PUBLIC_RESEARCH_NOT_A_LIVE_PRICE_SOURCE",
+      "documented_sec_fair_access_max_requests_per_second": 10,
+      "id": "QUALITY_DIPS_RESEARCH_PUBLICATION",
+      "official_public_reference_urls": [
+        "https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data",
+        "https://www.sec.gov/search-filings/edgar-application-programming-interfaces"
+      ],
+      "proposed_atlas_automatic_retries": 0,
+      "proposed_atlas_shared_max_requests_per_second": 2,
+      "requires_real_contact_user_agent": true,
+      "review_required": [
+        "real declared contact User-Agent and accepted fair-access behavior",
+        "upstream per-source data/retention/derived ranking rights and price freshness",
+        "live IEX-only quotation is not SEC companyfacts or derived analyst target",
+        "original permitted QD scoring/source issuer and current reader provenance",
+        "Robinhood/Yahoo/yfinance fallback remains disabled"
+      ]
+    }
+  ],
+  "rights_evidence_accepted": false,
+  "schema": "ATLAS_E1_PUBLIC_DOCUMENT_CAPABILITY_REVIEW_ONLY_V1",
+  "signed_settlement_oracle_accepted": false,
+  "status": "UNACCEPTED_DOCUMENTARY_CAPABILITY_INFORMATION_ONLY",
+  "unverified_product_claims_are_operating_permissions": false,
+  "windows_local_operator_decision_created": false,
+  "zero_monthly_paid_subscription_policy_preserved": true
+}
