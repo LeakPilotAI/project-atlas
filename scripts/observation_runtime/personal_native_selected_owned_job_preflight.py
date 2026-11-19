@@ -117,7 +117,8 @@ def validate_selected_two_lane_rosters(qd, perp, *, original_process,
 class RetainedSelectedNativeOwnerPreflight:
     """Hold actual selected installed Job and roots; no financial lease method."""
 
-    def __init__(self, *, child, qd, perp, release_digest, release_admission=None):
+    def __init__(self, *, child, qd, perp, release_digest, release_admission=None,
+                 successor_root_scope=None):
         if (os.name != "nt" or type(child) is not ContainedChild
                 or type(child.api) is not WindowsJobAPI
                 or child.closed or not child.job or not child.process):
@@ -154,7 +155,17 @@ class RetainedSelectedNativeOwnerPreflight:
         self._qd, self._perp = digest(qd), digest(perp)
         self._original_qd, self._original_perp = deepcopy(qd), deepcopy(perp)
         self._roles = roles
-        self._roots = inspect_two_lane_native_roots()
+        if successor_root_scope is not None:
+            from scripts.observation_runtime.personal_successor_native_root_scope import (
+                NativeSelectedSuccessorEpochRoots,
+            )
+            if (type(successor_root_scope) is not NativeSelectedSuccessorEpochRoots
+                    or successor_root_scope.plan['successor_release'] != release
+                    or successor_root_scope.historical_guard.release.artifact_digest
+                       != release_digest):
+                raise ValueError('SELECTED_OWNER_EXACT_SUCCESSOR_ROOT_SCOPE_REQUIRED')
+        self._successor_root_scope = successor_root_scope
+        self._roots = self._inspect_roots()
         self._native_binding = require_exact_r15_preinception_roots(
             qd, perp, self._roots)
         self._phase = "PREINCEPTION"
@@ -165,6 +176,21 @@ class RetainedSelectedNativeOwnerPreflight:
         self._current_operation = None
         self._writer_generation = None
         self.verify_still_running()
+
+    def _inspect_roots(self):
+        # The immutable R26 original uses its original twelve fixed roots.
+        # A future separately selected successor may bind ONLY an exact
+        # native historical-custody-verified NEW epoch scope. Never accept
+        # a caller-supplied function, dictionary, or root override.
+        scoped = getattr(self, '_successor_root_scope', None)
+        if scoped is None:
+            return inspect_two_lane_native_roots()
+        from scripts.observation_runtime.personal_successor_native_root_scope import (
+            NativeSelectedSuccessorEpochRoots,
+        )
+        if type(scoped) is not NativeSelectedSuccessorEpochRoots:
+            raise ValueError('SELECTED_OWNER_SUCCESSOR_ROOT_SCOPE_CHANGED')
+        return scoped.inspect()
 
     def _original_process_identity(self):
         # Get identity through the ACTUAL held process HANDLE; never reopen PID.
@@ -226,7 +252,7 @@ class RetainedSelectedNativeOwnerPreflight:
 
     def verify_still_running(self):
         self._verify_original_job()
-        roots = inspect_two_lane_native_roots()
+        roots = self._inspect_roots()
         if self._phase == "PREINCEPTION":
             if (roots != self._roots
                     or require_exact_r15_preinception_roots(
@@ -469,7 +495,7 @@ class RetainedSelectedNativeOwnerPreflight:
         self._phase = "PREINCEPTION_COORDINATION_PENDING"
         self._verify_original_job()
         self._initial_coordination = (qd_ledger, hl_ledger)
-        roots = inspect_two_lane_native_roots()
+        roots = self._inspect_roots()
         self._require_preinception_coordination_ready(roots)
         self._phase = "PREINCEPTION_COORDINATION_READY"
         self.verify_still_running()
@@ -516,7 +542,7 @@ class RetainedSelectedNativeOwnerPreflight:
                 or digest(q_enroll) != self._qd
                 or digest(h_enroll) != self._perp):
             raise ValueError("SELECTED_OWNER_INCEPTION_NOT_ORIGINAL_ACCOUNT_ROSTERS")
-        roots = inspect_two_lane_native_roots()
+        roots = self._inspect_roots()
         require_exact_r15_populated_root_identities(
             self._original_qd, self._original_perp, roots, self._native_binding)
         # The ACK comes from each original durable publication store, not a

@@ -60,7 +60,7 @@ class NativeOriginalTwoJournalPreinceptionPermit:
                 clock=clock, runtime_id=runtime_id,
                 release_digest=job.release_digest) is not True:
             raise ValueError("PREINCEPTION_SELECTED_ORIGINAL_NTP_REQUIRED")
-        original = inspect_two_lane_native_roots()
+        original = job._inspect_roots()
         if (original["native_root_total"] != 12
                 or original["native_root_ids_verified"] != 12
                 or original["existing_empty_root_namespaces"] != 12
@@ -138,7 +138,7 @@ class NativeOriginalTwoJournalPreinceptionPermit:
         self.clock.require_operational(self.runtime_id)
         # The genuine native file IDs must never change even when the first
         # journal's exclusive immutable files have now been created.
-        roots = inspect_two_lane_native_roots()
+        roots = self.job._inspect_roots()
         require_exact_r15_populated_root_identities(
             self.job._original_qd, self.job._original_perp,
             roots, self.job._native_binding)
@@ -179,7 +179,7 @@ class NativeOriginalTwoJournalPreinceptionPermit:
                     # The writer may have created this lane's first image
                     # between its two authorization checks. Never permit any
                     # other lane or role to change.
-                    count = inspect_two_lane_native_roots()["existing_empty_root_namespaces"]
+                    count = owner.job._inspect_roots()["existing_empty_root_namespaces"]
                     if count not in (12-owner.position, 11-owner.position):
                         return False
                     owner._verify(expected_count=count)

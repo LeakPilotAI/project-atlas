@@ -30,6 +30,12 @@ def model(monkeypatch):
             events.append("job_live")
             return True
 
+        def _inspect_roots(self):
+            from scripts.observation_runtime.personal_existing_native_resource_evidence import (
+                inspect_two_lane_native_roots,
+            )
+            return inspect_two_lane_native_roots()
+
         def require_exact_roster(self, *, qd, perp):
             events.append("job_roster")
             if qd["lane"] != "QUALITY_DIPS" or perp["lane"] != "HYPERLIQUID":

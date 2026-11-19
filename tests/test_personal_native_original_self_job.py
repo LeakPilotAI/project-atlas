@@ -44,7 +44,10 @@ def test_original_self_job_is_not_an_order_start_or_financial_issuer():
 def test_actual_selected_python_can_own_its_original_job_without_account_writes():
     before = inspect_two_lane_native_roots()
     assert before["native_root_total"] == 12
-    assert before["all_twelve_distinct_and_empty"] is True
+    assert before["native_root_ids_verified"] == 12
+    # Native self-Job feasibility is independent of account creation.
+    # Original R26 journals already exist; preserve their exact before/after
+    # namespace rather than requiring virgin pre-journal state or resetting it.
     child_code = (
         "from scripts.observation_runtime.personal_native_original_self_job "
         "import create_original_self_job;"

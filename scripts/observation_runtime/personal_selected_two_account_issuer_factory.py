@@ -87,7 +87,7 @@ def _origination_requirements(
     from scripts.observation_runtime.personal_existing_native_resource_evidence import (
         inspect_two_lane_native_roots,
     )
-    native_roots = inspect_two_lane_native_roots()
+    native_roots = job._inspect_roots()
     if (native_roots["native_root_total"] != 12
             or native_roots["existing_empty_root_namespaces"] != 10
             or native_roots["all_twelve_distinct_and_empty"] is not False):

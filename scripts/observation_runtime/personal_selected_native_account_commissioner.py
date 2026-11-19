@@ -266,7 +266,8 @@ def prepare_original_fresh_two_account_inceptions(
 
 
 def bind_original_native_two_account_commissioner(
-        *, self_job, release, clock, runtime_id, inceptions, admission):
+        *, self_job, release, clock, runtime_id, inceptions, admission,
+        successor_root_scope=None):
     """Stage C->D handoff: bind two REAL native stores without writing either.
 
     Caller owns release/clock/self-Job and must close returned image handles.
@@ -291,6 +292,14 @@ def bind_original_native_two_account_commissioner(
             or type(runtime_id) is not str or not runtime_id
             or type(inceptions) is not dict or set(inceptions) != set(LANES)):
         raise ValueError("PERSONAL_C_D_EXACT_RETAINED_NATIVE_INPUTS_REQUIRED")
+    if successor_root_scope is not None:
+        from scripts.observation_runtime.personal_successor_native_root_scope import (
+            NativeSelectedSuccessorEpochRoots,
+        )
+        if (type(successor_root_scope) is not NativeSelectedSuccessorEpochRoots
+                or successor_root_scope.plan['successor_release']
+                   != release.root.name):
+            raise ValueError('PERSONAL_C_D_GENUINE_SUCCESSOR_ROOT_SCOPE_REQUIRED')
     self_job.verify()
     admission.verify(release_digest=release.artifact_digest)
     require_version_safe_release_digest(
@@ -310,12 +319,20 @@ def bind_original_native_two_account_commissioner(
                     "USD" if lane == "QUALITY_DIPS" else "USDC")
                 or manifest["opened_at"] != inceptions[LANES[0]]["parameters"]["opened_at"]):
             raise ValueError("PERSONAL_C_D_FRESH_TWO_ACCOUNT_MANIFESTS_REQUIRED")
+        if successor_root_scope is not None:
+            scoped=successor_root_scope.plan['lanes'][lane]
+            if (enrollment['epoch'] != scoped['epoch']
+                    or any(enrollment['resources'][role]['path'] != path
+                           for role,path in scoped['roots'].items())):
+                raise ValueError('PERSONAL_C_D_SUCCESSOR_NEW_EPOCH_BINDING_REQUIRED')
         enrollments[lane] = enrollment
         manifests[lane] = manifest
-    owner = self_job.selected_two_account_owner(
-        qd=enrollments[LANES[0]], perp=enrollments[LANES[1]],
-        release_digest=release.artifact_digest, release_admission=admission,
-    )
+    owner_args={'qd':enrollments[LANES[0]], 'perp':enrollments[LANES[1]],
+                'release_digest':release.artifact_digest,
+                'release_admission':admission}
+    if successor_root_scope is not None:
+        owner_args['successor_root_scope']=successor_root_scope
+    owner = self_job.selected_two_account_owner(**owner_args)
     if (type(owner) is not RetainedSelectedNativeOwnerPreflight
             or owner._phase != "PREINCEPTION"
             or owner._release_admission is not admission
@@ -411,10 +428,7 @@ class NativeSelectedPersonalAccountCommissioner:
             release_digest=owner.release_digest,
         ) is not True:
             raise ValueError("PERSONAL_COMMISSION_ONE_SELECTED_NTP_REQUIRED")
-        from scripts.observation_runtime.personal_existing_native_resource_evidence import (
-            inspect_two_lane_native_roots,
-        )
-        roots = inspect_two_lane_native_roots()
+        roots = owner._inspect_roots()
         if (roots["native_root_total"] != 12
                 or roots["all_twelve_distinct_and_empty"] is not True):
             raise ValueError("PERSONAL_COMMISSION_ORIGINAL_ROOTS_NOT_EMPTY")

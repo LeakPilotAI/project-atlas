@@ -130,7 +130,8 @@ class NativeOriginalSelfJob:
             raise ValueError("ORIGINAL_SELF_JOB_NATIVE_KILL_ON_CLOSE_NOT_HELD")
         return True
 
-    def selected_two_account_owner(self, *, qd, perp, release_digest, release_admission=None):
+    def selected_two_account_owner(self, *, qd, perp, release_digest,
+                                   release_admission=None, successor_root_scope=None):
         """Reuses genuine native selected-finance owner admission, never fake."""
         from scripts.observation_runtime.personal_native_financial_release_origin import (
             require_selected_native_origin,
@@ -147,7 +148,8 @@ class NativeOriginalSelfJob:
             raise ValueError('ORIGINAL_SELF_JOB_RETAINED_RELEASE_REQUIRED')
         owner = RetainedSelectedNativeOwnerPreflight(
             child=self.child, qd=qd, perp=perp, release_digest=release_digest,
-            release_admission=release_admission)
+            release_admission=release_admission,
+            successor_root_scope=successor_root_scope)
         if (owner._identity != self.identity
                 or owner.verify_still_running() is not True):
             raise ValueError("ORIGINAL_SELF_JOB_SELECTED_WRITER_PROOF_REFUSED")

@@ -44,6 +44,11 @@ def configured(monkeypatch):
             if not self.alive:
                 raise ValueError("ORIGINAL_WINDOWS_OWNER_GONE")
             return True
+        def _inspect_roots(self):
+            from scripts.observation_runtime.personal_existing_native_resource_evidence import (
+                inspect_two_lane_native_roots,
+            )
+            return inspect_two_lane_native_roots()
         def require_exact_roster(self, *, qd, perp):
             assert qd["lane"]=="QUALITY_DIPS"
             assert perp["lane"]=="HYPERLIQUID"
@@ -150,11 +155,13 @@ def configured_native_c_d(monkeypatch):
             return True
 
         def selected_two_account_owner(self, *, qd, perp, release_digest,
-                                       release_admission):
+                                       release_admission, successor_root_scope=None):
             assert qd["lane"] == "QUALITY_DIPS"
             assert perp["lane"] == "HYPERLIQUID"
             assert release_digest == RELEASE
             assert release_admission is x.owner._release_admission
+            if successor_root_scope is not None:
+                assert successor_root_scope.plan['successor_release'] == RELEASE[:40]
             return x.owner
 
     class NativeImages:
@@ -1334,3 +1341,51 @@ def test_original_stage_c_source_identity_binding_refuses_without_exact_review(
     with pytest.raises(ValueError):
         target.prepare_original_fresh_two_account_inceptions(**x.x.kw)
     assert x.x.roots["all_twelve_distinct_and_empty"] is True
+
+
+@pytest.mark.parametrize("damage", ["none","forged_epoch","foreign_path","fake_scope"])
+def test_c_d_successor_scope_routes_only_distinct_new_epoch_without_reusing_original(
+        monkeypatch, damage):
+    """Synthetic future selected issuer: old hardwired roots are never replaced."""
+    from pathlib import Path
+    from scripts.observation_runtime import personal_successor_native_root_scope
+    x=configured_native_c_d(monkeypatch)
+    x.kwargs["release"].root=Path("D:/AtlasRuntime/releases")/(RELEASE[:40])
+    plan={"successor_release":RELEASE[:40],"lanes":{}}
+    roles=("source","projection","report","control","coordination","custody")
+    for lane in LANES:
+        epoch="new-"+lane.lower()+"-selected"
+        roots={}
+        for role in roles:
+            roots[role]=r"D:\AtlasPaper\REVIEWED_SUCCESSOR_ONLY"+"\\"+lane+"\\"+role
+        plan["lanes"][lane]={"epoch":epoch,"roots":roots}
+        e=x.candidates[lane]["native_enrollment"]
+        e["epoch"]=epoch
+        e["resources"]={
+            role:{"path":path,"native_id":[j+1,7,9]}
+            for j,(role,path) in enumerate(roots.items())
+        }
+    class RootScope:
+        def __init__(self):
+            self.plan=plan
+    monkeypatch.setattr(personal_successor_native_root_scope,
+                        "NativeSelectedSuccessorEpochRoots",RootScope)
+    scoped=RootScope()
+    if damage=="fake_scope":
+        scoped=object()
+    elif damage=="forged_epoch":
+        x.candidates["QUALITY_DIPS"]["native_enrollment"]["epoch"]="old-original-epoch"
+    elif damage=="foreign_path":
+        x.candidates["HYPERLIQUID"]["native_enrollment"]["resources"]["source"]["path"]=(
+            r"D:\AtlasPaper\QualityDips\OLD_R26_ORIGINAL")
+    x.kwargs["successor_root_scope"]=scoped
+    if damage=="none":
+        pair,images=target.bind_original_native_two_account_commissioner(**x.kwargs)
+        assert pair.phase=="PREINCEPTION_READY"
+        assert len(images)==2
+        for item in images.values():
+            item.close()
+    else:
+        with pytest.raises((ValueError,AttributeError)):
+            target.bind_original_native_two_account_commissioner(**x.kwargs)
+        assert x.created==[]

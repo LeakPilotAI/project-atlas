@@ -40,6 +40,9 @@ def system(monkeypatch):
         def verify_still_running(self):
             return True
 
+        def _inspect_roots(self):
+            return target.inspect_two_lane_native_roots()
+
         def _verify_original_job(self):
             return True
 
