@@ -3,7 +3,8 @@
 Exactly 6 PUBLIC HTTPS POST /info observations: metaAndAssetCtxs, two
 predictedFundings samples >=10 seconds apart, and BTC/ETH/SOL l2Book.
 The original HL native book admission parser validates the three books.
-Stale HlPerp nextFundingTime is a terminal refusal, NEVER inferred/corrected.
+HlPerp.nextFundingTime is retained as an observed hour label, NOT settlement.
+The local next UTC boundary is separate and never a provider funding oracle.
 No credentials, accounts, financial sources, publisher, PAPER or live authority.
 Network acquisition and original Windows operator consent are SEPARATE.
 """
@@ -98,14 +99,25 @@ def _forecast(body, *, observed_ms, uncertainty_ms):
             raise ValueError("HL_R24_ORIGINAL_HLPERP_RATE_REFUSED") from None
         if not rate.is_finite() or abs(rate) > Decimal("0.04"):
             raise ValueError("HL_R24_ORIGINAL_HLPERP_RATE_REFUSED")
-        next_utc_hour = (observed_ms // HOUR_MS + 1) * HOUR_MS
+        # Genuine November 18 observations reported the running-hour start
+        # in a field named nextFundingTime. The field name does not prove
+        # when funding settles; retain the ORIGINAL value as an hour label.
+        # Independently compute a future UTC cutoff ONLY for the conservative
+        # flat-before-hour policy, not as a provider-issued settlement time.
+        running_hour = (observed_ms // HOUR_MS) * HOUR_MS
         published = value["nextFundingTime"]
-        if (published != next_utc_hour
-                or published <= observed_ms + uncertainty_ms
-                or published % HOUR_MS != 0):
-            raise ValueError("HL_R24_ORIGINAL_HLPERP_NEXT_FUNDING_STALE_OR_INCONSISTENT")
-        found[coin] = {"next_funding_ms":published,
-                       "rate":str(rate)}
+        if (published != running_hour
+                or not 0 <= observed_ms - published < HOUR_MS
+                or published % HOUR_MS != 0
+                or observed_ms + uncertainty_ms >= running_hour + HOUR_MS):
+            raise ValueError("HL_R24_ORIGINAL_HLPERP_REPORTED_HOUR_CONFLICT")
+        found[coin] = {
+            "reported_field": "HlPerp.nextFundingTime",
+            "reported_hour_ms": published,
+            "independent_next_utc_boundary_ms": running_hour + HOUR_MS,
+            "rate": str(rate),
+            "verified_provider_settlement_time_ms": None,
+        }
     if set(found) != set(SYMBOLS):
         raise ValueError("HL_R24_ORIGINAL_HLPERP_THREE_REQUIRED")
     return found
@@ -133,12 +145,15 @@ def inspect_exact_six(*, frames, ntp_uncertainty_ms):
     second = _forecast(packets[5],
                        observed_ms=frames[5]["observed_ms"],
                        uncertainty_ms=ntp_uncertainty_ms)
-    expected_hours = {first[s]["next_funding_ms"] for s in SYMBOLS}
-    if (first != second or len(expected_hours) != 1):
-        # Rates can change between samples; only same clock-hour required.
-        if any(first[s]["next_funding_ms"] != second[s]["next_funding_ms"]
-               for s in SYMBOLS):
-            raise ValueError("HL_R24_PROVIDER_FUNDING_HOUR_CHANGED_OR_CONFLICTED")
+    expected_hours = {first[s]["reported_hour_ms"] for s in SYMBOLS}
+    if len(expected_hours) != 1 or any(
+            first[s]["reported_hour_ms"] != second[s]["reported_hour_ms"]
+            or first[s]["independent_next_utc_boundary_ms"] !=
+               second[s]["independent_next_utc_boundary_ms"]
+            for s in SYMBOLS):
+        # A two-sample review must not silently bridge an hour change.
+        # Rate fluctuations themselves are allowed and remain nonfinancial.
+        raise ValueError("HL_R24_PROVIDER_REPORTED_HOUR_CHANGED_OR_CONFLICTED")
     # The original native public execution parser validates the actual
     # metadata+3 contemporaneous public orderbook envelopes, without orders.
     books = {}
@@ -163,6 +178,8 @@ def inspect_exact_six(*, frames, ntp_uncertainty_ms):
         "reserved_max_info_weight":MAX_WEIGHT,
         "max_verified_ntp_uncertainty_ms":ntp_uncertainty_ms,
         "first_funding":first, "second_funding":second,
+        "provider_hour_field_used_as_settlement_oracle":False,
+        "independent_hour_boundary_is_local_guard_only":True,
         "books":books,
         "all_raw_receipts_sha256":[r["raw_sha256"] for r in frames],
         "two_forecast_samples_separated_at_least_ten_seconds":True,

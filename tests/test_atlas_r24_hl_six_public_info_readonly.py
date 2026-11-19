@@ -9,6 +9,7 @@ from scripts.observation_runtime import atlas_r24_hl_six_public_info_readonly as
 
 T = 1_800_000_000_000
 HOUR = (T // hl.HOUR_MS + 1) * hl.HOUR_MS
+RUNNING = HOUR - hl.HOUR_MS
 
 
 def frame(kind, coin, t, observed, value):
@@ -27,7 +28,7 @@ def data():
        [{"markPx":"300", "oraclePx":"300", "funding":"0.0001"}
         for _ in symbols],
     ]
-    def forecasts(rate="0.00001",nexttime=HOUR):
+    def forecasts(rate="0.00001",nexttime=RUNNING):
         return [[coin,[["HlPerp",{"fundingRate":rate,
                                 "nextFundingTime":nexttime}],
                        ["BinPerp",{"fundingRate":"0.0003",
@@ -58,8 +59,12 @@ def test_original_six_public_bytes_and_two_forecasts_stay_nonfinancial():
     assert result["real_public_info_requests"]==6
     assert result["reserved_max_info_weight"]==66
     assert set(result["books"])==set(hl.SYMBOLS)
-    assert all(result["first_funding"][s]["next_funding_ms"]==HOUR
+    assert all(result["first_funding"][s]["reported_hour_ms"]==RUNNING
+               and result["first_funding"][s]["independent_next_utc_boundary_ms"]==HOUR
+               and result["first_funding"][s]["verified_provider_settlement_time_ms"] is None
                for s in hl.SYMBOLS)
+    assert result["provider_hour_field_used_as_settlement_oracle"] is False
+    assert result["independent_hour_boundary_is_local_guard_only"] is True
     assert result["second_funding"]["BTC"]["rate"]=="0.000011"
     assert result["historical_settlement_oracle_accepted"] is False
     assert result["account_fee_tier_accepted"] is False
@@ -126,11 +131,11 @@ def test_actual_hl_forecast_hours_no_stale_or_fake_funding(damage):
     j=1 if damage not in ("second_stale","second_hour_changed") else 5
     payload=json.loads(rows[j]["raw_json"])
     if damage=="past_hour" or damage=="second_stale":
-        payload[0][1][0][1]["nextFundingTime"]=HOUR-hl.HOUR_MS
+        payload[0][1][0][1]["nextFundingTime"]=RUNNING-hl.HOUR_MS
     elif damage=="future_hour_plus_one" or damage=="second_hour_changed":
-        payload[0][1][0][1]["nextFundingTime"]=HOUR+hl.HOUR_MS
+        payload[0][1][0][1]["nextFundingTime"]=HOUR
     elif damage=="unequal_btc":
-        payload[0][1][0][1]["nextFundingTime"]=HOUR-500
+        payload[0][1][0][1]["nextFundingTime"]=RUNNING-500
     elif damage=="missing_coin":
         payload.pop()
     elif damage=="duplicate_coin":
@@ -144,7 +149,7 @@ def test_actual_hl_forecast_hours_no_stale_or_fake_funding(damage):
     elif damage=="rate_bad":
         payload[0][1][0][1]["fundingRate"]="0.05"
     elif damage=="stamp_float":
-        payload[0][1][0][1]["nextFundingTime"]=float(HOUR)
+        payload[0][1][0][1]["nextFundingTime"]=float(RUNNING)
     elif damage=="wrong_next_field":
         payload[0][1][0][1]["another"]="ignored"
     elif damage=="rate_number":
@@ -203,9 +208,8 @@ def test_injected_synthetic_funding_time_no_rights_grant():
 
 
 def test_original_optional_provider_hourly_interval_is_accepted_but_not_a_grant():
-    # Actual November 18 public HlPerp replies included an extra
-    # fundingIntervalHours: 1. Correct schema handling still MUST demand
-    # a genuinely future hour, independent of the field's mere presence.
+    # Genuine public HlPerp replies included fundingIntervalHours: 1.
+    # This does not promote its running-hour label to a settlement oracle.
     rows=data()
     for i in (1,5):
         payload=json.loads(rows[i]["raw_json"])
@@ -246,9 +250,9 @@ def test_original_provider_interval_does_not_override_past_funding_timestamp():
     rows=data()
     payload=json.loads(rows[1]["raw_json"])
     payload[0][1][0][1]["fundingIntervalHours"]=1
-    payload[0][1][0][1]["nextFundingTime"]=HOUR-hl.HOUR_MS
+    payload[0][1][0][1]["nextFundingTime"]=RUNNING-hl.HOUR_MS
     replace_raw(rows[1],payload)
-    with pytest.raises(ValueError,match="HL_R24_ORIGINAL_HLPERP_NEXT_FUNDING_STALE_OR_INCONSISTENT"):
+    with pytest.raises(ValueError,match="HL_R24_ORIGINAL_HLPERP_REPORTED_HOUR_CONFLICT"):
         hl.inspect_exact_six(frames=rows,ntp_uncertainty_ms=139)
 
 
