@@ -213,3 +213,57 @@ def test_secondary_receipt_cannot_claim_financial_or_original_authority(damage):
         receipt["not_authorized"] = True
     with pytest.raises(ValueError):
         research.review_syndicated_receipt(receipt, now=now)
+
+
+
+def test_avgo_current_target_after_arrow_is_not_previous_target_or_source_grant():
+    """The live AVGO public listing uses revised '$old → $new' analyst targets."""
+    now = datetime(2026, 11, 19, 15, 30, tzinfo=UTC)
+
+    def revision(analyst, firm, old, new, when):
+        source = row(analyst, firm, new, when)
+        return source.replace(
+            "<td>$" + str(new) + "</td>",
+            "<td>$" + str(old) + " → $" + str(new) + "</td>",
+        )
+
+    raw = fixture(
+        revision("James Schneider", "Goldman Sachs", 540, 460, "Nov 18, 2026"),
+        revision("Joshua Buchalter", "TD Cowen", 475, 425, "Nov 16, 2026"),
+        revision("Mike Harrison", "Rothschild & Co Redburn", 595, 398, "Nov 13, 2026"),
+        row("Thomas O'Malley", "Barclays", 500, "Oct 28, 2026"),
+        row("John Vinh", "KeyBanc", 575, "Oct 27, 2026"),
+        title="Broadcom (AVGO) Analyst Ratings",
+    )
+    data = research.parse_public_targets(raw, symbol="AVGO", retrieved_at=now)
+    assert data["individual_firm_count"] == 5
+    by_firm = {a["firm"]: a["target_usd"] for a in data["individually_attributed_targets"]}
+    assert by_firm == {
+        "Goldman Sachs": "460", "TD Cowen": "425",
+        "Rothschild & Co Redburn": "398",
+        "Barclays": "500", "KeyBanc": "575",
+    }
+    verified = research.review_syndicated_receipt(data, now=now)
+    assert verified["named_firms_in_syndicated_listing"] == 5
+    assert verified["admissible_independent_valuation_sources"] == 0
+    assert verified["independently_authenticated_original_issuers"] == 0
+    assert verified["operational_source_accepted"] is False
+    assert verified["paper_fill_authorized"] is False
+    assert verified["live_order_authorized"] is False
+
+
+@pytest.mark.parametrize("bad", [
+    "$540 → n/a", "$540 → $460 → $400", "$0 → $460",
+    "$540 → $0", "$540 → $460 trailing", "$-20 → $460",
+    "$540 ↔ $460", "$540 → $1,000", "$540 → $460.999",
+])
+def test_malformed_target_revision_does_not_create_third_independent_firm(bad):
+    raw = fixture(
+        row("Thomas Blakey", "Cantor Fitzgerald", 630),
+        row("Brent Thill", "Jefferies", 650),
+        row("James Schneider", "Goldman Sachs", 540).replace(
+            "<td>$540</td>", "<td>" + bad + "</td>",
+        ),
+    )
+    with pytest.raises(ValueError, match="THREE_DATED_DISTINCT_FIRMS_REQUIRED"):
+        research.parse_public_targets(raw, symbol="MSFT", retrieved_at=NOW)

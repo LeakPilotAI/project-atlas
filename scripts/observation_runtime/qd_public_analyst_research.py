@@ -20,6 +20,11 @@ MAX_ROWS = 30
 MAX_AGE_DAYS = 90
 SYMBOL = re.compile(r"[A-Z]{1,8}\Z")
 TARGET = re.compile(r"\$([0-9]{1,6}(?:\.[0-9]{1,2})?)\Z")
+# Dated analyst target revisions commonly display BOTH the previous and
+# current targets. Only the value AFTER the arrow is the new analyst target.
+TARGET_REVISION = re.compile(
+    r"\$([0-9]{1,6}(?:\.[0-9]{1,2})?)\s*(?:→|->)\s*\$([0-9]{1,6}(?:\.[0-9]{1,2})?)\Z"
+)
 FIRM = re.compile(r"[A-Za-z][A-Za-z0-9 .,&'/-]{1,79}\Z")
 ANALYST = re.compile(r"[A-Za-z][A-Za-z .,'-]{2,79}\Z")
 SCHEMA = "ATLAS_QD_PUBLIC_SYNDICATED_FIRM_TARGET_RESEARCH_V1"
@@ -80,11 +85,17 @@ def parse_public_targets(raw, *, symbol, retrieved_at):
         if len(cells) != 8 or type(analyst) is not str:
             continue
         firm, target, date_label = cells[1], cells[5], cells[7]
+        current = TARGET.fullmatch(target)
+        revision = TARGET_REVISION.fullmatch(target)
         if not (ANALYST.fullmatch(analyst) and FIRM.fullmatch(firm)
-                and TARGET.fullmatch(target) and len(by_firm) <= MAX_ROWS):
+                and (current or revision) and len(by_firm) <= MAX_ROWS):
             continue
         try:
-            estimate = Decimal(TARGET.fullmatch(target).group(1))
+            # Never mistake a revised FROM value for the current target.
+            # A malformed, zero, or nonfinite prior value refuses that row.
+            if revision and not 0 < Decimal(revision.group(1)) < 1000000:
+                continue
+            estimate = Decimal(current.group(1) if current else revision.group(2))
             day = datetime.strptime(date_label, "%b %d, %Y").replace(tzinfo=UTC)
         except (InvalidOperation, ValueError):
             continue
