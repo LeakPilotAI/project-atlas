@@ -21,7 +21,7 @@ from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
 class NativePersonalOperatorAuthority:
     def __init__(self, *, policy=None, enrollment=None, reader=None, clock=None,
                  runtime_id=None, clock_profile="WINDOWS_TIME_OPERATOR_CLOCK_V4",
-                 accounts=None):
+                 accounts=None, postinception_owner=None, qd_enrollment=None):
         from scripts.observation_runtime.personal_paper_activation import (
             NativePersonalActivationReader,
         )
@@ -75,6 +75,51 @@ class NativePersonalOperatorAuthority:
                            for v in bound_accounts.values())):
                 raise ValueError('PERSONAL_NATIVE_OPERATOR_TWO_ACCOUNT_BINDING_REQUIRED')
         self.accounts = strict(body(bound_accounts))
+        # The original HL authority was intentionally PREINCEPTION-ONLY.
+        # Source data action G is impossible without a separately constructed
+        # postinception authority tied to BOTH acknowledged FS1/FS3 accounts.
+        # This never changes the rules for a preinception authority.
+        self._postinception_owner = None
+        self._postinception_qd = None
+        self._postinception_ports = None
+        if postinception_owner is not None or qd_enrollment is not None:
+            from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
+                RetainedSelectedNativeOwnerPreflight,
+            )
+            from scripts.observation_runtime.personal_writer_generation import (
+                NativeRecoveredFinancialWriterOwner,
+            )
+            from scripts.observation_runtime.personal_version_safe_release_clock import (
+                NativeVersionSafePaperOperatorClock,
+                PROFILE as VERSION_SAFE_NTP_PROFILE,
+                require_version_safe_release_digest,
+            )
+            if (self._lane != 'HYPERLIQUID'
+                    or type(postinception_owner) not in (
+                        RetainedSelectedNativeOwnerPreflight,
+                        NativeRecoveredFinancialWriterOwner,
+                    )
+                    or type(qd_enrollment) is not dict
+                    or type(clock) is not NativeVersionSafePaperOperatorClock
+                    or clock_profile != VERSION_SAFE_NTP_PROFILE
+                    or postinception_owner._phase not in (
+                        'INITIAL_READBACK_ONLY', 'CURRENT_READBACK_ONLY')
+                    or postinception_owner.release_digest
+                    != self.enrollment['release_digest']
+                    or self.accounts.get('QUALITY_DIPS')
+                    != digest(validate_enrollment(qd_enrollment))
+                    or self.accounts.get('HYPERLIQUID') != digest(self.enrollment)
+                    or postinception_owner.require_exact_roster(
+                        qd=qd_enrollment, perp=self.enrollment) is not True
+                    or require_version_safe_release_digest(
+                        clock=clock, runtime_id=runtime_id,
+                        release_digest=postinception_owner.release_digest)
+                    is not True
+                    or postinception_owner.verify_still_running() is not True):
+                raise ValueError('PERSONAL_HL_G_TWO_ORIGINAL_FINANCIAL_ACCOUNTS_REQUIRED')
+            self._postinception_owner = postinception_owner
+            self._postinception_qd = strict(body(qd_enrollment))
+            self._postinception_ports = (postinception_owner, clock)
         self.reader, self.clock, self.runtime_id = reader, clock, runtime_id
         self.clock_profile = clock_profile
         self.native = native_primitives()
@@ -94,9 +139,25 @@ class NativePersonalOperatorAuthority:
         self.revoked = True
 
     def activation(self, action):
-        if (getattr(self, '_lane', 'QUALITY_DIPS') == 'HYPERLIQUID'
-                and action not in ('READ_ONLY', 'INITIALIZE_SIMULATED_ACCOUNTS')):
-            raise ValueError('PERSONAL_HL_FIRST_INCEPTION_ONLY_NO_PAPER_OPERATIONS')
+        if getattr(self, '_lane', 'QUALITY_DIPS') == 'HYPERLIQUID':
+            if self._postinception_owner is None:
+                if action not in ('READ_ONLY', 'INITIALIZE_SIMULATED_ACCOUNTS'):
+                    raise ValueError('PERSONAL_HL_FIRST_INCEPTION_ONLY_NO_PAPER_OPERATIONS')
+            else:
+                # This narrow G-stage owner supports source activation ONLY.
+                # No INITIALIZE replay, AUTO_PAPER, SHUTDOWN, or live orders.
+                if action not in ('READ_ONLY', 'CONNECT_APPROVED_DATA'):
+                    raise ValueError('PERSONAL_HL_POSTINCEPTION_DATA_ONLY_NO_PAPER')
+                owner = self._postinception_owner
+                if (self._postinception_ports != (owner, self.clock)
+                        or owner._phase not in (
+                            'INITIAL_READBACK_ONLY', 'CURRENT_READBACK_ONLY')
+                        or owner.release_digest != self.enrollment['release_digest']
+                        or owner.require_exact_roster(
+                            qd=self._postinception_qd, perp=self.enrollment)
+                        is not True
+                        or owner.verify_still_running() is not True):
+                    raise ValueError('PERSONAL_HL_G_ORIGINAL_TWO_ACCOUNT_OWNER_LOST')
         if (self.revoked or getattr(self, '_lane', 'QUALITY_DIPS') != (
                 'HYPERLIQUID' if self.enrollment.get('schema') ==
                 'PERP_AUTO_NATIVE_ENROLLMENT_V1' else 'QUALITY_DIPS')

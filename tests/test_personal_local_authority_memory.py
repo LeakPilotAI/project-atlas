@@ -278,3 +278,142 @@ def test_native_drain_reads_durable_pending_state_without_publication(monkeypatc
         assert images.history == before
     finally:
         s.port.close()
+
+
+def _hl_postinception_fixture(monkeypatch, *, phase="CURRENT_READBACK_ONLY"):
+    """Disposable role doubles: never genuine account ACKs or source rights."""
+    from test_personal_paper_inception_memory import system
+    from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
+        RetainedSelectedNativeOwnerPreflight,
+    )
+    from scripts.observation_runtime import personal_version_safe_release_clock as clock_module
+
+    s = authority(monkeypatch)
+    hl = system("HYPERLIQUID")
+    qd = copy.deepcopy(s.f.e)
+    assert qd["release_digest"] == hl.n["release_digest"]
+    pair = {"QUALITY_DIPS": digest(qd), "HYPERLIQUID": digest(hl.n)}
+    s.value["accounts"] = copy.deepcopy(pair)
+    s.value["release_digest"] = hl.n["release_digest"]
+    s.value["actions"] = ["READ_ONLY", "CONNECT_APPROVED_DATA"]
+    original = object.__new__(RetainedSelectedNativeOwnerPreflight)
+    original._phase = phase
+    original.release_digest = hl.n["release_digest"]
+    admitted = [True]
+    monkeypatch.setattr(
+        RetainedSelectedNativeOwnerPreflight, "require_exact_roster",
+        lambda self, *, qd, perp: (
+            admitted[0] and qd == s.f.e and perp == hl.n),
+    )
+    monkeypatch.setattr(
+        RetainedSelectedNativeOwnerPreflight, "verify_still_running",
+        lambda self: admitted[0],
+    )
+    # Construct exact native class identities with inert time/Windows doubles.
+    monkeypatch.setattr(clock_module, "NativeVersionSafePaperOperatorClock",
+                        LocalWindowsClock)
+    monkeypatch.setattr(clock_module, "require_version_safe_release_digest",
+                        lambda **_: True)
+    port = authority_module.NativePersonalOperatorAuthority(
+        policy=s.i.p, enrollment=hl.n, reader=s.reader, clock=s.clock,
+        runtime_id="SYNTHETIC-RUNTIME", accounts=pair,
+        clock_profile=clock_module.PROFILE,
+        postinception_owner=original, qd_enrollment=qd,
+    )
+    return SimpleNamespace(**locals(), i=s.i, reader=s.reader,
+                           clock=s.clock, now=s.now, value=s.value)
+
+
+@pytest.mark.parametrize("phase", [
+    "INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY",
+])
+def test_hl_original_postinception_data_only_source_activation(monkeypatch, phase):
+    s = _hl_postinception_fixture(monkeypatch, phase=phase)
+    try:
+        record = s.port.activation("CONNECT_APPROVED_DATA")
+        assert record["actions"] == ["READ_ONLY", "CONNECT_APPROVED_DATA"]
+        assert record["accounts"] == s.pair
+        assert s.port.activation("READ_ONLY") == record
+        for action in (
+            "INITIALIZE_SIMULATED_ACCOUNTS", "AUTO_PAPER",
+            "SHUTDOWN_FLATTEN", "EMERGENCY_STOP", "LIVE_ORDER",
+        ):
+            with pytest.raises(ValueError, match="POSTINCEPTION_DATA_ONLY"):
+                s.port.activation(action)
+        assert s.port._postinception_owner is s.original
+        assert s.port._lane == "HYPERLIQUID"
+    finally:
+        s.hl.ledger.db.close()
+
+
+def test_hl_first_inception_operator_cannot_take_data_or_financial_actions(
+        monkeypatch):
+    s = _hl_postinception_fixture(monkeypatch)
+    try:
+        original = authority_module.NativePersonalOperatorAuthority(
+            policy=s.i.p, enrollment=s.hl.n,
+            reader=s.reader, clock=s.clock,
+            runtime_id="SYNTHETIC-RUNTIME",
+            accounts=s.pair,
+        )
+        for action in ("CONNECT_APPROVED_DATA", "AUTO_PAPER",
+                       "SHUTDOWN_FLATTEN"):
+            with pytest.raises(ValueError, match="FIRST_INCEPTION_ONLY"):
+                original.activation(action)
+    finally:
+        s.hl.ledger.db.close()
+
+
+@pytest.mark.parametrize("damage", [
+    "lost_job", "wrong_phase", "changed_release", "roster_lost",
+    "clock_changed", "expired_record", "wrong_scope",
+])
+def test_hl_data_activation_requires_original_acknowledged_two_account_owner(
+        monkeypatch, damage):
+    s = _hl_postinception_fixture(monkeypatch)
+    try:
+        if damage in ("lost_job", "roster_lost"):
+            s.admitted[0] = False
+        elif damage == "wrong_phase":
+            s.original._phase = "PREINCEPTION"
+        elif damage == "changed_release":
+            s.original.release_digest = "f" * 64
+        elif damage == "clock_changed":
+            s.port.clock = object()
+        elif damage == "expired_record":
+            s.now[0] = s.value["expires_at"]
+        else:
+            s.value["actions"] = ["READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"]
+        with pytest.raises((ValueError,AttributeError,TypeError)):
+            s.port.activation("CONNECT_APPROVED_DATA")
+    finally:
+        s.hl.ledger.db.close()
+
+
+@pytest.mark.parametrize("damage", [
+    "preinception", "missing_pair", "wrong_qd", "wrong_release",
+])
+def test_hl_postinception_factory_rejects_unverified_original_account_admission(
+        monkeypatch, damage):
+    s = _hl_postinception_fixture(monkeypatch)
+    try:
+        kwargs = {
+            "policy": s.i.p, "enrollment": s.hl.n, "reader": s.reader,
+            "clock": s.clock, "runtime_id": "SYNTHETIC-RUNTIME",
+            "accounts": copy.deepcopy(s.pair),
+            "clock_profile": s.clock_module.PROFILE,
+            "postinception_owner": s.original,
+            "qd_enrollment": copy.deepcopy(s.qd),
+        }
+        if damage == "preinception":
+            s.original._phase = "PREINCEPTION"
+        elif damage == "missing_pair":
+            kwargs["accounts"].pop("QUALITY_DIPS")
+        elif damage == "wrong_qd":
+            kwargs["qd_enrollment"]["account_id"] = "FOREIGN"
+        else:
+            s.original.release_digest = "f" * 64
+        with pytest.raises(ValueError):
+            authority_module.NativePersonalOperatorAuthority(**kwargs)
+    finally:
+        s.hl.ledger.db.close()

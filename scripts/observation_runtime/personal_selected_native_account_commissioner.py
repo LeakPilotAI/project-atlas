@@ -407,6 +407,8 @@ class NativeSelectedPersonalAccountCommissioner:
         self._state = "PREINCEPTION_READY"
         self._activation_binding = None
         self._initial_activation_root = None
+        self._post_data_result = None
+        self._post_data_operator_bound = False
 
     @property
     def phase(self):
@@ -765,5 +767,93 @@ class NativeSelectedPersonalAccountCommissioner:
                 or result.get("paper_start_authorized") is not False
                 or result.get("live_trading_authorized") is not False):
             raise ValueError("PERSONAL_COMMISSION_ORIGINAL_DATA_ACTIVATION_UNVERIFIED")
+        self._post_data_result = strict(body(result))
         self._state = "POSTINCEPTION_DATA_ACTIVATION_ACKNOWLEDGED"
         return strict(body(result))
+
+    def bind_verified_postinception_data_operators_once(
+            self, *, personal_policy):
+        """Stage G->H: construct the TWO original approved data-only operators.
+
+        The Hyperliquid native authority cannot accept CONNECT_APPROVED_DATA
+        in its original first-inception mode. Construct a NEW one instead,
+        bound to genuine ACK'd QD+HL accounts, the retained selected owner,
+        original native G activation, and the exact same version-safe UTC.
+        No fresh approval, provider connection, root/image write, PAPER
+        account mutation or financial Start is performed by this method.
+        """
+        from app.services.personal_paper_runtime import validate_policy
+        from scripts.observation_runtime.personal_local_authority import (
+            NativePersonalOperatorAuthority,
+        )
+        self._require("POSTINCEPTION_DATA_ACTIVATION_ACKNOWLEDGED")
+        if self._post_data_operator_bound:
+            raise ValueError("PERSONAL_G_H_DATA_OPERATOR_PORT_ALREADY_BOUND")
+        data = self._post_data_result
+        if (type(data) is not dict
+                or data.get("schema") != "ATLAS_PERSONAL_ACTIVATION_PUBLICATION_V1"
+                or data.get("status") != "NATIVE_VERIFIED"
+                or type(data.get("root")) is not str
+                or type(data.get("native_root")) is not list
+                or len(data["native_root"]) != 3
+                or any(type(v) is not int or v < 0
+                       for v in data["native_root"])
+                or type(data.get("binding")) is not dict
+                or data.get("paper_start_authorized") is not False
+                or data.get("live_trading_authorized") is not False
+                or self.owner._phase not in (
+                    "INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY")
+                or self.owner.require_exact_roster(
+                    qd=self.enrollments["QUALITY_DIPS"],
+                    perp=self.enrollments["HYPERLIQUID"]) is not True):
+            raise ValueError("PERSONAL_G_H_EXACT_ORIGINAL_POSTINIT_DATA_ACK_REQUIRED")
+        self._post_data_operator_bound = True
+        ports = {}
+        try:
+            reader = NativePersonalActivationReader(
+                root=data["root"], native_root=data["native_root"],
+                binding=data["binding"],
+            )
+            policy = validate_policy(personal_policy)
+            for lane in LANES:
+                args = {
+                    "policy": policy, "enrollment": self.enrollments[lane],
+                    "reader": reader, "clock": self.clock,
+                    "runtime_id": self.runtime_id,
+                    "clock_profile": CLOCK_PROFILE, "accounts": self._digest,
+                }
+                if lane == "HYPERLIQUID":
+                    args.update(
+                        postinception_owner=self.owner,
+                        qd_enrollment=self.enrollments["QUALITY_DIPS"],
+                    )
+                ports[lane] = NativePersonalOperatorAuthority(**args)
+                record = ports[lane].activation("CONNECT_APPROVED_DATA")
+                if (type(record) is not dict
+                        or type(record.get("actions")) is not list
+                        or len(record["actions"]) != 2
+                        or set(record["actions"])
+                        != {"READ_ONLY", "CONNECT_APPROVED_DATA"}
+                        or record.get("origin") != "LOCAL_OPERATOR"
+                        or record.get("release_digest") != self.owner.release_digest
+                        or record.get("accounts") != self._digest):
+                    raise ValueError(
+                        "PERSONAL_G_H_SEPARATELY_APPROVED_SOURCE_ONLY_SCOPE_REQUIRED"
+                    )
+            self.clock.require_operational(self.runtime_id)
+            if (self.owner.verify_still_running() is not True
+                    or ports["QUALITY_DIPS"].reader is not reader
+                    or ports["HYPERLIQUID"].reader is not reader):
+                raise ValueError("PERSONAL_G_H_NATIVE_OWNER_OR_ACTIVATION_LOST")
+            return {
+                "schema": "ATLAS_PERSONAL_G_H_ORIGINAL_SOURCE_OPERATOR_PORTS_V1",
+                "reader": reader,
+                "operators": ports,
+                "source_provider_rights_accepted": False,
+                "financial_paper_start_authorized": False,
+                "live_trading_authorized": False,
+            }
+        except BaseException:
+            for operator in reversed(tuple(ports.values())):
+                operator.revoke()
+            raise

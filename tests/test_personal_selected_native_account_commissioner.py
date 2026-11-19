@@ -1103,3 +1103,119 @@ def test_stage_c_never_promotes_unaccepted_historic_draft_without_exact_scope(
         monkeypatch.setattr(draft,"inspect",wrong_root)
     with pytest.raises((ValueError,AssertionError,TypeError)):
         target.prepare_original_fresh_two_account_inceptions(**kw)
+
+
+def _g_h_original_source_ports_fixture(monkeypatch):
+    """Synthetic G->H composition only; original financial roots untouched."""
+    x = configured(monkeypatch)
+    activate_to_two_accounts(x)
+    stub_original_data_operator_record(monkeypatch, x)
+    original = x.obj.publish_postinception_data_activation_once(**postinit(x))
+    assert original["status"] == "NATIVE_VERIFIED"
+
+    from app.services import personal_paper_runtime
+    from scripts.observation_runtime import personal_local_authority
+    created = []
+    record_actions = [["READ_ONLY", "CONNECT_APPROVED_DATA"]]
+    failed_lane = [None]
+    monkeypatch.setattr(personal_paper_runtime, "validate_policy",
+                        lambda policy: policy)
+
+    class OriginalDataOperator:
+        def __init__(self, **kw):
+            self.reader = kw["reader"]
+            self.enrollment = kw["enrollment"]
+            self.clock = kw["clock"]
+            self.revoked = False
+            self.lane = self.enrollment["lane"]
+            assert kw["policy"] == {"synthetic": "G_POSTINCEPTION_DATA_ONLY"}
+            assert type(self.reader) is x.Reader
+            assert self.reader.root == postinit(x)["root"]
+            assert self.reader.native_root == [1, 2, 3]
+            assert self.reader.binding == {
+                "id": [1, 2, 3], "sha256": "b" * 64,
+            }
+            assert self.clock is x.clock
+            assert kw["runtime_id"] == "EXACT_LOCAL_PROCESS"
+            assert kw["clock_profile"] == target.CLOCK_PROFILE
+            assert kw["accounts"] == x.obj._digest
+            if self.lane == "HYPERLIQUID":
+                assert kw["postinception_owner"] is x.owner
+                assert kw["qd_enrollment"] == x.enrollments["QUALITY_DIPS"]
+            else:
+                assert "postinception_owner" not in kw
+                assert "qd_enrollment" not in kw
+            if failed_lane[0] == self.lane:
+                raise ValueError("SYNTHETIC_OPERATOR_G_BIND_FAILURE")
+            created.append(self)
+
+        def activation(self, action):
+            assert action == "CONNECT_APPROVED_DATA"
+            return {
+                "actions": list(record_actions[0]), "origin": "LOCAL_OPERATOR",
+                "release_digest": RELEASE, "accounts": x.obj._digest,
+            }
+
+        def revoke(self):
+            self.revoked = True
+
+    monkeypatch.setattr(personal_local_authority,
+                        "NativePersonalOperatorAuthority", OriginalDataOperator)
+    return SimpleNamespace(**locals())
+
+
+def test_original_g_h_binds_both_data_operators_from_one_actual_native_g_ack(
+        monkeypatch):
+    s = _g_h_original_source_ports_fixture(monkeypatch)
+    result = s.x.obj.bind_verified_postinception_data_operators_once(
+        personal_policy={"synthetic": "G_POSTINCEPTION_DATA_ONLY"},
+    )
+    assert result["schema"] == (
+        "ATLAS_PERSONAL_G_H_ORIGINAL_SOURCE_OPERATOR_PORTS_V1")
+    assert result["source_provider_rights_accepted"] is False
+    assert result["financial_paper_start_authorized"] is False
+    assert result["live_trading_authorized"] is False
+    assert set(result["operators"]) == set(LANES)
+    assert result["operators"]["QUALITY_DIPS"].reader is result["reader"]
+    assert result["operators"]["HYPERLIQUID"].reader is result["reader"]
+    assert [o.lane for o in s.created] == list(LANES)
+    assert s.x.obj.phase == "POSTINCEPTION_DATA_ACTIVATION_ACKNOWLEDGED"
+    assert s.x.events.count("accounts_publish") == 1
+    assert s.x.events.count("activation_publish") == 2
+    with pytest.raises(ValueError, match="ALREADY_BOUND"):
+        s.x.obj.bind_verified_postinception_data_operators_once(
+            personal_policy={"synthetic": "G_POSTINCEPTION_DATA_ONLY"},
+        )
+    for operator in result["operators"].values():
+        operator.revoke()
+
+
+@pytest.mark.parametrize("fault", [
+    "postinit_native_root_tampered", "postinit_binding_missing",
+    "operator_hl_refused", "operator_scope_auto_paper",
+    "lost_native_job", "reentered_preinception",
+])
+def test_original_g_h_refuses_before_fake_financial_permission_or_replay(
+        monkeypatch, fault):
+    s = _g_h_original_source_ports_fixture(monkeypatch)
+    x = s.x
+    if fault == "postinit_native_root_tampered":
+        x.obj._post_data_result["native_root"] = [-1, 2, 3]
+    elif fault == "postinit_binding_missing":
+        x.obj._post_data_result["binding"] = None
+    elif fault == "operator_hl_refused":
+        s.failed_lane[0] = "HYPERLIQUID"
+    elif fault == "operator_scope_auto_paper":
+        s.record_actions[0] = ["READ_ONLY", "AUTO_PAPER"]
+    elif fault == "lost_native_job":
+        x.owner.alive = False
+    else:
+        x.owner._phase = "PREINCEPTION"
+    with pytest.raises((ValueError,AssertionError)):
+        x.obj.bind_verified_postinception_data_operators_once(
+            personal_policy={"synthetic": "G_POSTINCEPTION_DATA_ONLY"},
+        )
+    assert x.events.count("accounts_publish") == 1
+    assert x.events.count("activation_publish") == 2
+    assert not any(not o.revoked for o in s.created)
+    assert x.obj.phase == "POSTINCEPTION_DATA_ACTIVATION_ACKNOWLEDGED"
