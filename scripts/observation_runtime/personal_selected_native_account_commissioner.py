@@ -211,6 +211,120 @@ def prepare_original_fresh_two_account_inceptions(
     return strict(body(result)), admission
 
 
+def bind_original_native_two_account_commissioner(
+        *, self_job, release, clock, runtime_id, inceptions, admission):
+    """Stage C->D handoff: bind two REAL native stores without writing either.
+
+    Caller owns release/clock/self-Job and must close returned image handles.
+    Requires separately reviewed fresh C results and retained native admission.
+    No default account, local approval, journal image, provider or PAPER grant.
+    """
+    from pathlib import Path
+    from scripts.observation_runtime.personal_coordination_store import (
+        NativePersonalCoordinationImages,
+    )
+    from scripts.observation_runtime.personal_paper_inception import (
+        validate_personal_inception,
+    )
+    from scripts.observation_runtime.personal_original_preinception_journal_permit import (
+        MAX_MANIFEST_OPENING_AGE_SECONDS,
+    )
+    if (type(self_job) is not NativeOriginalSelfJob
+            or type(release) is not NativePersonalReleaseIdentity
+            or type(clock) is not NativeVersionSafePaperOperatorClock
+            or type(admission) is not NativeFinancialReleaseAdmission
+            or admission.release is not release
+            or type(runtime_id) is not str or not runtime_id
+            or type(inceptions) is not dict or set(inceptions) != set(LANES)):
+        raise ValueError("PERSONAL_C_D_EXACT_RETAINED_NATIVE_INPUTS_REQUIRED")
+    self_job.verify()
+    admission.verify(release_digest=release.artifact_digest)
+    require_version_safe_release_digest(
+        clock=clock, runtime_id=runtime_id,
+        release_digest=release.artifact_digest,
+    )
+    enrollments, manifests = {}, {}
+    for lane in LANES:
+        entry = inceptions[lane]
+        actual_lane, enrollment, manifest = validate_personal_inception(entry)
+        if (actual_lane != lane
+                or manifest["release"] != release.artifact_digest
+                or enrollment["release_digest"] != release.artifact_digest
+                or enrollment["inception_digest"] != digest(manifest)
+                or manifest["opening_cash"] != "1000"
+                or manifest["currency"] != (
+                    "USD" if lane == "QUALITY_DIPS" else "USDC")
+                or manifest["opened_at"] != inceptions[LANES[0]]["parameters"]["opened_at"]):
+            raise ValueError("PERSONAL_C_D_FRESH_TWO_ACCOUNT_MANIFESTS_REQUIRED")
+        enrollments[lane] = enrollment
+        manifests[lane] = manifest
+    owner = self_job.selected_two_account_owner(
+        qd=enrollments[LANES[0]], perp=enrollments[LANES[1]],
+        release_digest=release.artifact_digest, release_admission=admission,
+    )
+    if (type(owner) is not RetainedSelectedNativeOwnerPreflight
+            or owner._phase != "PREINCEPTION"
+            or owner._release_admission is not admission
+            or owner.verify_still_running() is not True):
+        raise ValueError("PERSONAL_C_D_ONE_RETAINED_ORIGINAL_OWNER_REQUIRED")
+    images = {}
+    try:
+        ledgers = {}
+        for lane in LANES:
+            resource = enrollments[lane]["resources"]["coordination"]
+            images[lane] = NativePersonalCoordinationImages(
+                root=resource["path"], native_root=resource["native_id"],
+                enrollment_digest=digest(enrollments[lane]),
+            )
+            ledgers[lane] = PersonalNativeCoordination(
+                manifest=manifests[lane], images=images[lane],
+                path=Path(resource["path"]) / "coordination.image",
+            )
+        commissioner = NativeSelectedPersonalAccountCommissioner(
+            owner=owner, release=release, clock=clock, ledgers=ledgers,
+            enrollments=enrollments, runtime_id=runtime_id,
+        )
+        now = clock()
+        opened = manifests[LANES[0]]["opened_at"]
+        if (type(now) is not int
+                or not 0 <= now - opened <= MAX_MANIFEST_OPENING_AGE_SECONDS
+                or commissioner.phase != "PREINCEPTION_READY"
+                or owner.verify_still_running() is not True):
+            raise ValueError("PERSONAL_C_D_ORIGINAL_MANIFEST_FRESHNESS_EXPIRED")
+        return commissioner, images
+    except BaseException:
+        # Only our own read/mutex handles are released. Never delete or reset
+        # any original native root; no financial journal was created here.
+        for item in reversed(tuple(images.values())):
+            try:
+                item.close()
+            except BaseException:
+                pass
+        raise
+
+
+def prepare_and_bind_reviewed_original_native_accounts(
+        *, self_job, release, clock, runtime_id, personal_policy,
+        operator_acceptance_ids, approved_unstamped_manifest_digests):
+    """Production C->D admission in ONE selected original process.
+
+    Only a reviewed original account/policy permit may enter the existing
+    Stage C issuer. The resulting fresh account candidates are immediately
+    bound to the real existing native stores. Separate exact local journal
+    approval and the original later stages remain mandatory.
+    """
+    inceptions, admission = prepare_original_fresh_two_account_inceptions(
+        self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,
+        personal_policy=personal_policy,
+        operator_acceptance_ids=operator_acceptance_ids,
+        approved_unstamped_manifest_digests=approved_unstamped_manifest_digests,
+    )
+    return bind_original_native_two_account_commissioner(
+        self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,
+        inceptions=inceptions, admission=admission,
+    )
+
+
 class NativeSelectedPersonalAccountCommissioner:
     """No automatic approval; only coordinates existing installed native issuers.
 

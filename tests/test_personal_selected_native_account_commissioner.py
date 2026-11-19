@@ -135,6 +135,162 @@ def configured(monkeypatch):
     )
 
 
+def configured_native_c_d(monkeypatch):
+    """Disposable typed-port rehearsal; never accesses real financial roots."""
+    x = configured(monkeypatch)
+    now = [1794489500]
+    created = []
+    failing = [None]
+    monkeypatch.setattr(type(x.clock), "__call__", lambda self: now[0])
+
+    class OriginalSelfJob:
+        def verify(self):
+            return True
+
+        def selected_two_account_owner(self, *, qd, perp, release_digest,
+                                       release_admission):
+            assert qd["lane"] == "QUALITY_DIPS"
+            assert perp["lane"] == "HYPERLIQUID"
+            assert release_digest == RELEASE
+            assert release_admission is x.owner._release_admission
+            return x.owner
+
+    class NativeImages:
+        def __init__(self, *, root, native_root, enrollment_digest):
+            if failing[0] == root:
+                raise OSError("DISPOSABLE_SECOND_NATIVE_HANDLE_REFUSAL")
+            self.root = root
+            self.root_id = native_root
+            self.enrollment = enrollment_digest
+            self.closed = False
+            created.append(self)
+
+        def close(self):
+            self.closed = True
+
+    class NativeLedger:
+        def __init__(self, *, manifest, images, path):
+            self.manifest = manifest
+            self.images = images
+            self.path = path
+
+    monkeypatch.setattr(target, "NativeOriginalSelfJob", OriginalSelfJob)
+    monkeypatch.setattr(target, "PersonalNativeCoordination", NativeLedger)
+    from scripts.observation_runtime import personal_coordination_store, personal_paper_inception
+    monkeypatch.setattr(personal_coordination_store, "NativePersonalCoordinationImages", NativeImages)
+    monkeypatch.setattr(
+        personal_paper_inception, "validate_personal_inception",
+        lambda item: (item["lane"], item["native_enrollment"], item["parameters"]),
+    )
+    candidates = {}
+    for lane in LANES:
+        manifest = {
+            "release": RELEASE, "opened_at": 1794489500,
+            "opening_cash": "1000",
+            "currency": "USD" if lane == "QUALITY_DIPS" else "USDC",
+        }
+        enrollment = {
+            "lane": lane, "release_digest": RELEASE,
+            "inception_digest": target.digest(manifest),
+            "resources": {"coordination": {
+                "path": r"D:\AtlasPaper\DISPOSABLE_ONLY" + chr(92) + lane,
+                "native_id": [1, 2, 3] if lane == "QUALITY_DIPS" else [4, 5, 6],
+            }},
+        }
+        candidates[lane] = {
+            "lane": lane, "native_enrollment": enrollment, "parameters": manifest,
+        }
+    kwargs = {
+        "self_job": OriginalSelfJob(), "release": x.release,
+        "clock": x.clock, "runtime_id": "EXACT_LOCAL_PROCESS",
+        "inceptions": candidates, "admission": x.owner._release_admission,
+    }
+    return SimpleNamespace(kwargs=kwargs, created=created, now=now,
+                           failing=failing, candidates=candidates)
+
+
+def test_c_d_binds_two_real_native_port_types_without_initialization(monkeypatch):
+    x = configured_native_c_d(monkeypatch)
+    commissioner, images = target.bind_original_native_two_account_commissioner(
+        **x.kwargs)
+    assert commissioner.phase == "PREINCEPTION_READY"
+    assert list(images) == list(LANES)
+    assert len(x.created) == 2
+    assert all(not image.closed for image in images.values())
+    assert commissioner.owner._phase == "PREINCEPTION"
+    for image in images.values():
+        image.close()
+    assert all(image.closed for image in x.created)
+
+
+@pytest.mark.parametrize("case", [
+    "stale_manifest", "second_handle_failure", "foreign_inception",
+    "different_opening", "wrong_currency",
+])
+def test_c_d_refuses_invalid_native_or_expired_handoff_and_closes_ports(
+        monkeypatch, case):
+    x = configured_native_c_d(monkeypatch)
+    if case == "stale_manifest":
+        x.now[0] += 6
+    elif case == "second_handle_failure":
+        x.failing[0] = x.candidates["HYPERLIQUID"][
+            "native_enrollment"]["resources"]["coordination"]["path"]
+    elif case == "foreign_inception":
+        x.candidates["HYPERLIQUID"]["native_enrollment"][
+            "inception_digest"] = "f" * 64
+    elif case == "different_opening":
+        x.candidates["HYPERLIQUID"]["parameters"]["opened_at"] += 1
+    else:
+        x.candidates["HYPERLIQUID"]["parameters"]["currency"] = "USD"
+    with pytest.raises((ValueError, OSError)):
+        target.bind_original_native_two_account_commissioner(**x.kwargs)
+    assert all(image.closed for image in x.created)
+
+
+def test_one_original_c_d_production_call_passes_review_and_owns_native_ports(
+        monkeypatch):
+    x = configured_native_c_d(monkeypatch)
+    approvals = {
+        "personal_policy": {"preaccepted": "SYNTHETIC_TEST_ONLY"},
+        "operator_acceptance_ids": {
+            "QUALITY_DIPS": "TEST_QD", "HYPERLIQUID": "TEST_HL",
+        },
+        "approved_unstamped_manifest_digests": {
+            "QUALITY_DIPS": "a" * 64, "HYPERLIQUID": "b" * 64,
+        },
+    }
+    calls = []
+
+    def reviewed_original_issuer(**kwargs):
+        calls.append(kwargs)
+        return x.candidates, x.kwargs["admission"]
+
+    monkeypatch.setattr(
+        target, "prepare_original_fresh_two_account_inceptions",
+        reviewed_original_issuer,
+    )
+    commissioner, images = target.prepare_and_bind_reviewed_original_native_accounts(
+        self_job=x.kwargs["self_job"], release=x.kwargs["release"],
+        clock=x.kwargs["clock"], runtime_id=x.kwargs["runtime_id"],
+        **approvals,
+    )
+    assert len(calls) == 1
+    assert all(calls[0][key] == value for key, value in approvals.items())
+    assert commissioner.phase == "PREINCEPTION_READY"
+    assert list(images) == list(LANES)
+    assert len(x.created) == 2
+    for image in images.values():
+        image.close()
+
+
+def test_c_d_never_accepts_unowned_release_or_unaccepted_job(monkeypatch):
+    x = configured_native_c_d(monkeypatch)
+    x.kwargs["self_job"] = object()
+    with pytest.raises(ValueError, match="EXACT_RETAINED_NATIVE_INPUTS"):
+        target.bind_original_native_two_account_commissioner(**x.kwargs)
+    assert x.created == []
+
+
 def first(scope=None):
     return {"operator_scope":scope or {"human_exact_scope":"JOURNALS_ONLY"}}
 
