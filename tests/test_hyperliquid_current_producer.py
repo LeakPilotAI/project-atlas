@@ -886,3 +886,158 @@ def test_operational_publisher_will_not_accept_disposable_source_port(monkeypatc
     f = fixture(monkeypatch)
     with pytest.raises(ValueError, match="EXPLICIT_BOUND_SOURCE_COMPONENTS"):
         f.reopen("OPERATIONAL")
+
+
+@pytest.mark.asyncio
+async def test_original_owned_source_refresh_uses_verified_precise_utc(
+        monkeypatch):
+    from types import SimpleNamespace
+    f,obj=_inert_original_input(monkeypatch)
+    obj.adapter._client=object()
+    obj.adapter._connected=True
+    stamps=[]
+    class OriginalClock:
+        def __call__(self):
+            return f.clock()
+        def sample_precise(self):
+            return {"schema":"ATLAS_INDEPENDENT_PRECISE_UTC_V1",
+                    "utc_ns":STAMP * 1_000_000_000,
+                    "uncertainty_ms":139}
+        def verify_precise(self,sample):
+            stamps.append(sample["utc_ns"])
+            return True
+    obj.clock=OriginalClock()
+    async def source_cycle(*,clock_ms):
+        assert clock_ms()==STAMP*1000
+        assert f.archive.current()["revision"]==0
+        return f.adapter.paper_source_snapshot()
+    monkeypatch.setattr(f.adapter,"refresh_paper_core_public_inputs",
+                        source_cycle)
+    packet=await obj.refresh_and_read_current()
+    assert packet["schema"]=="HL_CURRENT_RESEARCH_INPUT_V1"
+    assert packet["input_revision"]==1
+    assert packet["maker_windows"]=={}
+    assert packet["settlements"]=={}
+    assert packet["provenance"]["independent_provider_rights_granted"] is False
+    assert stamps==[STAMP*1_000_000_000]
+    assert f.archive.current()["revision"]==0
+
+
+@pytest.mark.asyncio
+async def test_original_source_precise_clock_refusal_before_any_public_reply(
+        monkeypatch):
+    from types import SimpleNamespace
+    f,obj=_inert_original_input(monkeypatch)
+    obj.adapter._client=object()
+    obj.adapter._connected=True
+    calls=[]
+    class WrongClock:
+        def __call__(self):return f.clock()
+        def sample_precise(self):
+            return {"utc_ns":STAMP*1_000_000_000,"uncertainty_ms":1001}
+        def verify_precise(self,_):return True
+    obj.clock=WrongClock()
+    async def public(*,clock_ms):
+        calls.append("attempted")
+        clock_ms()
+        return {}
+    monkeypatch.setattr(f.adapter,"refresh_paper_core_public_inputs",public)
+    with pytest.raises(ValueError,match="SUBSECOND_UTC_REQUIRED"):
+        await obj.refresh_and_read_current()
+    assert calls==["attempted"]
+    assert f.archive.current()["revision"]==0
+
+
+@pytest.mark.asyncio
+async def test_original_source_acquire_wrapper_refuses_disposable_before_any_provider(
+        monkeypatch):
+    f=fixture(monkeypatch)
+    calls=[]
+    async def should_not_acquire():
+        calls.append("called")
+        raise ValueError("DO_NOT_GET_HERE")
+    f.source.refresh_and_read_current=should_not_acquire
+    with pytest.raises(ValueError,match="OPERATIONAL_ACQUISITION_OWNER_REQUIRED"):
+        await f.owner.acquire_and_publish_once()
+    assert calls==[]
+    assert f.archive.current()["revision"]==0
+
+
+@pytest.mark.asyncio
+async def test_original_source_acquisition_publishes_only_through_existing_authority(
+        monkeypatch):
+    from app.services.hyperliquid_current_producer import (
+        NativeOriginalHyperliquidCurrentInput,
+    )
+    f=fixture(monkeypatch)
+    owner=f.owner
+    original=object.__new__(NativeOriginalHyperliquidCurrentInput)
+    events=[]
+    async def acquire():
+        events.append("genuine_source_input_requested")
+        return {"revision":1,"financial_authority":False}
+    original.refresh_and_read_current=acquire
+    original.read_current=lambda:{"revision":1,"financial_authority":False}
+    owner.source=original
+    owner.execution_domain="OPERATIONAL"
+    # The real source identity/clock are separately tested above.
+    # This is only a synthetic ordering test, NOT source acceptance.
+    owner._verify=lambda:events.append("component_verified")
+    def independently_authorized_publisher():
+        events.append("original_authenticated_publisher")
+        return {"schema":"TEST_SOURCE_ACK"}
+    owner.publish_current=independently_authorized_publisher
+    result=await owner.acquire_and_publish_once()
+    assert result=={"schema":"TEST_SOURCE_ACK"}
+    assert events==["component_verified","genuine_source_input_requested",
+                    "component_verified","original_authenticated_publisher"]
+    assert f.archive.current()["revision"]==0
+
+
+@pytest.mark.asyncio
+async def test_original_acquisition_never_promotes_unaccepted_public_source(
+        monkeypatch):
+    from app.services.hyperliquid_current_producer import (
+        NativeOriginalHyperliquidCurrentInput,
+    )
+    f=fixture(monkeypatch)
+    owner=f.owner
+    source=object.__new__(NativeOriginalHyperliquidCurrentInput)
+    async def acquire():
+        return {"revision":1}
+    source.refresh_and_read_current=acquire
+    source.read_current=lambda:{"revision":1}
+    owner.source=source
+    owner.execution_domain="OPERATIONAL"
+    owner._verify=lambda:None
+    def refuse():
+        raise ValueError("INDEPENDENT_SOURCE_ISSUER_RIGHTS_UNACCEPTED")
+    owner.publish_current=refuse
+    with pytest.raises(ValueError,match="RIGHTS_UNACCEPTED"):
+        await owner.acquire_and_publish_once()
+    assert owner._acquisition_lock.locked() is False
+    assert f.archive.current()["revision"]==0
+
+
+@pytest.mark.asyncio
+async def test_original_acquisition_concurrent_call_is_refused_before_any_source(
+        monkeypatch):
+    from app.services.hyperliquid_current_producer import (
+        NativeOriginalHyperliquidCurrentInput,
+    )
+    f=fixture(monkeypatch)
+    owner=f.owner
+    source=object.__new__(NativeOriginalHyperliquidCurrentInput)
+    async def should_not_acquire():
+        raise ValueError("SHOULD_NOT_RUN_DURING_LOCK")
+    source.refresh_and_read_current=should_not_acquire
+    owner.source=source
+    owner.execution_domain="OPERATIONAL"
+    owner._verify=lambda:None
+    assert owner._acquisition_lock.acquire(blocking=False) is True
+    try:
+        with pytest.raises(ValueError,match="ACQUISITION_ALREADY_ACTIVE"):
+            await owner.acquire_and_publish_once()
+    finally:
+        owner._acquisition_lock.release()
+    assert f.archive.current()["revision"]==0

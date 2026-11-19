@@ -369,6 +369,39 @@ class NativeOriginalHyperliquidCurrentInput:
         self._last = identity, strict(body(candidate))
         return strict(body(candidate))
 
+    async def refresh_and_read_current(self):
+        """Acquire one complete provider cut with the ORIGINAL native UTC.
+
+        Does not connect an unapproved provider, install a request budget,
+        authorize or publish a source, or schedule repeated acquisition.
+        The selected Windows owner and source authority remain separate.
+        """
+        self._verify()
+        adapter = self.adapter
+        if adapter._client is None or adapter._connected is not True:
+            raise ValueError("HL_ORIGINAL_PRECONNECTED_GATED_READER_REQUIRED")
+
+        def original_utc_millis():
+            sample = self.clock.sample_precise()
+            if (type(sample) is not dict
+                    or self.clock.verify_precise(sample) is not True
+                    or type(sample.get("utc_ns")) is not int
+                    or type(sample.get("uncertainty_ms")) is not int
+                    or not 0 <= sample["uncertainty_ms"] <= 1000):
+                raise ValueError("HL_ORIGINAL_SELECTED_SUBSECOND_UTC_REQUIRED")
+            return sample["utc_ns"] // 1_000_000
+
+        original = await adapter.refresh_paper_core_public_inputs(
+            clock_ms=original_utc_millis)
+        self._verify()
+        if (adapter is not self.adapter
+                or adapter.paper_source_snapshot() != original):
+            raise ValueError("HL_ORIGINAL_SOURCE_PROVIDER_MOVED_AFTER_ACQUISITION")
+        current = self.read_current()
+        if current["cache"] != original:
+            raise ValueError("HL_ORIGINAL_SOURCE_PROVIDER_CHANGED_BEFORE_CURRENT")
+        return current
+
 
 class HyperliquidCurrentProducer:
     def __init__(
@@ -443,6 +476,8 @@ class HyperliquidCurrentProducer:
         )
         self._publication = self.publication
         self._lock, self._failed = Lock(), False
+        self._acquisition_lock = Lock()
+        self._original_acquisition_lock = self._acquisition_lock
 
     def _now(self):
         now = self.clock()
@@ -453,6 +488,7 @@ class HyperliquidCurrentProducer:
     def _verify(self):
         if (
             self._failed
+            or self._acquisition_lock is not self._original_acquisition_lock
             or body([self.enrollment, self.parameters, self.execution_domain]) != self._scope
             or any(
                 a is not b
@@ -672,6 +708,32 @@ class HyperliquidCurrentProducer:
         if self.read_cut() != packet:
             raise ValueError("HL_RESEARCH_COMPLETION_CUT_CHANGED")
         return result
+
+    async def acquire_and_publish_once(self):
+        """One original gated public cycle -> independent source acceptance.
+
+        The acquisition is read-only; publish_current still enforces the exact
+        input-issuer, archive, approval and CAS checks. This does NOT install
+        a recurring task or start a PAPER financial session.
+        """
+        self._verify()
+        if (self.execution_domain != "OPERATIONAL"
+                or type(self.source) is not NativeOriginalHyperliquidCurrentInput):
+            raise ValueError("HL_ORIGINAL_OPERATIONAL_ACQUISITION_OWNER_REQUIRED")
+        if not self._acquisition_lock.acquire(blocking=False):
+            raise ValueError("HL_ORIGINAL_ACQUISITION_ALREADY_ACTIVE")
+        try:
+            before = self.source
+            current = await before.refresh_and_read_current()
+            self._verify()
+            if (before is not self.source
+                    or body(before.read_current()) != body(current)):
+                raise ValueError("HL_ORIGINAL_ACQUIRED_SOURCE_CUT_CHANGED")
+            # No independent source rights? publish_current REFUSES before
+            # writing. This wrapper deliberately issues no approval record.
+            return self.publish_current()
+        finally:
+            self._acquisition_lock.release()
 
     def publish_current(self):
         self._verify()

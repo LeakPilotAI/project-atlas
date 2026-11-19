@@ -424,6 +424,106 @@ class HyperliquidAdapter:
         self._cache_paper('funding', symbol, {'parsed': value, 'rows': data, 'started_ms': started})
         return value
 
+    async def refresh_paper_core_public_inputs(self, *, clock_ms):
+        """One gated, bounded BTC/ETH/SOL market + book + 5m-candle cycle.
+
+        Existing HTTP request gate accounts for every provider request before
+        transport. This is source acquisition only: no financial publisher,
+        wallet, authentication grant, automatic retry or order endpoint.
+        A partial or expired cycle closes the adapter and invalidates its
+        whole cache, so old books cannot pair with newly refreshed markets.
+        """
+        from datetime import datetime
+
+        if (not callable(clock_ms) or self._client is None
+                or self._connected is not True):
+            raise ValueError("HL_ORIGINAL_PUBLIC_GATED_EXISTING_CLIENT_REQUIRED")
+        hyperliquid_gate_registry.require_gate()
+        initial_client = self._client
+        started = clock_ms()
+        if type(started) is not int or started <= 0:
+            raise ValueError("HL_ORIGINAL_PUBLIC_EXPLICIT_UTC_MS_REQUIRED")
+        self._connected = False  # No downstream reader accepts a partial cut.
+        tasks = []
+        symbols = ("BTC", "ETH", "SOL")
+        try:
+            tickers = await self.get_all_tickers()
+            if (type(tickers) is not list
+                    or {ticker.symbol for ticker in tickers
+                        if type(ticker) is Ticker and ticker.symbol in symbols}
+                    != set(symbols)):
+                raise ValueError("HL_ORIGINAL_PUBLIC_CORE_MARKETS_MISSING")
+            # At most six bounded children: each book consumes two genuine
+            # HTTP requests, each candle consumes one (10 total including
+            # the initial public ticker request).
+            for symbol in symbols:
+                tasks.append(asyncio.create_task(
+                    self.paper_execution_observation(
+                        symbol, clock_ms=clock_ms)))
+                tasks.append(asyncio.create_task(
+                    self.get_candles(
+                        symbol, interval="5m", lookback=96,
+                        clock_ms=clock_ms)))
+            try:
+                results = await asyncio.gather(*tasks)
+            finally:
+                for task in tasks:
+                    if not task.done():
+                        task.cancel()
+                await asyncio.gather(*tasks, return_exceptions=True)
+            ended = clock_ms()
+            cache = self.paper_source_snapshot()
+            facts = cache["facts"]
+            if (self._client is not initial_client
+                    or type(ended) is not int
+                    or not 0 <= ended-started <= 5000
+                    or type(facts.get("markets")) is not list
+                    or len(facts["markets"]) != 3
+                    or {row["symbol"] for row in facts["markets"]}
+                       != set(symbols)
+                    or set(facts["books"]) != set(symbols)
+                    or set(facts["candles"]) != set(symbols)
+                    or set(facts["funding"]) - set(symbols)
+                    or set(facts["trades"]) - set(symbols)):
+                raise ValueError("HL_ORIGINAL_PUBLIC_CYCLE_INCOMPLETE_OR_EXPIRED")
+            for index, symbol in enumerate(symbols):
+                execution, candle_rows = results[index*2:index*2+2]
+                book = facts["books"][symbol]
+                bar = facts["candles"][symbol]
+                market = next(row for row in facts["markets"]
+                              if row["symbol"] == symbol)
+                stamp = datetime.fromisoformat(market["timestamp"])
+                if (type(execution) is not dict
+                        or execution.get("market_book_validated") is not True
+                        or execution.get("financial_execution_authorized")
+                           is not False
+                        or execution != book["parsed"]
+                        or type(candle_rows) is not list
+                        or not 0 < len(candle_rows) <= 96
+                        or bar.get("interval") != "5m"
+                        or bar.get("rows") != candle_rows
+                        or stamp.tzinfo is None
+                        or stamp.utcoffset() is None
+                        or not 0 <= ended/1000 - stamp.timestamp() <= 5
+                        or not 0 <= ended - execution["book_timestamp_ms"] <= 5000
+                        or not 0 <= ended - execution["request_started_ms"] <= 5000
+                        or not 0 <= ended - bar["observed_at_ms"] <= 300000
+                        or type(candle_rows[-1].get("time")) is not int
+                        or not 0 <= ended-candle_rows[-1]["time"] <= 305000):
+                    raise ValueError("HL_ORIGINAL_PUBLIC_COIN_EVIDENCE_UNVERIFIED")
+            self._connected = True
+            fresh = self.paper_source_snapshot()
+            if (fresh["facts"] != facts or fresh["connected"] is not True
+                    or self._client is not initial_client):
+                raise ValueError("HL_ORIGINAL_PUBLIC_CYCLE_CHANGED_BEFORE_READ")
+            return fresh
+        except BaseException:
+            # Cancellation, one partial response, a spent gate or clock drift
+            # never permits the last successful cut to remain apparently live.
+            self._connected = False
+            await self.close()
+            raise
+
     async def refresh_universe(self) -> list[str]:
         data = await self._post({"type": "meta"})
         universe = data.get("universe") if isinstance(data, dict) else None
@@ -579,6 +679,8 @@ class HyperliquidAdapter:
         symbol: str,
         interval: str = "15m",
         lookback: int = 96,
+        *,
+        clock_ms=None,
     ) -> list[dict[str, Any]]:
         # Approximate start from interval minutes
         mins = {
@@ -594,7 +696,14 @@ class HyperliquidAdapter:
             "12h": 720,
             "1d": 1440,
         }.get(interval, 15)
-        end_ms = int(time.time() * 1000)
+        # The operational current-source cycle has an independently verified
+        # UTC millisecond clock. Using Windows time.time() here can run ahead
+        # of that authority and falsely classify a fresh candle as future.
+        # Existing manual/research callers retain their historical default.
+        end_ms = (clock_ms() if clock_ms is not None
+                  else int(time.time() * 1000))
+        if type(end_ms) is not int or end_ms <= 0:
+            raise ValueError("HL_ORIGINAL_CANDLE_UTC_MS_REQUIRED")
         start_ms = end_ms - lookback * mins * 60 * 1000
 
         data = await self._post(
