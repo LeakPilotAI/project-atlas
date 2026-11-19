@@ -176,6 +176,42 @@ def _paper_execution_observation(symbol, metadata, book, started, observed):
             "startup_authorized": False}
 
 
+def _verified_compact_paper_metadata(symbol, metadata, book, started, observed,
+                                     original_parsed):
+    """Lossless-for-execution projection of the original public metadata.
+
+    Hyperliquid's full metaAndAssetCtxs reply can exceed 70 KiB. Retaining
+    that entire response inside EACH BTC/ETH/SOL book makes the original
+    128-KiB native current-source cut impossible. Keep only the exact original
+    coin's instrument/context and unchanged shared margin tables. Re-run
+    the existing strict parser to prove the accepted economic book facts
+    are identical; never manufacture a provider field or settlement oracle.
+    """
+    if (type(metadata) is not list or len(metadata) != 2
+            or type(metadata[0]) is not dict
+            or type(metadata[1]) is not list
+            or type(metadata[0].get("universe")) is not list
+            or len(metadata[0]["universe"]) != len(metadata[1])):
+        raise ValueError("HL_COMPACT_ORIGINAL_METADATA_REQUIRED")
+    indices = [index for index, entry in enumerate(metadata[0]["universe"])
+               if type(entry) is dict and entry.get("name") == symbol]
+    if len(indices) != 1:
+        raise ValueError("HL_COMPACT_UNAMBIGUOUS_ORIGINAL_INSTRUMENT_REQUIRED")
+    index = indices[0]
+    universe = metadata[0]
+    narrow = {"universe": [deepcopy(universe["universe"][index])]}
+    if "marginTables" in universe:
+        narrow["marginTables"] = deepcopy(universe["marginTables"])
+    if "collateralToken" in universe:
+        narrow["collateralToken"] = deepcopy(universe["collateralToken"])
+    retained = [narrow, [deepcopy(metadata[1][index])]]
+    parsed_again = _paper_execution_observation(
+        symbol, retained, book, started, observed)
+    if parsed_again != original_parsed:
+        raise ValueError("HL_COMPACT_METADATA_CHANGED_ORIGINAL_EXECUTION_FACTS")
+    return retained
+
+
 def candle_window(data, lookback):
     """Decode original provider bars and select the requested newest window.
 
@@ -362,8 +398,13 @@ class HyperliquidAdapter:
                 if not task.done():
                     task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
-        value = _paper_execution_observation(symbol, metadata, book, started, clock_ms())
-        self._cache_paper('books', symbol, {'parsed': value, 'metadata': metadata, 'book': book})
+        observed = clock_ms()
+        value = _paper_execution_observation(symbol, metadata, book, started, observed)
+        compact = _verified_compact_paper_metadata(
+            symbol, metadata, book, started, observed, value)
+        self._cache_paper('books', symbol, {
+            'parsed': value, 'metadata': compact, 'book': book,
+        })
         return value
 
     async def paper_funding_observation(self, symbol: str, start_ms: int, end_ms: int, *, clock_ms) -> dict[str, Any]:

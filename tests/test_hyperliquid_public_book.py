@@ -98,6 +98,14 @@ async def test_fixed_info_requests_preserve_public_observation_boundary(monkeypa
     result = await adapter.paper_execution_observation("BTC", clock_ms=lambda: 100001)
     assert calls == [{"type": "metaAndAssetCtxs"}, {"type": "l2Book", "coin": "BTC"}]
     assert result["bid_size"] == "1.25" and not result["financial_execution_authorized"]
+    cache = adapter.paper_source_snapshot()
+    retained = cache["facts"]["books"]["BTC"]
+    assert retained["parsed"] == result
+    assert retained["metadata"][0]["universe"] == [
+        {"name": "BTC", "szDecimals": 5, "maxLeverage": 50, "marginTableId": 56}]
+    assert _paper_execution_observation(
+        "BTC", retained["metadata"], retained["book"],
+        result["request_started_ms"], result["observed_at_ms"]) == result
 
 
 @pytest.mark.parametrize("damage", [None, "missing", "duplicate", "wrong-symbol", "nonfinite", "wrong-interval", "future"])
@@ -141,3 +149,47 @@ async def test_research_funding_requires_explicit_finite_unambiguous_rate(monkey
     monkeypatch.setattr(adapter,'_post',reply)
     result=await adapter.get_funding_history('BTC')
     assert [row['funding_rate'] for row in result]==expected
+
+
+def test_large_original_hyperliquid_universe_compacts_without_changing_executable_facts():
+    import json
+    from app.adapters.hyperliquid import _verified_compact_paper_metadata
+    metadata, book = inputs()
+    original = copy.deepcopy((metadata, book))
+    for i in range(235):
+        metadata[0]["universe"].append({
+            "name": f"SYNTHETIC_EXTRA_{i}", "szDecimals": 5,
+            "maxLeverage": 50, "marginTableId": 56,
+        })
+        metadata[1].append({
+            "markPx": "100.5", "oraclePx": "100.4", "funding": "0.0000125",
+        })
+    accepted = _paper_execution_observation(
+        "BTC", metadata, book, 99999, 100001)
+    compact = _verified_compact_paper_metadata(
+        "BTC", metadata, book, 99999, 100001, accepted)
+    assert _paper_execution_observation(
+        "BTC", compact, book, 99999, 100001) == accepted
+    assert compact[0]["universe"] == [original[0][0]["universe"][0]]
+    assert compact[1] == [original[0][1][0]]
+    assert compact[0]["marginTables"] == original[0][0]["marginTables"]
+    assert len(json.dumps(compact).encode()) * 10 < len(
+        json.dumps(metadata).encode())
+    # This test grants no source issuer, original oracle, broker access, or fill.
+    assert accepted["financial_execution_authorized"] is False
+    assert accepted["funding_settlement"] is None
+    assert accepted["startup_authorized"] is False
+
+
+def test_compact_metadata_never_adopts_foreign_or_modified_instrument():
+    from app.adapters.hyperliquid import _verified_compact_paper_metadata
+    meta, book = inputs()
+    accepted = _paper_execution_observation(
+        "BTC", meta, book, 99999, 100001)
+    with pytest.raises(ValueError):
+        _verified_compact_paper_metadata(
+            "ETH", meta, book, 99999, 100001, accepted)
+    meta[0]["universe"][0]["maxLeverage"] = 2
+    with pytest.raises(ValueError, match="CHANGED_ORIGINAL_EXECUTION_FACTS"):
+        _verified_compact_paper_metadata(
+            "BTC", meta, book, 99999, 100001, accepted)

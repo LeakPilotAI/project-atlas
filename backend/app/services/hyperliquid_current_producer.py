@@ -152,6 +152,224 @@ class _Evidence:
         return strict(body(self.cut["setups"]))
 
 
+class NativeOriginalHyperliquidCurrentInput:
+    """Installed, read-only source cut from original owned adapter and journal.
+
+    This is the genuine missing source.read_current() for HyperliquidCurrentProducer.
+    It never issues a source-acceptance receipt: producer.input_authority and
+    producer.publication_authority MUST separately authenticate each cut.
+    Empty maker windows/settlements mean NOT VERIFIED, never synthetic fills.
+    """
+
+    def __init__(self, *, adapter, orders, archive, parameters, enrollment,
+                 clock, owner, runtime_id):
+        from scripts.volume_inspector.resting_order_store import RestingOrderStore
+        from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
+            RetainedSelectedNativeOwnerPreflight,
+        )
+        from scripts.observation_runtime.personal_writer_generation import (
+            NativeRecoveredFinancialWriterOwner,
+        )
+        from scripts.observation_runtime.personal_version_safe_release_clock import (
+            NativeVersionSafePaperOperatorClock,
+        )
+
+        validated = validate_enrollment(enrollment)
+        validate_manifest(parameters)
+        if (type(adapter) is not HyperliquidAdapter
+                or type(orders) is not RestingOrderStore
+                or type(archive) is not NativePersonalPerpResearchArchive
+                or type(clock) is not NativeVersionSafePaperOperatorClock
+                or type(owner) not in (
+                    RetainedSelectedNativeOwnerPreflight,
+                    NativeRecoveredFinancialWriterOwner,
+                )
+                or type(runtime_id) is not str or not runtime_id
+                or owner.release_digest != validated["release_digest"]
+                or orders.execution_domain != "LOCAL_ENROLLED"
+                or orders.clock is not clock
+                or archive.clock is not clock
+                or archive.enrollment != validated
+                or digest(parameters) != validated["parameters_digest"]
+                or body(orders.manifest) != body(parameters)
+                or parameters["schema"] != "PAPER_EPOCH_PERP_OPERATIONAL_V1"
+                or parameters["epoch"] != validated["epoch"]
+                or parameters["release"] != owner.release_digest):
+            raise ValueError("HL_ORIGINAL_CURRENT_EXACT_NATIVE_SOURCE_PORTS_REQUIRED")
+        self.adapter, self.orders, self.archive = adapter, orders, archive
+        self.parameters, self.enrollment = strict(body(parameters)), validated
+        self.clock, self.owner, self.runtime_id = clock, owner, runtime_id
+        self._ports = adapter, orders, archive, clock, owner
+        self._pin = digest([parameters, validated, runtime_id])
+        self._last = None
+        self._failed = False
+
+    def _verify(self):
+        from scripts.observation_runtime.personal_version_safe_release_clock import (
+            require_version_safe_release_digest,
+        )
+        if (self._failed
+                or any(a is not b for a, b in zip(
+                    (self.adapter, self.orders, self.archive,
+                     self.clock, self.owner), self._ports, strict=True))
+                or digest([self.parameters, self.enrollment, self.runtime_id])
+                   != self._pin
+                or self.archive.enrollment != self.enrollment
+                or self.archive.clock is not self.clock
+                or self.orders.clock is not self.clock
+                or body(self.orders.manifest) != body(self.parameters)
+                or self.owner._phase != "CURRENT_READBACK_ONLY"
+                or self.owner.verify_still_running() is not True
+                or self.owner.require_financial_fence() is not True
+                or self.owner.require_current_clock(
+                    clock=self.clock, runtime_id=self.runtime_id) is not True
+                or require_version_safe_release_digest(
+                    clock=self.clock, runtime_id=self.runtime_id,
+                    release_digest=self.owner.release_digest) is not True):
+            raise ValueError("HL_ORIGINAL_CURRENT_NATIVE_OWNER_CHANGED")
+        return True
+
+    def read_current(self):
+        """Produce one bounded immutable input for a separately approved issuer.
+
+        Source revision survives adapter resets via acknowledged original
+        archive. Same cache/control evidence is idempotent and never refreshed
+        by inventing a new timestamp. No network, credential or financial I/O.
+        """
+        self._verify()
+        now = self.clock()
+        cache = strict(body(self.adapter.paper_source_snapshot()))
+        orders = strict(body(self.orders.snapshot()))
+        head = strict(body(self.archive.current()))
+        if (type(now) is not int or now <= 0
+                or type(cache) is not dict
+                or cache.get("schema") != "HL_SOURCE_CACHE_V1"
+                or cache.get("connected") is not True
+                or type(cache.get("revision")) is not int
+                or cache["revision"] < 1
+                or type(cache.get("facts")) is not dict
+                or type(orders) is not dict
+                or orders.get("execution_domain") != "LOCAL_ENROLLED"
+                or type(head) is not dict
+                or type(head.get("revision")) is not int
+                or not 0 <= head["revision"] <= 128):
+            raise ValueError("HL_ORIGINAL_CURRENT_REAL_CACHE_ORDER_AND_HEAD_REQUIRED")
+        facts = cache["facts"]
+        symbols = self.parameters["perp_policy"]["symbols"]
+        markets = facts.get("markets")
+        if (type(markets) is not list or len(markets) != 3
+                or {r.get("symbol") for r in markets if type(r) is dict}
+                   != set(symbols)
+                or any(type(r) is not dict for r in markets)
+                or type(facts.get("books")) is not dict
+                or type(facts.get("candles")) is not dict
+                or set(facts["books"]) != set(symbols)
+                or set(facts["candles"]) != set(symbols)
+                or type(facts.get("funding")) is not dict
+                or type(facts.get("trades")) is not dict
+                or not set(facts["funding"]) <= set(symbols)
+                or not set(facts["trades"]) <= set(symbols)):
+            raise ValueError("HL_ORIGINAL_CURRENT_COMPLETE_THREE_MARKETS_REQUIRED")
+        from datetime import datetime
+        from app.adapters.hyperliquid import _paper_execution_observation
+        for row in markets:
+            stamp = datetime.fromisoformat(row["timestamp"])
+            if (stamp.tzinfo is None or stamp.utcoffset() is None
+                    or not 0 <= now - stamp.timestamp() <= 5):
+                raise ValueError("HL_ORIGINAL_CURRENT_MARKET_TIMESTAMP_STALE")
+        for symbol in symbols:
+            row = facts["books"][symbol]
+            if (type(row) is not dict
+                    or set(row) != {"parsed", "metadata", "book"}
+                    or type(row["parsed"]) is not dict):
+                raise ValueError("HL_ORIGINAL_CURRENT_RAW_BOOK_MISSING")
+            original = row["parsed"]
+            parsed = _paper_execution_observation(
+                symbol, row["metadata"], row["book"],
+                original["request_started_ms"], original["observed_at_ms"])
+            if (parsed != original
+                    or not 0 <= now*1000 - parsed["book_timestamp_ms"] <= 5000
+                    or not 0 <= now*1000 - parsed["request_started_ms"] <= 5000):
+                raise ValueError("HL_ORIGINAL_CURRENT_BOOK_REPLAY_OR_STALE")
+            bars = facts["candles"][symbol]
+            if (type(bars) is not dict or bars.get("interval") != "5m"
+                    or type(bars.get("observed_at_ms")) is not int
+                    or not 0 <= now*1000-bars["observed_at_ms"] <= 300000
+                    or type(bars.get("rows")) is not list
+                    or not 0 < len(bars["rows"]) <= 96):
+                raise ValueError("HL_ORIGINAL_CURRENT_CANDLES_MISSING_OR_STALE")
+        # Read the exact original committed source high-water. No fallback to
+        # current adapter revision: native source image may have survived
+        # a restart while the adapter's memory revision reset to zero.
+        prior = None
+        prior_revision = 0
+        if head["revision"]:
+            saved = self.archive.read_evidence(head)
+            prior = saved.get("sources", {}).get("current_input", {}).get("input")
+            if (type(prior) is not dict
+                    or prior.get("source_id") != self.enrollment["source_id"]
+                    or prior.get("execution_domain") != "OPERATIONAL"
+                    or type(prior.get("input_revision")) is not int
+                    or prior["input_revision"] < 1):
+                raise ValueError("HL_ORIGINAL_CURRENT_ARCHIVED_HIGH_WATER_MISSING")
+            prior_revision = prior["input_revision"]
+            if (self._last is not None
+                    and prior_revision > self._last[1]["input_revision"]):
+                self._failed = True
+                raise ValueError("HL_ORIGINAL_CURRENT_FOREIGN_ARCHIVE_ADVANCE")
+        identity = digest({"cache":cache, "orders":orders})
+        if self._last is not None and self._last[0] == identity:
+            candidate = strict(body(self._last[1]))
+        elif (prior is not None
+              and digest({"cache": prior["cache"],
+                          "orders": prior["orders"]}) == identity):
+            candidate = strict(body(prior))
+        else:
+            sequence = max(
+                prior_revision,
+                self._last[1]["input_revision"] if self._last else 0,
+            ) + 1
+            candidate = {
+                "schema":"HL_CURRENT_RESEARCH_INPUT_V1",
+                "source_id":self.enrollment["source_id"],
+                "execution_domain":"OPERATIONAL",
+                "input_revision":sequence,
+                "observed_at":now,
+                "cache":cache,
+                "orders":orders,
+                "maker_windows":{},
+                "settlements":{},
+                "setups":[],
+                "provenance":{
+                    "source_kind":"ORIGINAL_ADAPTER_AND_NATIVE_ORDER_CUT",
+                    "source_cache_digest":digest(cache),
+                    "native_order_digest":digest(orders),
+                    "independent_provider_rights_granted":False,
+                    "historical_settlement_oracle_granted":False,
+                    "maker_window_granted":False,
+                },
+            }
+        if (type(candidate.get("observed_at")) is not int
+                or not 0 <= now-candidate["observed_at"] <= 5
+                or candidate.get("cache") != cache
+                or candidate.get("orders") != orders
+                or candidate.get("source_id") != self.enrollment["source_id"]
+                or candidate.get("execution_domain") != "OPERATIONAL"
+                or len(body(candidate).encode()) > 131072):
+            raise ValueError("HL_ORIGINAL_CURRENT_COHERENT_FRESH_CUT_REQUIRED")
+        self._verify()
+        if (self.adapter.paper_source_snapshot() != cache
+                or self.orders.snapshot() != orders
+                or self.archive.current() != head
+                or not 0 <= self.clock() - now <= 1):
+            raise ValueError("HL_ORIGINAL_CURRENT_COMPONENT_MOVED_DURING_READ")
+        if self._last is not None and candidate["input_revision"] < (
+                self._last[1]["input_revision"]):
+            raise ValueError("HL_ORIGINAL_CURRENT_INPUT_REVISION_ROLLBACK")
+        self._last = identity, strict(body(candidate))
+        return strict(body(candidate))
+
+
 class HyperliquidCurrentProducer:
     def __init__(
         self,
@@ -171,6 +389,8 @@ class HyperliquidCurrentProducer:
         validate_manifest(parameters)
         if (
             execution_domain not in ("DISPOSABLE", "OPERATIONAL")
+            or (execution_domain == "OPERATIONAL"
+                and type(source) is not NativeOriginalHyperliquidCurrentInput)
             or type(archive) is not NativePersonalPerpResearchArchive
             or type(adapter) is not HyperliquidAdapter
             or any(
@@ -178,6 +398,13 @@ class HyperliquidCurrentProducer:
             )
             or archive.enrollment != self.enrollment
             or archive.clock is not clock
+            or (execution_domain == "OPERATIONAL" and (
+                source.archive is not archive
+                or source.adapter is not adapter
+                or source.orders is not orders
+                or source.clock is not clock
+                or source.enrollment != self.enrollment
+                or body(source.parameters) != body(parameters)))
             or digest(parameters) != self.enrollment["parameters_digest"]
             or parameters["epoch"] != self.enrollment["epoch"]
             or parameters["currency"] != "USDC"
@@ -193,6 +420,10 @@ class HyperliquidCurrentProducer:
             != ("DISPOSABLE_TEST" if execution_domain == "DISPOSABLE" else "LOCAL_ENROLLED")
         ):
             raise ValueError("HL_EXPLICIT_BOUND_SOURCE_COMPONENTS_REQUIRED")
+        if execution_domain == "OPERATIONAL":
+            # The exact original owned source reader is mandatory; a fixture
+            # SimpleNamespace cannot publish a current financial source.
+            source._verify()
         self.source, self.input_authority = source, input_authority
         self.adapter, self.orders, self.archive, self.clock = adapter, orders, archive, clock
         self.parameters, self.execution_domain = strict(body(parameters)), execution_domain
@@ -246,6 +477,8 @@ class HyperliquidCurrentProducer:
             or body(self.orders.manifest) != body(self.parameters)
         ):
             raise ValueError("HL_CURRENT_BINDING_CHANGED_OR_UNCERTAIN")
+        if self.execution_domain == "OPERATIONAL":
+            self.source._verify()
 
     def _context(self, cut):
         return {

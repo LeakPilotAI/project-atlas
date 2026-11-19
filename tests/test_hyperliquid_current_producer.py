@@ -737,3 +737,152 @@ def test_source_authority_cannot_mutate_bound_parameters_before_publication(
     with pytest.raises(ValueError, match="BINDING_CHANGED"):
         f.owner.publish_current()
     assert f.io.files == frozen
+
+
+# The original operational source.reader is a real, source-only port. The
+# fixtures here replace ONLY its native owner admission; they cannot create
+# authentic operator approvals, install providers or start any PAPER session.
+def _inert_original_input(monkeypatch):
+    from app.services.hyperliquid_current_producer import (
+        NativeOriginalHyperliquidCurrentInput,
+    )
+    f = fixture(monkeypatch)
+    f.control["execution_domain"] = "LOCAL_ENROLLED"
+    obj = object.__new__(NativeOriginalHyperliquidCurrentInput)
+    obj.adapter, obj.orders, obj.archive = f.adapter, f.orders, f.archive
+    obj.clock, obj.owner, obj.runtime_id = f.clock, object(), "TEST_ONLY"
+    obj.parameters, obj.enrollment = f.parameters, f.e
+    obj._last, obj._failed = None, False
+    obj._verify = lambda: True  # Always synthetic; not a financial issuer.
+    return f, obj
+
+
+def test_original_native_input_prepares_exact_current_source_without_fake_fills(
+        monkeypatch):
+    f, obj = _inert_original_input(monkeypatch)
+    packet = obj.read_current()
+    assert packet["schema"] == "HL_CURRENT_RESEARCH_INPUT_V1"
+    assert packet["execution_domain"] == "OPERATIONAL"
+    assert packet["source_id"] == f.e["source_id"]
+    assert packet["input_revision"] == 1
+    assert packet["observed_at"] == STAMP
+    assert packet["cache"] == f.adapter.paper_source_snapshot()
+    assert packet["orders"]["execution_domain"] == "LOCAL_ENROLLED"
+    assert packet["maker_windows"] == {}
+    assert packet["settlements"] == {}
+    assert packet["setups"] == []
+    assert packet["provenance"]["independent_provider_rights_granted"] is False
+    assert packet["provenance"]["historical_settlement_oracle_granted"] is False
+    assert packet["provenance"]["maker_window_granted"] is False
+    assert obj.read_current() == packet
+    assert f.archive.current()["revision"] == 0
+
+
+@pytest.mark.parametrize("fault", [
+    "stale_clock", "missing_book", "stale_book", "tampered_book",
+    "stale_market", "missing_candles", "stale_candles",
+    "wrong_order_domain", "disconnected",
+])
+def test_original_operational_input_refuses_unreal_or_stale_provider_cache(
+        monkeypatch, fault):
+    f, obj = _inert_original_input(monkeypatch)
+    if fault == "stale_clock":
+        f.now[0] += 7
+    elif fault == "missing_book":
+        f.adapter._paper_cache["books"].pop("BTC")
+    elif fault == "stale_book":
+        f.adapter._paper_cache["books"]["BTC"]["book"]["time"] -= 6000
+    elif fault == "tampered_book":
+        f.adapter._paper_cache["books"]["BTC"]["parsed"]["ask"] = "0.0001"
+    elif fault == "stale_market":
+        f.adapter._paper_cache["markets"][0]["timestamp"] = (
+            datetime.fromtimestamp(STAMP - 7, UTC).isoformat())
+    elif fault == "missing_candles":
+        f.adapter._paper_cache["candles"].pop("ETH")
+    elif fault == "stale_candles":
+        f.adapter._paper_cache["candles"]["SOL"]["observed_at_ms"] -= 300_001
+    elif fault == "wrong_order_domain":
+        f.control["execution_domain"] = "DISPOSABLE_TEST"
+    else:
+        f.adapter._connected = False
+    with pytest.raises((ValueError, KeyError, TypeError)):
+        obj.read_current()
+    assert f.archive.current()["revision"] == 0
+
+
+def test_original_current_input_source_revision_survives_adapter_cache_updates(
+        monkeypatch):
+    f, obj = _inert_original_input(monkeypatch)
+    original = obj.read_current()
+    assert obj.read_current() == original
+    f.adapter._cache_paper(
+        "markets", None, f.adapter.paper_source_snapshot()["facts"]["markets"])
+    changed = obj.read_current()
+    assert changed["input_revision"] == original["input_revision"] + 1
+    assert changed["cache"]["revision"] > original["cache"]["revision"]
+    assert changed["orders"] == original["orders"]
+    assert obj.read_current() == changed
+    assert f.archive.current()["revision"] == 0
+
+
+def test_original_current_input_restores_native_archive_highwater_on_restart(
+        monkeypatch):
+    f, obj = _inert_original_input(monkeypatch)
+    original = obj.read_current()
+    monkeypatch.setattr(
+        f.archive, "current", lambda: {
+            "schema": "TEST_NATIVE_ARCHIVE_HEAD_ONLY", "revision": 1,
+        })
+    monkeypatch.setattr(
+        f.archive, "read_evidence", lambda _head: {
+            "sources": {"current_input": {"input": original}},
+        })
+    cold = object.__new__(type(obj))
+    cold.adapter, cold.orders, cold.archive = f.adapter, f.orders, f.archive
+    cold.clock, cold.owner, cold.runtime_id = f.clock, object(), "TEST_ONLY"
+    cold.parameters, cold.enrollment = f.parameters, f.e
+    cold._last, cold._failed = None, False
+    cold._verify = lambda: True
+    assert cold.read_current() == original
+    f.adapter._cache_paper(
+        "markets", None, f.adapter.paper_source_snapshot()["facts"]["markets"])
+    newer = cold.read_current()
+    assert newer["input_revision"] == 2
+    assert newer["observed_at"] == STAMP
+
+
+def test_original_installed_input_never_accepts_synthetic_ports_as_native(
+        monkeypatch):
+    from app.services.hyperliquid_current_producer import (
+        NativeOriginalHyperliquidCurrentInput,
+    )
+    f = fixture(monkeypatch)
+    with pytest.raises(ValueError, match="EXACT_NATIVE_SOURCE_PORTS_REQUIRED"):
+        NativeOriginalHyperliquidCurrentInput(
+            adapter=f.adapter, orders=f.orders, archive=f.archive,
+            parameters=f.parameters, enrollment=f.e,
+            clock=f.clock, owner=SimpleNamespace(release_digest="b"*64),
+            runtime_id="INERT_NO_FINANCE",
+        )
+
+
+def test_original_native_source_latches_foreign_archive_advance(monkeypatch):
+    f, obj = _inert_original_input(monkeypatch)
+    previous = obj.read_current()
+    foreign = copy.deepcopy(previous)
+    foreign["input_revision"] = previous["input_revision"] + 1
+    monkeypatch.setattr(f.archive, "current", lambda: {
+        "schema": "TEST_ONLY_NATIVE_ARCHIVE_HEAD", "revision": 2,
+    })
+    monkeypatch.setattr(f.archive, "read_evidence", lambda _: {
+        "sources": {"current_input": {"input": foreign}},
+    })
+    with pytest.raises(ValueError, match="FOREIGN_ARCHIVE_ADVANCE"):
+        obj.read_current()
+    assert obj._failed is True
+
+
+def test_operational_publisher_will_not_accept_disposable_source_port(monkeypatch):
+    f = fixture(monkeypatch)
+    with pytest.raises(ValueError, match="EXPLICIT_BOUND_SOURCE_COMPONENTS"):
+        f.reopen("OPERATIONAL")
