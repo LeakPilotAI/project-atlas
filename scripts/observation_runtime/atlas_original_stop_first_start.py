@@ -76,9 +76,9 @@ def start_accepted_original_paper_once(
     # No financial session or entry latch is touched if installed code is not
     # the active native image. Owner/clock/sources are revalidated downstream.
     _require_selected_source(owner.release_digest)
-    if source_lane == "HYPERLIQUID":
-        # Even direct original Start callers must not bypass the same
-        # conservative account-fee and hourly-cutoff preflight.
+    if source_lane in ("HYPERLIQUID", "BOTH"):
+        # Both-lane Start has the SAME Hyperliquid funding/fee exposure.
+        # It must never bypass the conservative native pre-funding gate.
         require_original_hl_conservative_start_preflight({
             "source_lane": source_lane, "qd_instrument": qd_instrument,
             "runtime": runtime, "installation": installation,
@@ -175,8 +175,11 @@ def require_original_hl_conservative_start_preflight(startup):
     )
 
     if (type(startup) is not dict
-            or startup.get("source_lane") != "HYPERLIQUID"
-            or startup.get("qd_instrument") is not None
+            or startup.get("source_lane") not in ("HYPERLIQUID", "BOTH")
+            or (startup.get("source_lane") == "HYPERLIQUID"
+                and startup.get("qd_instrument") is not None)
+            or (startup.get("source_lane") == "BOTH"
+                and type(startup.get("qd_instrument")) is not dict)
             or type(startup.get("runtime")) is not UnifiedPaperRuntime
             or type(startup.get("installation")) is not PersonalOperatorInstallation
             or type(startup.get("operator")) is not NativePersonalOperatorAuthority
@@ -237,12 +240,13 @@ async def run_accepted_original_paper_session(
             or type(intrahour_flat_before_funding) is not bool):
         raise ValueError("ATLAS_ORIGINAL_EXACT_BOUNDED_SESSION_REQUIRED")
 
-    if (startup.get("source_lane") == "HYPERLIQUID"
+    lane = startup.get("source_lane")
+    if (lane in ("HYPERLIQUID", "BOTH")
             and intrahour_flat_before_funding is not True):
         raise ValueError("ATLAS_HL_PRE_FUNDING_STOP_GUARD_REQUIRED")
-    if (startup.get("source_lane") != "HYPERLIQUID"
+    if (lane not in ("HYPERLIQUID", "BOTH")
             and intrahour_flat_before_funding is True):
-        raise ValueError("ATLAS_HL_ONLY_GUARD_CANNOT_OWN_OTHER_LANE")
+        raise ValueError("ATLAS_NON_HL_FUNDING_GUARD_SCOPE_REFUSED")
     stop_owner, issuer = start_accepted_original_paper_once(**startup)
     try:
         receipt = await run_personal_installed_owner_session(

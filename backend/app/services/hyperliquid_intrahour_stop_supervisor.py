@@ -29,7 +29,11 @@ def _int_time(value):
 
 
 class NativeIntrahourPaperStopSupervisor:
-    """Actual STOP owner only. No replaceable lease, data or financial writer."""
+    """Actual shared STOP owner for an HL-exposed lane, including BOTH.
+
+    In BOTH mode a single original SHUTDOWN_FLATTEN must stop BOTH lanes;
+    neither QD nor HL may keep trading after the funding cutoff.
+    """
 
     def __init__(self, *, owner):
         if type(owner) is not PersonalInstalledPaperStopOwner:
@@ -37,18 +41,20 @@ class NativeIntrahourPaperStopSupervisor:
         runtime = owner._runtime
         if (
             runtime._stop_first_state != "RELEASED"
-            or runtime._stop_first_initial_source_lane != "HYPERLIQUID"
+            or runtime._stop_first_initial_source_lane
+               not in ("HYPERLIQUID", "BOTH")
             or runtime.state != "RUNNING"
             or runtime.entry_closed.is_set() or runtime.uncertain
             or owner._used or owner.verify_session() is not True
             or owner._runtime.installation is not owner._installation
             or not callable(runtime.clock)
         ):
-            raise ValueError("HL_PRE_FUNDING_HL_ONLY_STOP_FIRST_NOT_ACCEPTED")
+            raise ValueError("HL_PRE_FUNDING_HL_EXPOSED_STOP_FIRST_NOT_ACCEPTED")
         self.owner = owner
         self.runtime = runtime
         self.clock = runtime.clock
         self.session_id = owner.session_id
+        self.source_lane = runtime._stop_first_initial_source_lane
         self.terminal = False
         self._last_time = None
         try:
@@ -76,7 +82,8 @@ class NativeIntrahourPaperStopSupervisor:
             or owner.session_id != self.session_id
             or r.clock is not self.clock
             or r._stop_first_state != "RELEASED"
-            or r._stop_first_initial_source_lane != "HYPERLIQUID"
+            or r._stop_first_initial_source_lane != self.source_lane
+            or self.source_lane not in ("HYPERLIQUID", "BOTH")
             or r.state != "RUNNING"
             or r.uncertain or r.entry_closed.is_set() or owner._used
             or owner.verify_session() is not True

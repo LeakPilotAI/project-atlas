@@ -71,11 +71,11 @@ def test_only_genuine_owned_stop_class_may_enter_supervisor(original):
     with pytest.raises(ValueError, match="REAL_SELECTED_NATIVE_STOP_OWNER_REQUIRED"):
         stop.NativeIntrahourPaperStopSupervisor(owner=object())
     original._runtime._stop_first_state = "ARMED"
-    with pytest.raises(ValueError, match="HL_ONLY_STOP_FIRST_NOT_ACCEPTED"):
+    with pytest.raises(ValueError, match="HL_EXPOSED_STOP_FIRST_NOT_ACCEPTED"):
         stop.NativeIntrahourPaperStopSupervisor(owner=original)
     original._runtime._stop_first_state = "RELEASED"
-    original._runtime._stop_first_initial_source_lane = "BOTH"
-    with pytest.raises(ValueError, match="HL_ONLY_STOP_FIRST_NOT_ACCEPTED"):
+    original._runtime._stop_first_initial_source_lane = "QUALITY_DIPS"
+    with pytest.raises(ValueError, match="HL_EXPOSED_STOP_FIRST_NOT_ACCEPTED"):
         stop.NativeIntrahourPaperStopSupervisor(owner=original)
 
 
@@ -215,6 +215,44 @@ def test_a_revoked_selected_stop_owner_latches_new_entries_before_next_tick(orig
         guard.entry_window()
     assert guard.terminal is True
     assert original._runtime.entry_closed.is_set()
+    assert original._runtime.uncertain is True
+    assert original._runtime.state == "STOP_INCOMPLETE"
+    assert original.callbacks == []
+
+
+def test_original_both_lane_paper_stop_is_owned_and_flat_before_funding(original):
+    original._runtime._stop_first_initial_source_lane = "BOTH"
+    guard = stop.NativeIntrahourPaperStopSupervisor(owner=original)
+    assert guard.source_lane == "BOTH"
+    assert guard.entry_window() is True
+    assert guard.tick()["status"] == "STILL_SUPERVISING_NO_FINANCIAL_PERMISSION"
+    assert original.callbacks == []
+    original._runtime.value = HOUR_START + 3600 - stop.STOP_AHEAD_SECONDS
+    proof = guard.tick()
+    assert proof["status"] == "ORIGINAL_NATIVE_DURABLE_STOP_FLAT_BEFORE_FUNDING"
+    assert proof["original_native_durable_stop_verified"] is True
+    assert proof["original_native_stop_receipt"]["outcome"]["position_state"] == "FLAT"
+    assert original.callbacks == ["SHUTDOWN_FLATTEN"]
+    assert original._runtime.entry_closed.is_set() is True
+    assert original._runtime.state == "STOPPED"
+    assert guard.terminal is True
+
+
+@pytest.mark.parametrize("alter", ["BOTH_to_HL", "HL_to_BOTH", "BOTH_to_QD"])
+def test_original_selected_funding_supervisor_rejects_source_lane_mutation(
+        original, alter):
+    initial = "HYPERLIQUID" if alter == "HL_to_BOTH" else "BOTH"
+    original._runtime._stop_first_initial_source_lane = initial
+    guard = stop.NativeIntrahourPaperStopSupervisor(owner=original)
+    original._runtime._stop_first_initial_source_lane = (
+        "QUALITY_DIPS" if alter == "BOTH_to_QD"
+        else "HYPERLIQUID" if alter == "BOTH_to_HL"
+        else "BOTH"
+    )
+    with pytest.raises(ValueError, match="OWNER_CHANGED_OR_REVOKED"):
+        guard.tick()
+    assert guard.terminal is True
+    assert original._runtime.entry_closed.is_set() is True
     assert original._runtime.uncertain is True
     assert original._runtime.state == "STOP_INCOMPLETE"
     assert original.callbacks == []

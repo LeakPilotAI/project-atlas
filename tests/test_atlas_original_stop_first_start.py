@@ -125,6 +125,14 @@ def fixture_ports(monkeypatch):
     monkeypatch.setattr(issuer_module, "NativeSelectedPaperOperationIssuer", Issuer)
     monkeypatch.setattr(start, "_require_selected_source",
                         lambda value: events.append("selected_source") or True)
+    def disposable_only_hl_cost_preflight(received):
+        assert received["source_lane"] in ("HYPERLIQUID", "BOTH")
+        assert (received["source_lane"] != "BOTH"
+                or type(received["qd_instrument"]) is dict)
+        return {"financial_paper_start_authorized": False,
+                "live_trading_authorized": False}
+    monkeypatch.setattr(start, "require_original_hl_conservative_start_preflight",
+                        disposable_only_hl_cost_preflight)
     installation = Installation()
     runtime = Runtime(installation)
     kwargs = {
@@ -247,6 +255,7 @@ def test_original_start_stop_uncertainty_is_terminal(monkeypatch, failure):
 async def test_original_bounded_run_exits_only_with_durable_flat_ack(monkeypatch):
     from app.services import personal_installed_stop_owner
     data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = "QUALITY_DIPS"
 
     async def supervised(*, owner, seconds, interval,
                          intrahour_flat_before_funding):
@@ -275,6 +284,7 @@ async def test_original_bounded_run_exits_only_with_durable_flat_ack(monkeypatch
 async def test_original_supervised_run_refuses_false_flat_ack(monkeypatch):
     from app.services import personal_installed_stop_owner
     data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = "QUALITY_DIPS"
 
     async def refused(*, owner, seconds, interval, intrahour_flat_before_funding):
         data.events.append("financial_supervision")
@@ -303,6 +313,7 @@ async def test_original_supervisor_crash_latches_entries_and_revokes_issuer(
         monkeypatch):
     from app.services import personal_installed_stop_owner
     data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = "QUALITY_DIPS"
 
     async def crash(**_kwargs):
         raise OSError("TEST_SUPERVISION_INTERRUPTED_AFTER_START")
@@ -352,7 +363,8 @@ async def test_hl_only_paper_requires_conservative_time_guard_before_any_start(
 @pytest.mark.asyncio
 async def test_non_hl_paper_cannot_inherit_hl_only_funding_proof(monkeypatch):
     data = fixture_ports(monkeypatch)
-    with pytest.raises(ValueError, match="HL_ONLY_GUARD_CANNOT_OWN_OTHER_LANE"):
+    data.kwargs["source_lane"] = "QUALITY_DIPS"
+    with pytest.raises(ValueError, match="NON_HL_FUNDING_GUARD_SCOPE_REFUSED"):
         await start.run_accepted_original_paper_session(
             startup=data.kwargs, seconds=120,
             intrahour_flat_before_funding=True,
@@ -385,15 +397,19 @@ async def test_original_hl_preflight_denial_cannot_arm_or_bind_stop(monkeypatch)
 
 
 @pytest.mark.asyncio
-async def test_hl_only_approved_preflight_precedes_all_financial_effects(monkeypatch):
+@pytest.mark.parametrize("source_lane", ["HYPERLIQUID", "BOTH"])
+async def test_hl_only_approved_preflight_precedes_all_financial_effects(
+        monkeypatch, source_lane):
     from app.services import personal_installed_stop_owner
     data = fixture_ports(monkeypatch)
-    data.kwargs["source_lane"] = "HYPERLIQUID"
-    data.kwargs["qd_instrument"] = None
+    data.kwargs["source_lane"] = source_lane
+    if source_lane == "HYPERLIQUID":
+        data.kwargs["qd_instrument"] = None
 
     def preflight(received):
         assert received["runtime"] is data.kwargs["runtime"]
-        assert received["source_lane"] == "HYPERLIQUID"
+        assert received["source_lane"] == source_lane
+        assert received["qd_instrument"] == data.kwargs["qd_instrument"]
         assert received["operator"] is data.kwargs["operator"]
         data.events.append("native_hl_fee_funding_preflight")
         return {"financial_paper_start_authorized": False,
@@ -421,16 +437,23 @@ async def test_hl_only_approved_preflight_precedes_all_financial_effects(monkeyp
         "issuer_revoke")
 
 
+@pytest.mark.parametrize("source_lane", ["HYPERLIQUID", "BOTH"])
 def test_native_hl_preflight_requires_exact_original_signed_clock_and_cut(
-        monkeypatch):
+        monkeypatch, source_lane):
     from app.services import unified_native_writer
     from scripts.observation_runtime import personal_local_authority
     from scripts.observation_runtime import personal_version_safe_release_clock
     from app.services import hyperliquid_forward_flat_paper_policy
 
+    # Keep the REAL preflight before the disposable test harness stubs the
+    # financial operation. Otherwise a passing test would prove nothing.
+    original_conservative_preflight = (
+        start.require_original_hl_conservative_start_preflight
+    )
     data = fixture_ports(monkeypatch)
-    data.kwargs["source_lane"] = "HYPERLIQUID"
-    data.kwargs["qd_instrument"] = None
+    data.kwargs["source_lane"] = source_lane
+    if source_lane == "HYPERLIQUID":
+        data.kwargs["qd_instrument"] = None
     events = data.events
 
     class OriginalClock:
@@ -484,11 +507,45 @@ def test_native_hl_preflight_requires_exact_original_signed_clock_and_cut(
     data.runtime.lanes = {"HYPERLIQUID": OriginalLane(writer)}
     data.runtime.portfolio = SimpleNamespace(
         writers={"HYPERLIQUID": writer})
-    proof = start.require_original_hl_conservative_start_preflight(
-        data.kwargs)
+    proof = original_conservative_preflight(data.kwargs)
     assert proof["financial_paper_start_authorized"] is False
     assert events == [
         "native_lane_verified", "selected_release_ntp",
         "original_utc_sample", "verify_issued_utc",
         "native_writer_cut", "original_utc_sample", "verify_issued_utc",
     ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("lane", ["BOTH","HYPERLIQUID"])
+async def test_any_hl_exposed_original_start_requires_funding_stop_before_financial_arm(
+        monkeypatch, lane):
+    data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = lane
+    if lane == "HYPERLIQUID":
+        data.kwargs["qd_instrument"] = None
+    with pytest.raises(ValueError,match="PRE_FUNDING_STOP_GUARD_REQUIRED"):
+        await start.run_accepted_original_paper_session(
+            startup=data.kwargs, seconds=300,
+            intrahour_flat_before_funding=False,
+        )
+    assert data.events == []
+    assert data.runtime.state == "STOPPED"
+    assert data.runtime.grant is None
+
+
+def test_combined_native_original_start_rejects_fee_preflight_before_arm(
+        monkeypatch):
+    data=fixture_ports(monkeypatch)
+    assert data.kwargs["source_lane"]=="BOTH"
+    def refused(scope):
+        assert scope["qd_instrument"]["symbol"] == "MSFT"
+        assert scope["source_lane"]=="BOTH"
+        raise ValueError("TEST_COMBINED_HL_ACTUAL_FUNDING_FEES_UNVERIFIED")
+    monkeypatch.setattr(start,"require_original_hl_conservative_start_preflight",
+                        refused)
+    with pytest.raises(ValueError,match="ACTUAL_FUNDING_FEES_UNVERIFIED"):
+        start.start_accepted_original_paper_once(**data.kwargs)
+    assert data.events==["selected_source"]
+    assert data.runtime.state=="STOPPED"
+    assert data.runtime.grant is None

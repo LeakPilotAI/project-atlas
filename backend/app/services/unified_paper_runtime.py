@@ -507,14 +507,15 @@ class UnifiedPaperRuntime:
             )
 
             # The additional time-based STOP is only a risk reducer attached
-            # to an already accepted real Stop-first HYPERLIQUID-only owner.
+            # to a real Stop-first HL-exposed owner (HL or BOTH lanes).
             # Never let a planning flag construct an owner or start a session.
             if (type(intrahour_supervisor) is not NativeIntrahourPaperStopSupervisor
                     or stop_signal is None
                     or intrahour_supervisor.owner is not stop_signal._owner
                     or intrahour_supervisor.runtime is not self
                     or intrahour_supervisor.session_id != self.grant['session_id']
-                    or self._stop_first_initial_source_lane != 'HYPERLIQUID'
+                    or self._stop_first_initial_source_lane
+                       not in ('HYPERLIQUID', 'BOTH')
                     or self._stop_first_state != 'RELEASED'):
                 raise ValueError('UNIFIED_PRE_FUNDING_EXACT_ACCEPTED_STOP_OWNER_REQUIRED')
             if self._intrahour_supervisor is not None:
