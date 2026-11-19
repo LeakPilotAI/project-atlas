@@ -263,6 +263,50 @@ def test_multi_symbol_stale_latest_data_does_not_become_paper_quote(test_ports):
     assert "100." not in str(report)
 
 
+@pytest.mark.parametrize("phase", [
+    "PREINCEPTION", "INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY",
+])
+def test_original_iex_data_only_read_works_in_accepted_owner_phases(
+        test_ports, phase):
+    owner, _clock = test_ports
+    owner._phase = phase
+    report, opener = _run(test_ports, {"MSFT": 2}, symbols=("MSFT",))
+    assert report["original_owner_data_only_phase"] == phase
+    assert report["provider_rest_authentication_observed"] is True
+    assert report["fresh_and_both_sided_source_only_count"] == 1
+    assert report["provider_data_rights_independently_accepted"] is False
+    assert report["financial_quote_admission_accepted"] is False
+    assert report["paper_startup_authorized"] is False
+    assert report["live_trading_authorized"] is False
+    assert len(opener.requests) == 1
+    assert all(response.closed for response in opener.responses)
+
+
+def test_original_iex_refuses_owner_phase_transition_inside_data_read(test_ports):
+    owner, clock = test_ports
+    owner._phase = "INITIAL_READBACK_ONLY"
+
+    class PhaseChangingOpener(Opener):
+        def open(self, request, timeout):
+            response = super().open(request, timeout)
+            # A real original owner may change lifecycle during HTTP I/O;
+            # neither a successful GET nor a quote proves a stable cohort.
+            owner._phase = "CURRENT_READBACK_ONLY"
+            return response
+
+    opener = PhaseChangingOpener({"MSFT": 2, "AVGO": 2})
+    with pytest.raises(ValueError, match="OWNER_PHASE_CHANGED_DURING_HTTP"):
+        iex.audit_owned_iex(
+            owner=owner, clock=clock, runtime_id="test-owned",
+            release_digest="a" * 64, symbols=("MSFT", "AVGO"),
+            opener=opener,
+            credential_reader=lambda _:
+                Credentials("DATA_ONLY_DUMMY", "DATA_ONLY_DUMMY"),
+        )
+    assert len(opener.requests) == 1
+    assert all(response.closed for response in opener.responses)
+
+
 def test_all_recent_still_no_financial_or_session_rights(test_ports):
     report, opener = _run(
         test_ports, dict.fromkeys(iex.WATCHLIST, 2), symbols=iex.WATCHLIST

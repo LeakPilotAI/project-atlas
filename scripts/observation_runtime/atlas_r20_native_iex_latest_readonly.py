@@ -192,7 +192,9 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
     if (type(owner) is not RetainedSelectedNativeOwnerPreflight
             or type(clock) is not NativeVersionSafePaperOperatorClock
             or type(runtime_id) is not str or not runtime_id
-            or owner._phase not in ("PREINCEPTION", "INITIAL_READBACK_ONLY")
+            or owner._phase not in (
+                "PREINCEPTION", "INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY"
+            )
             or owner.verify_still_running() is not True
             or clock.require_operational(runtime_id) is not clock
             or require_version_safe_release_digest(
@@ -200,6 +202,10 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
                 release_digest=release_digest,
             ) is not True):
         raise ValueError("IEX_NATIVE_ORIGINAL_JOB_CLOCK_OR_SELECTED_RELEASE_REQUIRED")
+    # A bounded authenticated data observation must not straddle an
+    # irreversible account/owner lifecycle transition. Pin the original
+    # phase until every HTTP/clock/native readback has finished.
+    owner_phase = owner._phase
     path = _required_data_only_config()
     reader = credential_reader or Credentials.load
     credentials = reader(path)
@@ -213,7 +219,8 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
         )
     rows = []
     for symbol in symbols:
-        if owner.verify_still_running() is not True:
+        if (owner._phase != owner_phase
+                or owner.verify_still_running() is not True):
             raise ValueError("IEX_NATIVE_ORIGINAL_JOB_REVOKED_BEFORE_GET")
         clock.require_operational(runtime_id)
         url = BASE + symbol + "/quotes/latest?feed=iex"
@@ -232,6 +239,9 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
             raise ValueError("IEX_NATIVE_HTTP_AUTH_OR_ENTITLEMENT_REFUSED") from None
         except urllib.error.URLError:
             raise ValueError("IEX_NATIVE_NETWORK_OR_TLS_UNAVAILABLE") from None
+        if (owner._phase != owner_phase
+                or owner.verify_still_running() is not True):
+            raise ValueError("IEX_NATIVE_OWNER_PHASE_CHANGED_DURING_HTTP")
         # R22 selected-original clocks can prove subsecond UTC. The genuine
         # immutable selected R21 artifact predates that capability: its
         # separately issued+verified integer-second UTC remains a safe,
@@ -291,7 +301,8 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
             uncertainty_ms=uncertainty_ms,
             observed_precision_ns=precision_ns,
         ))
-    if owner.verify_still_running() is not True:
+    if (owner._phase != owner_phase
+            or owner.verify_still_running() is not True):
         raise ValueError("IEX_NATIVE_ORIGINAL_JOB_CHANGED_AT_END")
     fresh = sum(row["provider_quote_fresh_at_sample"] for row in rows)
     present = sum(row["bid_and_ask_present"] for row in rows)
@@ -309,7 +320,7 @@ def audit_owned_iex(*, owner, clock, runtime_id, release_digest,
             else "PROVIDER_REACHABLE_BUT_NOT_ALL_QUOTES_CURRENT_DATA_ONLY"
         ),
         "selected_original_windows_job_verified": True,
-        "original_owner_data_only_phase": owner._phase,
+        "original_owner_data_only_phase": owner_phase,
         "postinception_diagnostic_never_issues_financial_grant": True,
         "two_peer_independent_utc_observed": True,
         "provider_rest_authentication_observed": True,
