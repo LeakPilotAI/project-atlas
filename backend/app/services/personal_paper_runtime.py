@@ -98,7 +98,19 @@ class PersonalOperatorInstallation:
             operator_id=self.identity.current_operator(),release=self.release,accounts=self.accounts,
             now=now,action=request.get('action','AUTO_PAPER'))
         facts=strict(body(self.technical.inspect(request)))
-        if set(facts)!=set(CHECKS) or any(x is not True for x in facts.values()):raise ValueError('PERSONAL_TECHNICAL_CHECKS_FAILED')
+        if set(facts)!=set(CHECKS) or any(x is not True for x in facts.values()):
+            # A missing fact must remain a hard refusal. Name only the failed
+            # public check IDs so the original operator can diagnose a real
+            # native attempt without guessing which source/safety gate failed.
+            failed = [name for name in CHECKS if facts.get(name) is not True]
+            if set(facts) != set(CHECKS):
+                failed.append('CHECK_SCHEMA_MISMATCH')
+            reason = getattr(self.technical, 'last_failure', None)
+            if (type(reason) is str and 8 <= len(reason) <= 96
+                    and reason.isascii() and reason[0].isalpha()
+                    and all(char in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_' for char in reason)):
+                failed.append('REASON_' + reason)
+            raise ValueError('PERSONAL_TECHNICAL_CHECKS_FAILED:' + ','.join(failed))
         return value,now
     @contextmanager
     def lease(self,request):

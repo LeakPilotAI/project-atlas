@@ -162,3 +162,27 @@ def test_exhausted_verified_store_remains_readable_without_granting_write_capaci
     assert not all(reader.inspect({'action':'AUTO_PAPER'}).values())
     assert s.old.db.serialize() == before
     s.old.db.close()
+
+
+@pytest.mark.parametrize('message,expected', [
+    ('PERSONAL_WRITER_NATIVE_RESOURCE_CHANGED', 'PERSONAL_WRITER_NATIVE_RESOURCE_CHANGED'),
+    ('C:\\private\\secret.json', 'PERSONAL_TECHNICAL_EVIDENCE_UNAVAILABLE_OR_CHANGED'),
+    ('untrusted mixed case', 'PERSONAL_TECHNICAL_EVIDENCE_UNAVAILABLE_OR_CHANGED'),
+])
+def test_failed_native_technical_checks_preserve_only_safe_diagnostic_code(monkeypatch,
+                                                                            message,expected):
+    s = setup(monkeypatch, initial=True)
+    try:
+        before = s.old.db.serialize()
+        def refuse():
+            raise ValueError(message)
+        s.owner._verify = refuse
+        request = {'schema':'ATLAS_PERSONAL_INCEPTION_REQUEST_V1',
+                   'action':'INITIALIZE_SIMULATED_ACCOUNTS',
+                   'scope':s.s.b.scope()}
+        facts = s.port.inspect(request)
+        assert not all(facts.values())
+        assert s.port.last_failure == expected
+        assert s.old.db.serialize() == before
+    finally:
+        s.old.db.close()

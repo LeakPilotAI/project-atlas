@@ -227,6 +227,14 @@ class NativePersonalTechnicalChecks:
                         and 1 <= pin['revision'] <= MAX_REVISIONS and 0 < len(image) <= MAX_IMAGE)
                 facts['CAPACITY_WITH_STOP_RESERVES'] = capacity
                 facts['WRITER_OWNERSHIP'] = lease.check(lease.snapshot,self.clock()) is True
-        except (ValueError,OSError,KeyError,TypeError,AttributeError,sqlite3.Error):
-            self.last_failure = 'PERSONAL_TECHNICAL_EVIDENCE_UNAVAILABLE_OR_CHANGED'
+        except (ValueError,OSError,KeyError,TypeError,AttributeError,sqlite3.Error) as exc:
+            # Failure is never authorization. Preserve a bounded, code-like
+            # reason without exposing paths, inputs, or exception payloads.
+            reason = exc.args[0] if type(exc) is ValueError and len(exc.args) == 1 else None
+            if (type(reason) is str and 8 <= len(reason) <= 96
+                    and reason.isascii() and reason[0].isalpha()
+                    and all(char in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_' for char in reason)):
+                self.last_failure = reason
+            else:
+                self.last_failure = 'PERSONAL_TECHNICAL_EVIDENCE_UNAVAILABLE_OR_CHANGED'
         return facts

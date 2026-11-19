@@ -95,7 +95,9 @@ def test_hl_operator_refuses_one_lane_or_foreign_sibling_account(monkeypatch):
 def test_hl_real_native_writer_class_accepts_only_genesis_and_read(monkeypatch):
     hl = system("HYPERLIQUID")
     try:
-        port = original_writer_fixture(monkeypatch, enrollment=hl.n)
+        # First-inception HL has no successor writer generation. The default
+        # QD-only fixture generation is intentionally invalid for this lane.
+        port = original_writer_fixture(monkeypatch, enrollment=hl.n, inception=True)
         assert port.port._lane == "HYPERLIQUID"
         initializer = {
             "schema": "PERSONAL_GENESIS_WRITER_V1",

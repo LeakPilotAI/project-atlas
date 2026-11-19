@@ -235,3 +235,41 @@ def test_personal_stop_binding_refuses_changed_installation_before_ledger(tmp_pa
             origin='http://127.0.0.1:18811', token='synthetic-test-control-token-1234567890')
     assert not (tmp_path / 'stop.sqlite').exists()
     assert not any(route.path == '/_atlas/control/stop-session' for route in app.routes)
+
+
+@pytest.mark.parametrize('failed', [
+    ('FINANCIAL_INTEGRITY',),
+    ('CLOCK_CONTINUITY', 'WRITER_OWNERSHIP'),
+    ('DATA_REFUSAL_CONTROLS',),
+])
+def test_technical_refusal_names_only_failed_public_checks_without_approval(failed):
+    s = installed()
+    for name in failed:
+        s.facts[name] = False
+    s.tech.last_failure = 'PERSONAL_WRITER_NATIVE_RESOURCE_CHANGED'
+    with pytest.raises(ValueError, match='PERSONAL_TECHNICAL_CHECKS_FAILED:') as err:
+        with s.i.lease({'session': 'synthetic'}):
+            pytest.fail('refused technical evidence unexpectedly allowed financial scope')
+    detail = str(err.value)
+    assert all(name in detail for name in failed)
+    assert 'REASON_PERSONAL_WRITER_NATIVE_RESOURCE_CHANGED' in detail
+    assert s.i.revoked is False  # Refusal does not silently create or revoke grants.
+
+
+def test_technical_refusal_reports_missing_or_unexpected_gate_without_bypass():
+    s = installed()
+    s.tech.inspect = lambda _: {'FINANCIAL_INTEGRITY': True, 'INVENTED_GRANT': True}
+    with pytest.raises(ValueError, match='CHECK_SCHEMA_MISMATCH'):
+        with s.i.lease({'session': 'synthetic'}):
+            pytest.fail('invented evidence must not satisfy the original gate list')
+
+
+def test_technical_refusal_does_not_echo_untrusted_reason_text():
+    s = installed()
+    s.facts['FINANCIAL_INTEGRITY'] = False
+    s.tech.last_failure = 'C:\\private\\secrets\\credential.json'
+    with pytest.raises(ValueError, match='PERSONAL_TECHNICAL_CHECKS_FAILED:') as err:
+        with s.i.lease({'session': 'synthetic'}):
+            pytest.fail('financial refusal must remain terminal')
+    assert 'private' not in str(err.value)
+    assert 'secrets' not in str(err.value)
