@@ -64,6 +64,70 @@ class IEXPaperQuotes:
             raise IEXRefused('IEX_RESEARCH_ACCEPTANCE_CHANGED')
         return result
 
+    def original_operational_execution_evidence(self, instrument):
+        """Convert ONE already-authorized IEX ASK into current QD evidence.
+
+        The source of authorization is the original execution quote lease,
+        NOT this conversion, a research target, or an unauthenticated snapshot.
+        Never invent an instrument, provider permission, ranking or fill.
+        This read-only packet is for a separately authorized native publisher.
+        """
+        if (type(instrument) is not dict
+                or type(instrument.get("symbol")) is not str
+                or type(instrument.get("instrument_id")) is not str
+                or not instrument["instrument_id"]
+                or instrument.get("asset_class") not in ("STOCK", "ETF")
+                or instrument.get("currency") != "USD"
+                or instrument.get("units") != "SHARES"
+                or instrument.get("long_supported") is not True
+                or type(instrument.get("fractional")) is not bool
+                or not self.session_id
+                or self.authority is None):
+            raise IEXRefused("IEX_ORIGINAL_OPERATIONAL_PUBLISHER_BINDING_REQUIRED")
+        frozen = body(instrument)
+        original_feed, original_authority = self.feed, self.authority
+        quote = self.quote(instrument)  # Actual accepted entitlement/UTC/market lease.
+        view = self.feed.snapshot()
+        matching = [row for row in view["quotes"]
+                    if row["symbol"] == instrument["symbol"]]
+        if (len(matching) != 1
+                or view.get("authenticated") is not True
+                or view.get("subscribed") is not True
+                or view.get("feed_id") != FEED
+                or view.get("scope") != "SINGLE_EXCHANGE_NOT_NBBO"
+                or type(view.get("observed_at")) is not int
+                or quote.get("feed_id") != FEED
+                or quote.get("market_status") != "TRADING"
+                or quote.get("session") != "REGULAR"
+                or quote.get("instrument_id") != instrument["instrument_id"]
+                or quote.get("symbol") != instrument["symbol"]
+                or quote.get("source_timestamp") !=
+                   matching[0]["source_ns"] // 1_000_000_000
+                or matching[0].get("state") != "FRESH"
+                or matching[0].get("ask") != quote.get("ask")
+                or matching[0].get("bid") != quote.get("bid")
+                or not 0 <= view["observed_at"] - quote["source_timestamp"] <= 30
+                or quote.get("entitlement_id") in (None, "")
+                or number(quote["ask"]) <= 0
+                or number(quote["bid"]) <= 0):
+            raise IEXRefused("IEX_ORIGINAL_OPERATIONAL_QUOTE_CUT_UNVERIFIED")
+        result = {
+            "symbol": instrument["symbol"],
+            "instrument_id": instrument["instrument_id"],
+            "source": "ALPACA_IEX_AUTHORIZED_ASK_NOT_FILL",
+            "effective_timestamp": datetime.fromtimestamp(
+                quote["source_timestamp"], UTC).isoformat(),
+            "execution_price": quote["ask"],
+        }
+        # Do not allow a new source generation, changed bid/ask, revoked
+        # calendar or a different entitlement to be joined to this price.
+        if (body(instrument) != frozen or self.feed is not original_feed
+                or self.authority is not original_authority
+                or self.quote(instrument) != quote
+                or self.feed.snapshot() != view):
+            raise IEXRefused("IEX_ORIGINAL_OPERATIONAL_QUOTE_CHANGED_BEFORE_PUBLICATION")
+        return strict(body(result))
+
     def quote(self, instrument):
         if self.authority is None:
             raise IEXRefused("IEX_EXECUTION_AUTHORITY_REQUIRED")

@@ -64,9 +64,15 @@ def test_analyst_low_mean_high_are_not_three_independent_analysts_or_a_median():
               'quality': 'FRESH', 'effective_timestamp': NOW.isoformat()}
         for key, value in [('target_low_price', 110), ('target_mean_price', 135), ('target_high_price', 200)]}}
     result = project_explicit_research([row], now=NOW)[0]['quality_dips_v2']
-    assert result['valuation_source_count'] == 3
-    assert result['normalization_value'] == {'conservative': 110, 'base': 135, 'optimistic': 200}
-    assert all(p['provenance'] == 'ANALYST_CONSENSUS' for p in result['valuation_provenance'])
+    # Low/mean/high from one syndicated snapshot are neither three issuers
+    # nor dated original reports. Current PAPER research must refuse all
+    # three until their original target dates have genuine authentication.
+    assert result['valuation_source_count'] == 0
+    assert result['normalization_value'] == {
+        'conservative': None, 'base': None, 'optimistic': None,
+    }
+    assert result['valuation_provenance'] == []
+    assert result['quality_dips_v3']['entry_ladder']['ready'] is False
 
 
 @pytest.mark.parametrize('quality', ['STALE', 'CONFLICTING', 'UNKNOWN', 'MISSING'])

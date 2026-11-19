@@ -116,5 +116,65 @@ def test_shutdown_requires_issued_fresh_bid_but_not_a_new_fundamental_ranking(tm
     with pytest.raises(ValueError): s.port.verify(request, now=s.clock())
 
 
+def test_original_authenticated_iex_ask_enters_exact_qd_execution_evidence(
+        tmp_path):
+    """Original IEX execution authority -> current quote -> QD proof, no fills."""
+    s = setup(tmp_path)
+    accepted = s.source.original_operational_execution_evidence(
+        s.b["instrument"])
+    direct = s.source.quote(s.b["instrument"])
+    assert accepted == {
+        "symbol": "MSFT",
+        "instrument_id": s.b["instrument"]["instrument_id"],
+        "source": "ALPACA_IEX_AUTHORIZED_ASK_NOT_FILL",
+        "effective_timestamp": datetime.fromtimestamp(
+            direct["source_timestamp"], UTC).isoformat(),
+        "execution_price": direct["ask"],
+    }
+    # This receipt is an ASK observation, not authority to manufacture a
+    # ranking or fill. Only the same current original publication can admit it.
+    s.b["quote"] = copy.deepcopy(accepted)
+    s.port.bind_session(s.n.grant)
+    adapter = CandidateEvidenceAdapter(
+        ranking_authority=s.port, execution_authority=s.port)
+    result = adapter.execution(s.b["instrument"], accepted, now=s.clock())
+    assert result["execution_proof"]["verified"] is True
+    assert result["source_quote"] == accepted
+    assert result["quote"]["price"] == accepted["execution_price"]
+    assert s.n.ledger.snapshot()["revision"] == 0
+    assert s.n.ledger.snapshot()["positions"] == {}
+
+
+@pytest.mark.parametrize("fault", [
+    "missing_session", "no_entitlement", "disconnect", "instrument",
+    "quote_changed",
+])
+def test_original_operational_iex_quote_refuses_revoked_or_changed_cut(
+        tmp_path, fault, monkeypatch):
+    s = setup(tmp_path)
+    instrument = copy.deepcopy(s.b["instrument"])
+    if fault == "missing_session":
+        s.source.session_id = None
+    elif fault == "no_entitlement":
+        s.source.authority = None
+    elif fault == "disconnect":
+        s.f.disconnect()
+    elif fault == "instrument":
+        instrument["currency"] = "EUR"
+    else:
+        accepted_snapshot = s.source.feed.snapshot
+        calls = [0]
+        def changed_snapshot():
+            calls[0] += 1
+            result = accepted_snapshot()
+            if calls[0] >= 3:
+                result["observed_at"] += 1
+            return result
+        monkeypatch.setattr(s.source.feed, "snapshot", changed_snapshot)
+    with pytest.raises(ValueError):
+        s.source.original_operational_execution_evidence(instrument)
+    assert s.n.ledger.snapshot()["revision"] == 0
+
+
 def test_defaults_refuse():
     with pytest.raises(ValueError): NativePersonalMarketInputs()
