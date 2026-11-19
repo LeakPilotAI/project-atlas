@@ -49,6 +49,16 @@ from scripts.observation_runtime.personal_version_safe_release_clock import (
 )
 
 LANES = ("QUALITY_DIPS", "HYPERLIQUID")
+# Stable LOCAL source names from the documented public Hyperliquid /info
+# request families. These are labels for a future independently accepted
+# publisher, not source permissions, a settlement oracle or executable proof.
+HL_ORIGINAL_PUBLIC_SOURCE_REVIEW = {
+    "schema": "ATLAS_HL_PUBLIC_INFO_SOURCE_IDENTIFIERS_REVIEW_V1",
+    "provider_url": "https://api.hyperliquid.xyz/info",
+    "market_source": "HL_ORIGINAL_INFO_META_AND_L2BOOK_V1",
+    "instrument_cut": "HL_ORIGINAL_INFO_META_ASSET_CTX_V1",
+    "funding_source": "HL_ORIGINAL_INFO_FUNDING_HISTORY_V1",
+}
 STATES = (
     "PREINCEPTION_READY",
     "JOURNALS_UNKNOWN",
@@ -65,14 +75,15 @@ STATES = (
 def prepare_original_fresh_two_account_inceptions(
         *, self_job, release, clock, runtime_id, personal_policy,
         operator_acceptance_ids, approved_unstamped_manifest_digests,
-        hl_cost_amendment=None):
+        hl_cost_amendment=None, hl_source_identifiers=None):
     """Stage C: create fresh IN-MEMORY original-manifest candidates.
 
     The source is the real selected original release + 12 genuine original
     empty root identities, NOT caller-chosen arbitrary finance templates.
     The local operator must already have reviewed the exact unstamped
-    financial terms, fees, cash and policies and supplied both digests.
-    No journal, activation, account file, provider, Stop or trading starts.
+    financial terms, fees, cash, source labels and policies and supplied
+    both digests. Source labels are NOT provider authorization or a genuine
+    trading-source issuer. No journal, activation, account, or trade starts.
     The returned opening time expires in five seconds by the ORIGINAL issuer;
     caller must retain the same original self-Job and initialize journals
     immediately under an independent exact one-shot operator scope.
@@ -106,6 +117,10 @@ def prepare_original_fresh_two_account_inceptions(
             or hl_cost_amendment not in (
                 None, CONSERVATIVE_LOCAL_FEE_POLICY_ID,
             )
+            or (hl_source_identifiers is not None
+                and (type(hl_source_identifiers) is not dict
+                     or hl_source_identifiers
+                     != HL_ORIGINAL_PUBLIC_SOURCE_REVIEW))
             or type(approved_unstamped_manifest_digests) is not dict
             or set(approved_unstamped_manifest_digests) != set(LANES)
             or any(type(operator_acceptance_ids[k]) is not str
@@ -180,6 +195,26 @@ def prepare_original_fresh_two_account_inceptions(
                     "PERSONAL_C_CONSERVATIVE_HL_TERMS_REVIEW_REQUIRED"
                 )
             manifest = derive_reviewable_conservative_hl_manifest(manifest)
+            bindings = ("market_source", "instrument_cut", "funding_source")
+            if any(manifest["perp_policy"][key].startswith("PENDING_")
+                   for key in bindings):
+                # Stage C must not permanently open an account whose immutable
+                # manifest can only match placeholder public-source IDs.
+                # The exact reviewed namespace will still need independent
+                # source authentication at the later PAPER publication gate.
+                if hl_source_identifiers != HL_ORIGINAL_PUBLIC_SOURCE_REVIEW:
+                    raise ValueError(
+                        "PERSONAL_C_HL_PENDING_SOURCE_IDS_MUST_BE_REVIEWED")
+                for key in bindings:
+                    manifest["perp_policy"][key] = hl_source_identifiers[key]
+            elif hl_source_identifiers is not None and any(
+                    manifest["perp_policy"][key]
+                    != hl_source_identifiers[key] for key in bindings):
+                raise ValueError("PERSONAL_C_HL_SOURCE_REVIEW_BINDING_CONFLICT")
+            if any(
+                    manifest["perp_policy"][key].startswith("PENDING_")
+                    for key in bindings):
+                raise ValueError("PERSONAL_C_HL_SOURCE_PLACEHOLDER_REFUSED")
             enrollment["policy_digest"] = digest(manifest["perp_policy"])
         # Approval binds ALL original finance terms except a fresh UTC
         # inception second that could not have been approved in advance.
@@ -325,7 +360,7 @@ def bind_original_native_two_account_commissioner(
 def prepare_and_bind_reviewed_original_native_accounts(
         *, self_job, release, clock, runtime_id, personal_policy,
         operator_acceptance_ids, approved_unstamped_manifest_digests,
-        hl_cost_amendment=None):
+        hl_cost_amendment=None, hl_source_identifiers=None):
     """Production C->D admission in ONE selected original process.
 
     Only a reviewed original account/policy permit may enter the existing
@@ -339,6 +374,7 @@ def prepare_and_bind_reviewed_original_native_accounts(
         operator_acceptance_ids=operator_acceptance_ids,
         approved_unstamped_manifest_digests=approved_unstamped_manifest_digests,
         hl_cost_amendment=hl_cost_amendment,
+        hl_source_identifiers=hl_source_identifiers,
     )
     return bind_original_native_two_account_commissioner(
         self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,

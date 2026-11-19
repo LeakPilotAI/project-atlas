@@ -1219,3 +1219,118 @@ def test_original_g_h_refuses_before_fake_financial_permission_or_replay(
     assert x.events.count("activation_publish") == 2
     assert not any(not o.revoked for o in s.created)
     assert x.obj.phase == "POSTINCEPTION_DATA_ACTIVATION_ACKNOWLEDGED"
+
+
+
+def _pending_hl_source_review_fixture(monkeypatch):
+    """Exact three original pending R25 terms in a disposable stage-C cohort."""
+    from copy import deepcopy
+    from app.services.hyperliquid_forward_flat_paper_policy import (
+        derive_reviewable_conservative_hl_manifest,
+    )
+    review = conservative_stage_c_review(monkeypatch)
+    x = review.x
+    pending = {
+        "market_source": "PENDING_E1_VERIFIED_BOOK_SOURCE",
+        "instrument_cut": "PENDING_E1_VERIFIED_INSTRUMENT_CUT",
+        "funding_source": "PENDING_E1_VERIFIED_FUNDING_SOURCE",
+    }
+    original = deepcopy(review.historical)
+    original["perp_policy"].update(pending)
+    x.draft["accounts"]["HYPERLIQUID"][
+        "unaccepted_historical_parameters"] = deepcopy(original)
+    x.kw["approved_unstamped_manifest_digests"]["HYPERLIQUID"] = target.digest(
+        {k: v for k, v in derive_reviewable_conservative_hl_manifest(
+            original).items() if k != "opened_at"})
+    return SimpleNamespace(
+        review=review, x=x, original=original, pending=pending,
+    )
+
+
+def test_original_stage_c_refuses_permanent_pending_source_ids_until_review(
+        monkeypatch):
+    x = _pending_hl_source_review_fixture(monkeypatch)
+    with pytest.raises(
+        ValueError, match="HL_PENDING_SOURCE_IDS_MUST_BE_REVIEWED",
+    ):
+        target.prepare_original_fresh_two_account_inceptions(**x.x.kw)
+    assert (x.x.draft["accounts"]["HYPERLIQUID"]
+            ["unaccepted_historical_parameters"] == x.original)
+    assert x.x.roots["all_twelve_distinct_and_empty"] is True
+
+
+def test_original_stage_c_accepted_source_namespace_is_not_source_authority(
+        monkeypatch):
+    from copy import deepcopy
+    from app.services.hyperliquid_forward_flat_paper_policy import (
+        derive_reviewable_conservative_hl_manifest,
+    )
+    x = _pending_hl_source_review_fixture(monkeypatch)
+    assert x.x.kw["operator_acceptance_ids"]["HYPERLIQUID"].startswith(
+        "OPERATOR_REVIEWED_"
+    )
+    proposed = deepcopy(target.HL_ORIGINAL_PUBLIC_SOURCE_REVIEW)
+    x.x.kw["hl_source_identifiers"] = proposed
+    manifest = derive_reviewable_conservative_hl_manifest(x.original)
+    for key in ("market_source", "instrument_cut", "funding_source"):
+        manifest["perp_policy"][key] = proposed[key]
+    x.x.kw["approved_unstamped_manifest_digests"]["HYPERLIQUID"] = target.digest(
+        {k: v for k, v in manifest.items() if k != "opened_at"})
+    entries, admission = target.prepare_original_fresh_two_account_inceptions(
+        **x.x.kw)
+    assert admission.release is x.x.kw["release"]
+    hl = entries["HYPERLIQUID"]
+    assert hl["parameters"]["perp_policy"] == manifest["perp_policy"]
+    assert all(
+        not hl["parameters"]["perp_policy"][key].startswith("PENDING_")
+        for key in ("market_source", "instrument_cut", "funding_source")
+    )
+    assert hl["native_enrollment"]["policy_digest"] == target.digest(
+        hl["parameters"]["perp_policy"])
+    assert hl["native_enrollment"]["inception_digest"] == target.digest(
+        hl["parameters"])
+    assert hl["parameters"]["opening_cash"] == "1000"
+    assert hl["parameters"]["currency"] == "USDC"
+    assert entries["QUALITY_DIPS"]["parameters"]["opening_cash"] == "1000"
+    assert x.x.draft["accounts"]["HYPERLIQUID"][
+        "unaccepted_historical_parameters"] == x.original
+    # No source-authority, provider-connection, writer, account or PAPER
+    # side effect exists in this original stage-C in-memory review.
+    assert x.x.roots["all_twelve_distinct_and_empty"] is True
+
+
+@pytest.mark.parametrize("damage", [
+    "alternate_provider", "invented_market", "missing_source",
+    "wrong_schema", "unreviewed_hl_digest", "changed_terms_after_review",
+])
+def test_original_stage_c_source_identity_binding_refuses_without_exact_review(
+        monkeypatch, damage):
+    from copy import deepcopy
+    from app.services.hyperliquid_forward_flat_paper_policy import (
+        derive_reviewable_conservative_hl_manifest,
+    )
+    x = _pending_hl_source_review_fixture(monkeypatch)
+    source = deepcopy(target.HL_ORIGINAL_PUBLIC_SOURCE_REVIEW)
+    proposed = derive_reviewable_conservative_hl_manifest(x.original)
+    for key in ("market_source", "instrument_cut", "funding_source"):
+        proposed["perp_policy"][key] = source[key]
+    x.x.kw["hl_source_identifiers"] = source
+    x.x.kw["approved_unstamped_manifest_digests"]["HYPERLIQUID"] = target.digest(
+        {k: v for k, v in proposed.items() if k != "opened_at"})
+    if damage == "alternate_provider":
+        source["provider_url"] = "https://localhost.invalid/info"
+    elif damage == "invented_market":
+        source["market_source"] = "FAKE_PROVIDER_PUBLIC_BOOK"
+    elif damage == "missing_source":
+        source.pop("funding_source")
+    elif damage == "wrong_schema":
+        source["schema"] = "PROVIDER_RIGHTS_ALREADY_ACCEPTED"
+    elif damage == "unreviewed_hl_digest":
+        x.x.kw["approved_unstamped_manifest_digests"]["HYPERLIQUID"] = "f" * 64
+    else:
+        x.x.draft["accounts"]["HYPERLIQUID"][
+            "unaccepted_historical_parameters"]["perp_policy"][
+                "max_notional"] = "300"
+    with pytest.raises(ValueError):
+        target.prepare_original_fresh_two_account_inceptions(**x.x.kw)
+    assert x.x.roots["all_twelve_distinct_and_empty"] is True
