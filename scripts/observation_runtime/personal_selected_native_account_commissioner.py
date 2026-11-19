@@ -350,8 +350,8 @@ class NativeSelectedPersonalAccountCommissioner:
                 or result.get("schema") != "ATLAS_PERSONAL_ACTIVATION_PUBLICATION_V1"
                 or result.get("status") != "NATIVE_VERIFIED"
                 or type(result.get("binding")) is not dict
-                or result.get("paper_start_authorized") is True
-                or result.get("live_trading_authorized") is True):
+                or result.get("paper_start_authorized") is not False
+                or result.get("live_trading_authorized") is not False):
             raise ValueError("PERSONAL_COMMISSION_ORIGINAL_ACTIVATION_UNVERIFIED")
         self._activation_binding = strict(body(result["binding"]))
         self._initial_activation_root = root
@@ -463,8 +463,8 @@ class NativeSelectedPersonalAccountCommissioner:
                 or result.get("schema") != "ATLAS_PERSONAL_ACTIVATION_PUBLICATION_V1"
                 or result.get("status") != "NATIVE_VERIFIED"
                 or type(result.get("binding")) is not dict
-                or result.get("paper_start_authorized") is True
-                or result.get("live_trading_authorized") is True):
+                or result.get("paper_start_authorized") is not False
+                or result.get("live_trading_authorized") is not False):
             raise ValueError("PERSONAL_COMMISSION_ORIGINAL_DATA_ACTIVATION_UNVERIFIED")
         self._state = "POSTINCEPTION_DATA_ACTIVATION_ACKNOWLEDGED"
         return strict(body(result))

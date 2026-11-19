@@ -360,6 +360,50 @@ def test_stage_g_partial_publication_terminal_and_no_retry(monkeypatch):
         x.obj.publish_postinception_data_activation_once(**postinit(x))
 
 
+@pytest.mark.parametrize("phase", ["E", "G"])
+@pytest.mark.parametrize("field", [
+    "paper_start_authorized", "live_trading_authorized",
+])
+@pytest.mark.parametrize("corruption", ["omitted", "string_false"])
+def test_original_activation_ack_must_explicitly_deny_financial_start(
+        monkeypatch, phase, field, corruption):
+    x = configured(monkeypatch)
+    if phase == "E":
+        x.obj.initialize_two_journals_once(**first())
+        operation, arguments, unknown = (
+            x.obj.publish_initialization_activation_once,
+            second(), "ACTIVATION_UNKNOWN",
+        )
+    else:
+        activate_to_two_accounts(x)
+        stub_original_data_operator_record(monkeypatch, x)
+        operation, arguments, unknown = (
+            x.obj.publish_postinception_data_activation_once,
+            postinit(x), "DATA_ACTIVATION_UNKNOWN",
+        )
+
+    def malformed_ack(**kwargs):
+        result = {
+            "schema": "ATLAS_PERSONAL_ACTIVATION_PUBLICATION_V1",
+            "status": "NATIVE_VERIFIED",
+            "binding": {"id": [1, 2, 3], "sha256": "b" * 64},
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
+        if corruption == "omitted":
+            result.pop(field)
+        else:
+            result[field] = "false"
+        return result
+
+    monkeypatch.setattr(target, "commission_native_activation", malformed_ack)
+    with pytest.raises(ValueError, match="ACTIVATION_UNVERIFIED"):
+        operation(**arguments)
+    assert x.obj.phase == unknown
+    with pytest.raises(ValueError, match="REPLAY_OR_UNKNOWN"):
+        operation(**arguments)
+
+
 def test_stage_g_requires_real_initial_fs1_fs3_not_just_journals(monkeypatch):
     x=configured(monkeypatch)
     x.obj.initialize_two_journals_once(**first())
