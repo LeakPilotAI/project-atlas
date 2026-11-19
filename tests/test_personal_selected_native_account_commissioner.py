@@ -394,3 +394,181 @@ def test_writer_handle_close_failure_leaves_account_outcome_unknown_and_closes_a
     assert events[-2:]==["close_HYPERLIQUID","close_QUALITY_DIPS"]
     with pytest.raises(ValueError,match="REPLAY_OR_UNKNOWN"):
         x.obj.initialize_two_accounts_once(**third(x))
+
+
+def original_fresh_stage_c_model(monkeypatch):
+    """Only stubs select/clock/Windows ports, not production account grant."""
+    from copy import deepcopy
+    from scripts.observation_runtime import (
+        personal_current_selected_dual_account_draft as draft,
+        personal_existing_native_resource_evidence as roots_module,
+        personal_paper_inception as inception_module,
+    )
+    from app.services import personal_paper_runtime as runtime
+    from app.services import paper_financial_replay as ledger
+    T=1794500100
+    class Release:
+        artifact_digest=RELEASE
+        def verify(self, *, release_digest):
+            assert release_digest==RELEASE
+            return {"source_commit":"test-only"}
+    class Job:
+        identity={"pid":432,"creation_filetime":123456789,
+                  "image":r"D:\ATLAS_SELECTED_TEST_PYTHON.exe"}
+        def verify(self):return True
+    class Clock:
+        def __init__(self):self.stamp=T
+        def __call__(self):return self.stamp
+        def require_operational(self,runtime_id):
+            assert runtime_id=="ORIGINAL_SELECTED"
+    class Admission:
+        def __init__(self, *, release):self.release=release
+        def verify(self, *, release_digest):
+            assert release_digest==self.release.artifact_digest
+            return {"selected_artifact_digest_bound":True}
+    roots={"native_root_total":12,"existing_empty_root_namespaces":12,
+           "all_twelve_distinct_and_empty":True,"lanes":{}}
+    candidate={"status":"TWO_CURRENT_RELEASE_ACCOUNT_DRAFTS_UNACCEPTED_NO_FINANCE",
+               "selected_artifact_digest":RELEASE,"original_native_root_count":12,
+               "native_account_inceptions_published":0,
+               "operator_financial_approval_accepted":False,
+               "paper_start_authorized":False,"live_trading_authorized":False,
+               "accounts":{}}
+    for idx,lane in enumerate(LANES):
+        manifest={
+            "schema":"TEST_ONLY_MANIFEST","opening_cash":"1000",
+            "currency":"USD" if lane=="QUALITY_DIPS" else "USDC",
+            "release":RELEASE,"opened_at":T-123,"epoch":lane+"_EPOCH",
+            "fees_bps":"2","initial_net_r":"0",
+        }
+        native_resources={}
+        root_rows={}
+        for k,role in enumerate(("source","projection","report",
+                                "control","coordination","custody")):
+            identity=[1,idx*6+k+1,999]
+            native_resources[role]={"native_id":identity,
+                "path":r"D:\DISPOSABLE_ATLAS_ORIGINAL_INPUTS"
+                        +"\\"+lane+"\\"+role}
+            root_rows[role]={"native_id":identity,
+                             "existing_empty_namespace_verified":True}
+        native={"lane":lane,"release_digest":RELEASE,"epoch":manifest["epoch"],
+                "resources":native_resources,
+                "writers":None,"acceptance_id":None}
+        candidate["accounts"][lane]={
+            "unaccepted_historical_parameters":manifest,
+            "unaccepted_historical_enrollment":native,
+            "unaccepted_historical_report_scope":{"policy_digest":"historic"},
+            "opening_timestamp_historical_stale":True,
+            "operator_approval_unissued":True,
+            "fee_rights_unreviewed":True,
+            "fs1_fs3_not_published":True,
+            "operational_market_rights_unaccepted":True,
+        }
+        roots["lanes"][lane]={"roots":root_rows}
+    monkeypatch.setattr(target,"NativeOriginalSelfJob",Job)
+    monkeypatch.setattr(target,"NativePersonalReleaseIdentity",Release)
+    monkeypatch.setattr(target,"NativeVersionSafePaperOperatorClock",Clock)
+    monkeypatch.setattr(target,"NativeFinancialReleaseAdmission",Admission)
+    monkeypatch.setattr(target,"require_version_safe_release_digest",
+        lambda *,clock,runtime_id,release_digest:
+            type(clock) is Clock and runtime_id=="ORIGINAL_SELECTED"
+            and release_digest==RELEASE)
+    monkeypatch.setattr(roots_module,"inspect_two_lane_native_roots",lambda:deepcopy(roots))
+    monkeypatch.setattr(draft,"inspect",lambda:deepcopy(candidate))
+    monkeypatch.setattr(runtime,"validate_policy",lambda p:deepcopy(p))
+    monkeypatch.setattr(ledger,"validate_manifest",lambda m:m)
+    monkeypatch.setattr(inception_module,"validate_personal_inception",
+        lambda e:(e["lane"],e["native_enrollment"],e["parameters"]))
+    digests={lane:target.digest({k:v for k,v in candidate["accounts"][lane]
+         ["unaccepted_historical_parameters"].items() if k!="opened_at"})
+         for lane in LANES}
+    approvals={lane:"OPERATOR_REVIEWED_"+lane for lane in LANES}
+    kw={"self_job":Job(),"release":Release(),"clock":Clock(),
+        "runtime_id":"ORIGINAL_SELECTED","personal_policy":{"scope":"TEST_ONLY"},
+        "operator_acceptance_ids":approvals,
+        "approved_unstamped_manifest_digests":digests}
+    return SimpleNamespace(kw=kw, draft=candidate, roots=roots)
+
+
+def test_stage_c_uses_real_original_bound_drafts_and_actual_original_job(
+        monkeypatch):
+    x=original_fresh_stage_c_model(monkeypatch)
+    before=x.draft["accounts"]["QUALITY_DIPS"]["unaccepted_historical_parameters"]
+    old_stamp=before["opened_at"]
+    accounts,admission=target.prepare_original_fresh_two_account_inceptions(**x.kw)
+    assert set(accounts)==set(LANES)
+    assert admission.release is x.kw["release"]
+    assert x.draft["accounts"]["QUALITY_DIPS"]["unaccepted_historical_parameters"]["opened_at"]==old_stamp
+    for lane in LANES:
+        e=accounts[lane]
+        assert e["lane"]==lane
+        assert e["parameters"]["opened_at"]==x.kw["clock"]()
+        assert e["native_enrollment"]["inception_digest"]==target.digest(e["parameters"])
+        assert e["report_scope"]["policy_digest"]==target.digest(e["parameters"])
+        assert e["native_enrollment"]["acceptance_id"]==x.kw["operator_acceptance_ids"][lane]
+        assert set(e["native_enrollment"]["writers"])==(
+            {"decision","source","projection","report","coordination"}
+            if lane=="QUALITY_DIPS"
+            else {"decision","source","projection","report","coordination","funding","mark"})
+        assert all(row["pid"]==432 for row in e["native_enrollment"]["writers"].values())
+        assert e["parameters"]["opening_cash"]=="1000"
+        assert e["native_enrollment"]["release_digest"]==RELEASE
+
+
+@pytest.mark.parametrize("fault",[
+    "no_operator_ids","duplicate_ids","unaccepted_ids",
+    "unreviewed_fee_digest","wrong_release","foreign_original",
+    "nonempty_financial_roots","already_promoted_draft","missing_second_lane",
+    "expired_new_stamp","unexpected_wrong_lane","wrong_native_id",
+])
+def test_stage_c_never_promotes_unaccepted_historic_draft_without_exact_scope(
+        monkeypatch,fault):
+    x=original_fresh_stage_c_model(monkeypatch)
+    kw=x.kw
+    if fault=="no_operator_ids":kw["operator_acceptance_ids"]={}
+    elif fault=="duplicate_ids":kw["operator_acceptance_ids"]["HYPERLIQUID"]=kw["operator_acceptance_ids"]["QUALITY_DIPS"]
+    elif fault=="unaccepted_ids":kw["operator_acceptance_ids"]["QUALITY_DIPS"]="UNACCEPTED_DRAFT"
+    elif fault=="unreviewed_fee_digest":kw["approved_unstamped_manifest_digests"]["QUALITY_DIPS"]="f"*64
+    elif fault=="wrong_release":kw["release"].artifact_digest="f"*64
+    elif fault=="foreign_original":kw["self_job"]=object()
+    elif fault=="nonempty_financial_roots":
+        from scripts.observation_runtime import personal_existing_native_resource_evidence as native
+        def bad_roots():
+            value=__import__("copy").deepcopy(x.roots)
+            value["all_twelve_distinct_and_empty"]=False
+            return value
+        monkeypatch.setattr(native,"inspect_two_lane_native_roots",bad_roots)
+    elif fault=="already_promoted_draft":
+        from scripts.observation_runtime import personal_current_selected_dual_account_draft as draft
+        def bad_draft():
+            value=__import__("copy").deepcopy(x.draft)
+            value["accounts"]["QUALITY_DIPS"]["operational_market_rights_unaccepted"]=False
+            return value
+        monkeypatch.setattr(draft,"inspect",bad_draft)
+    elif fault=="missing_second_lane":
+        from scripts.observation_runtime import personal_current_selected_dual_account_draft as draft
+        def incomplete():
+            value=__import__("copy").deepcopy(x.draft)
+            value["accounts"].pop("HYPERLIQUID")
+            return value
+        monkeypatch.setattr(draft,"inspect",incomplete)
+    elif fault=="expired_new_stamp":
+        class Expiring(type(kw["clock"])):
+            def __call__(self):
+                self.stamp+=3
+                return self.stamp
+        kw["clock"]=Expiring()
+    elif fault=="unexpected_wrong_lane":
+        from scripts.observation_runtime import personal_paper_inception as inception
+        monkeypatch.setattr(inception,"validate_personal_inception",
+            lambda e:("HYPERLIQUID" if e["lane"]=="QUALITY_DIPS" else e["lane"],
+                     e["native_enrollment"],e["parameters"]))
+    elif fault=="wrong_native_id":
+        from scripts.observation_runtime import personal_current_selected_dual_account_draft as draft
+        def wrong_root():
+            value=__import__("copy").deepcopy(x.draft)
+            value["accounts"]["QUALITY_DIPS"]["unaccepted_historical_enrollment"]["resources"]["report"]["native_id"]=[999,999,999]
+            return value
+        monkeypatch.setattr(draft,"inspect",wrong_root)
+    with pytest.raises((ValueError,AssertionError,TypeError)):
+        target.prepare_original_fresh_two_account_inceptions(**kw)

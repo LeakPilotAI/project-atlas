@@ -1,11 +1,13 @@
-"""Original selected personal PAPER account commissioning, stages D/E/F.
+"""Original selected personal PAPER account commissioning, stages C-G.
 
 One SAME selected native Windows process retains the original installation
 inventory, Windows Job, genuine original financial writer-roster identities
 and independent operational UTC through the existing original:
+  C: explicitly reviewed fresh original account candidates in memory
   D: two coordination journals (separate exact operator scope)
   E: preinception READ_ONLY + INITIALIZE_SIMULATED_ACCOUNTS activation record
   F: two real PAPER-only $1,000-account initial durable native publications
+  G: distinct postinception READ_ONLY + CONNECT_APPROVED_DATA activation
 
 This is the missing composition, NOT another financial issuer, order route,
 source-terms grant, wallet connection or PAPER startup. No defaults, no
@@ -23,6 +25,7 @@ from scripts.observation_runtime.personal_activation_commission import (
 )
 from scripts.observation_runtime.personal_native_original_self_job import (
     NativeFinancialReleaseAdmission,
+    NativeOriginalSelfJob,
 )
 from scripts.observation_runtime.personal_native_selected_owned_job_preflight import (
     RetainedSelectedNativeOwnerPreflight,
@@ -59,10 +62,159 @@ STATES = (
 )
 
 
+def prepare_original_fresh_two_account_inceptions(
+        *, self_job, release, clock, runtime_id, personal_policy,
+        operator_acceptance_ids, approved_unstamped_manifest_digests):
+    """Stage C: create fresh IN-MEMORY original-manifest candidates.
+
+    The source is the real selected original release + 12 genuine original
+    empty root identities, NOT caller-chosen arbitrary finance templates.
+    The local operator must already have reviewed the exact unstamped
+    financial terms, fees, cash and policies and supplied both digests.
+    No journal, activation, account file, provider, Stop or trading starts.
+    The returned opening time expires in five seconds by the ORIGINAL issuer;
+    caller must retain the same original self-Job and initialize journals
+    immediately under an independent exact one-shot operator scope.
+    """
+    from copy import deepcopy
+    from app.services.personal_paper_runtime import validate_policy
+    from app.services.paper_financial_replay import validate_manifest
+    from app.services.quality_dips_autonomous_enrollment import (
+        WRITERS as QD_WRITERS,
+    )
+    from app.services.perp_operational_contract import WRITERS as HL_WRITERS
+    from scripts.observation_runtime.personal_current_selected_dual_account_draft import (
+        inspect as inspect_selected_draft,
+    )
+    from scripts.observation_runtime.personal_paper_inception import (
+        validate_personal_inception,
+    )
+    from scripts.observation_runtime.personal_existing_native_resource_evidence import (
+        inspect_two_lane_native_roots,
+    )
+    if (type(self_job) is not NativeOriginalSelfJob
+            or type(release) is not NativePersonalReleaseIdentity
+            or type(clock) is not NativeVersionSafePaperOperatorClock
+            or type(runtime_id) is not str or not runtime_id
+            or type(operator_acceptance_ids) is not dict
+            or set(operator_acceptance_ids) != set(LANES)
+            or type(approved_unstamped_manifest_digests) is not dict
+            or set(approved_unstamped_manifest_digests) != set(LANES)
+            or any(type(operator_acceptance_ids[k]) is not str
+                   or not operator_acceptance_ids[k]
+                   or operator_acceptance_ids[k].startswith("UNACCEPTED")
+                   for k in LANES)
+            or len(set(operator_acceptance_ids.values())) != 2
+            or any(type(approved_unstamped_manifest_digests[k]) is not str
+                   or len(approved_unstamped_manifest_digests[k]) != 64
+                   or any(c not in "0123456789abcdef"
+                          for c in approved_unstamped_manifest_digests[k])
+                   for k in LANES)):
+        raise ValueError("PERSONAL_C_REVIEWED_ORIGINAL_ACCOUNT_INPUTS_REQUIRED")
+    if self_job.verify() is not True:
+        raise ValueError("PERSONAL_C_ORIGINAL_WINDOWS_SELF_JOB_GONE")
+    admission = NativeFinancialReleaseAdmission(release=release)
+    if admission.verify(release_digest=release.artifact_digest) is None:
+        raise ValueError("PERSONAL_C_SELECTED_ORIGINAL_SOURCE_REQUIRED")
+    if require_version_safe_release_digest(
+            clock=clock, runtime_id=runtime_id,
+            release_digest=release.artifact_digest) is not True:
+        raise ValueError("PERSONAL_C_SELECTED_ONE_NTP_REQUIRED")
+    approved_policy = validate_policy(personal_policy)
+    roots_before = inspect_two_lane_native_roots()
+    if (roots_before["native_root_total"] != 12
+            or roots_before["existing_empty_root_namespaces"] != 12
+            or roots_before["all_twelve_distinct_and_empty"] is not True):
+        raise ValueError("PERSONAL_C_TWELVE_EMPTY_ORIGINAL_ROOTS_REQUIRED")
+    selected = inspect_selected_draft()
+    if (selected.get("status")
+            != "TWO_CURRENT_RELEASE_ACCOUNT_DRAFTS_UNACCEPTED_NO_FINANCE"
+            or selected.get("selected_artifact_digest")
+            != release.artifact_digest
+            or selected.get("original_native_root_count") != 12
+            or selected.get("native_account_inceptions_published") != 0
+            or selected.get("operator_financial_approval_accepted") is not False
+            or selected.get("paper_start_authorized") is not False
+            or selected.get("live_trading_authorized") is not False
+            or set(selected.get("accounts", {})) != set(LANES)):
+        raise ValueError("PERSONAL_C_UNACCEPTED_SELECTED_ORIGINAL_DRAFT_REQUIRED")
+    # Finish expensive original release/draft verification BEFORE establishing
+    # the new five-second issuer-sensitive opening timestamp.
+    self_job.verify()
+    clock.require_operational(runtime_id)
+    opening = clock()
+    if type(opening) is not int:
+        raise ValueError("PERSONAL_C_INTEGER_ORIGINAL_UTC_REQUIRED")
+    process = {"schema": "QD_OP_PROCESS_ID_V1", **self_job.identity}
+    result = {}
+    for lane, roles in (
+        ("QUALITY_DIPS", QD_WRITERS),
+        ("HYPERLIQUID", HL_WRITERS),
+    ):
+        old = selected["accounts"][lane]
+        if (old.get("opening_timestamp_historical_stale") is not True
+                or old.get("operator_approval_unissued") is not True
+                or old.get("fee_rights_unreviewed") is not True
+                or old.get("fs1_fs3_not_published") is not True
+                or old.get("operational_market_rights_unaccepted") is not True):
+            raise ValueError("PERSONAL_C_ORIGINAL_DRAFT_ALREADY_PROMOTED_REFUSED")
+        manifest = deepcopy(old["unaccepted_historical_parameters"])
+        enrollment = deepcopy(old["unaccepted_historical_enrollment"])
+        scope = deepcopy(old["unaccepted_historical_report_scope"])
+        validate_manifest(manifest)
+        # Approval binds ALL original finance terms except a fresh UTC
+        # inception second that could not have been approved in advance.
+        financial_terms = {k: v for k, v in manifest.items() if k != "opened_at"}
+        if digest(financial_terms) != approved_unstamped_manifest_digests[lane]:
+            raise ValueError("PERSONAL_C_FEES_RISK_AND_MANIFEST_TERMS_NOT_APPROVED")
+        manifest["opened_at"] = opening
+        validate_manifest(manifest)
+        enrollment["writers"] = {
+            role: deepcopy(process) for role in roles
+        }
+        enrollment["acceptance_id"] = operator_acceptance_ids[lane]
+        enrollment["clock_source"] = SOURCE
+        enrollment["inception_digest"] = digest(manifest)
+        scope["policy_digest"] = digest(manifest)
+        inception = {
+            "profile": "PERSONAL_PAPER_ONLY_V1",
+            "personal_policy": deepcopy(approved_policy),
+            "lane": lane,
+            "native_enrollment": enrollment,
+            "parameters": manifest,
+            "report_scope": scope,
+        }
+        verified_lane, verified_native, verified_manifest = (
+            validate_personal_inception(inception)
+        )
+        if (verified_lane != lane
+                or verified_native != enrollment
+                or verified_manifest != manifest
+                or manifest["release"] != release.artifact_digest
+                or enrollment["release_digest"] != release.artifact_digest
+                or manifest["opening_cash"] != "1000"
+                or manifest["currency"] != (
+                    "USD" if lane == "QUALITY_DIPS" else "USDC")
+                or any(
+                    enrollment["resources"][role]["native_id"]
+                    != roots_before["lanes"][lane]["roots"][role]["native_id"]
+                    for role in roots_before["lanes"][lane]["roots"]
+                )):
+            raise ValueError("PERSONAL_C_FINANCIAL_MANIFEST_OR_NATIVE_ROOT_CONFLICT")
+        result[lane] = inception
+    if (clock() - opening > 2
+            or inspect_two_lane_native_roots() != roots_before
+            or self_job.verify() is not True):
+        raise ValueError("PERSONAL_C_FRESH_ORIGINAL_SELECTED_COHORT_EXPIRED")
+    # Keep the SAME full selected native release handles alive through the
+    # immediately following owner and journal admission; never reopen them.
+    return strict(body(result)), admission
+
+
 class NativeSelectedPersonalAccountCommissioner:
     """No automatic approval; only coordinates existing installed native issuers.
 
-    All three irreversible phases happen within the SAME original selected
+    All four sequential approval/publication phases happen within the SAME selected
     process and owner, with fresh externally reviewed per-phase records.
     Caller owns and finally closes its original release, clock, Job and ledgers.
     """
