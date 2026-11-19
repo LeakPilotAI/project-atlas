@@ -1389,3 +1389,61 @@ def test_c_d_successor_scope_routes_only_distinct_new_epoch_without_reusing_orig
         with pytest.raises((ValueError,AttributeError)):
             target.bind_original_native_two_account_commissioner(**x.kwargs)
         assert x.created==[]
+
+
+def test_successor_c_d_dispatch_uses_new_epoch_candidates_and_bind_scope(monkeypatch):
+    """Composition of future scope; no real native roots/accounts in this test."""
+    from scripts.observation_runtime import personal_successor_stage_c_candidates as fresh
+    sentinel=object()
+    checked=[]
+    originals={
+        "self_job":object(),"release":object(),"clock":object(),
+        "runtime_id":"TEST_SELECTED_SUCCESSOR",
+        "personal_policy":{"simulation_only":True},
+        "operator_acceptance_ids":{"QUALITY_DIPS":"R27_REVIEWED_QD",
+                                   "HYPERLIQUID":"R27_REVIEWED_HL"},
+        "approved_unstamped_manifest_digests":{"QUALITY_DIPS":"a"*64,
+                                               "HYPERLIQUID":"b"*64},
+        "successor_root_scope":sentinel,
+        "reviewed_successor_terms":{"new_epoch":True},
+    }
+    def fresh_stage(**kw):
+        checked.append("fresh_scope")
+        assert kw["successor_root_scope"] is sentinel
+        assert kw["reviewed_successor_terms"]==originals["reviewed_successor_terms"]
+        return {"QUALITY_DIPS":"NEW_QD","HYPERLIQUID":"NEW_HL"},"NEW_ADMISSION"
+    def bind_stage(**kw):
+        checked.append("native_bound")
+        assert kw["successor_root_scope"] is sentinel
+        assert kw["admission"]=="NEW_ADMISSION"
+        assert kw["inceptions"]=={"QUALITY_DIPS":"NEW_QD","HYPERLIQUID":"NEW_HL"}
+        return "NEW_COMMISSIONER","NO_FINANCIAL_IMAGE_WRITES"
+    monkeypatch.setattr(fresh,"prepare_fresh_successor_account_candidates",fresh_stage)
+    monkeypatch.setattr(target,"bind_original_native_two_account_commissioner",bind_stage)
+    result=target.prepare_and_bind_reviewed_original_native_accounts(**originals)
+    assert result==("NEW_COMMISSIONER","NO_FINANCIAL_IMAGE_WRITES")
+    assert checked==["fresh_scope","native_bound"]
+
+
+@pytest.mark.parametrize("change",[
+    "terms_without_native_scope","old_hl_fee_amendment","old_hl_sources",
+    "missing_new_review",
+])
+def test_successor_stage_c_cannot_bypass_original_vs_new_epoch_discriminator(
+        monkeypatch,change):
+    inputs={
+        "self_job":object(),"release":object(),"clock":object(),
+        "runtime_id":"NEW",
+        "personal_policy":{"simulation_only":True},
+        "operator_acceptance_ids":{"QUALITY_DIPS":"a","HYPERLIQUID":"b"},
+        "approved_unstamped_manifest_digests":{"QUALITY_DIPS":"a"*64,
+                                               "HYPERLIQUID":"b"*64},
+        "successor_root_scope":object(),
+        "reviewed_successor_terms":{},
+    }
+    if change=="terms_without_native_scope":inputs["successor_root_scope"]=None
+    elif change=="old_hl_fee_amendment":inputs["hl_cost_amendment"]="SYNTHETIC_ORIGINAL_AMENDMENT"
+    elif change=="old_hl_sources":inputs["hl_source_identifiers"]={}
+    elif change=="missing_new_review":inputs["reviewed_successor_terms"]=None
+    with pytest.raises(ValueError,match="PERSONAL_C_D_SUCCESSOR"):
+        target.prepare_and_bind_reviewed_original_native_accounts(**inputs)

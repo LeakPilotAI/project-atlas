@@ -377,25 +377,47 @@ def bind_original_native_two_account_commissioner(
 def prepare_and_bind_reviewed_original_native_accounts(
         *, self_job, release, clock, runtime_id, personal_policy,
         operator_acceptance_ids, approved_unstamped_manifest_digests,
-        hl_cost_amendment=None, hl_source_identifiers=None):
-    """Production C->D admission in ONE selected original process.
+        hl_cost_amendment=None, hl_source_identifiers=None,
+        successor_root_scope=None, reviewed_successor_terms=None):
+    """Production C->D admission in ONE selected native process.
 
-    Only a reviewed original account/policy permit may enter the existing
-    Stage C issuer. The resulting fresh account candidates are immediately
-    bound to the real existing native stores. Separate exact local journal
-    approval and the original later stages remain mandatory.
+    Original R26 keeps its original preinception path. A distinct successor
+    may enter only through the separately verified historical-custody and
+    new-root-scope Stage C path, never by reusing the R26 draft, process, or
+    accounts. Later genuine exact local journal/activation approvals remain
+    mandatory; this composition never grants PAPER or live trading.
     """
-    inceptions, admission = prepare_original_fresh_two_account_inceptions(
-        self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,
-        personal_policy=personal_policy,
-        operator_acceptance_ids=operator_acceptance_ids,
-        approved_unstamped_manifest_digests=approved_unstamped_manifest_digests,
-        hl_cost_amendment=hl_cost_amendment,
-        hl_source_identifiers=hl_source_identifiers,
-    )
+    bind_scope={}
+    if successor_root_scope is None:
+        if reviewed_successor_terms is not None:
+            raise ValueError('PERSONAL_C_D_SUCCESSOR_TERMS_WITHOUT_NATIVE_SCOPE_REFUSED')
+        inceptions, admission = prepare_original_fresh_two_account_inceptions(
+            self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,
+            personal_policy=personal_policy,
+            operator_acceptance_ids=operator_acceptance_ids,
+            approved_unstamped_manifest_digests=approved_unstamped_manifest_digests,
+            hl_cost_amendment=hl_cost_amendment,
+            hl_source_identifiers=hl_source_identifiers,
+        )
+    else:
+        if (reviewed_successor_terms is None
+                or hl_cost_amendment is not None or hl_source_identifiers is not None):
+            raise ValueError('PERSONAL_C_D_SUCCESSOR_CANNOT_USE_ORIGINAL_R26_DRAFT_AMENDMENTS')
+        from scripts.observation_runtime.personal_successor_stage_c_candidates import (
+            prepare_fresh_successor_account_candidates,
+        )
+        inceptions, admission = prepare_fresh_successor_account_candidates(
+            self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,
+            successor_root_scope=successor_root_scope,
+            reviewed_successor_terms=reviewed_successor_terms,
+            personal_policy=personal_policy,
+            operator_acceptance_ids=operator_acceptance_ids,
+            approved_unstamped_manifest_digests=approved_unstamped_manifest_digests,
+        )
+        bind_scope['successor_root_scope']=successor_root_scope
     return bind_original_native_two_account_commissioner(
         self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,
-        inceptions=inceptions, admission=admission,
+        inceptions=inceptions, admission=admission, **bind_scope,
     )
 
 
