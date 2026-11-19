@@ -85,8 +85,13 @@ def runner(f, owner, clock):
     )
 
 
-def test_original_selected_source_handoff_is_one_shot_native_replay_only(monkeypatch):
+@pytest.mark.parametrize("allowed_phase", [
+    "INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY",
+])
+def test_original_selected_source_handoff_is_one_shot_native_replay_only(
+        monkeypatch, allowed_phase):
     f, owner, clock = synthetic_ports(monkeypatch)
+    owner._phase = allowed_phase
     before = copy.deepcopy(f.s.s.files)
     bound = runner(f, owner, clock)
     result = bound.publish_one()

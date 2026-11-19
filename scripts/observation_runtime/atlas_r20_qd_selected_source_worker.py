@@ -32,9 +32,11 @@ from scripts.observation_runtime.quality_dips_read_service import observe_self
 SCHEMA = "ATLAS_QD_ORIGINAL_SELECTED_OPERATING_SOURCE_HANDOFF_V1"
 # An original QD source archive genesis requires CONNECT_APPROVED_DATA,
 # which original later-release activation cannot grant before two FS1/FS3
-# account ACKs. Refuse PREINCEPTION and PREINCEPTION_COORDINATION_READY:
-# those phases cannot genuinely host an accepted native current-source CAS.
-_ALLOWED_PHASES = frozenset(("INITIAL_READBACK_ONLY",))
+# account ACKs. Both initial and continuously verified current-account
+# readback remain eligible; the original owner's verify_still_running() must
+# separately authenticate each phase and its original native account ACKs.
+# Refuse PREINCEPTION and PREINCEPTION_COORDINATION_READY before those ACKs.
+_ALLOWED_PHASES = frozenset(("INITIAL_READBACK_ONLY", "CURRENT_READBACK_ONLY"))
 
 
 def _installed_qd_source(origin):
