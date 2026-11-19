@@ -109,6 +109,60 @@ def test_v7_publisher_refuses_falsified_clock_evidence_before_native_custody(
         publisher.publish_personal_activation(**kw)
 
 
+def test_native_activation_publication_receipt_explicitly_disables_paper_and_live(
+        monkeypatch):
+    """Exercise the real publisher response with disposable native ports."""
+    import hashlib
+    import json
+    from types import SimpleNamespace
+    from scripts.observation_runtime import personal_paper_activation
+
+    kw = publisher_inputs(monkeypatch)
+    expected = kw["record"]
+
+    class Output:
+        root_handle = object()
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def write_bound(self, name, raw):
+            assert name == "activation.json"
+            assert json.loads(raw) == expected
+            return {"id": [4, 5, 6], "sha256": hashlib.sha256(raw).hexdigest()}
+
+    output = Output()
+
+    class FakeWindowsOutput:
+        @staticmethod
+        def create_root(root):
+            assert root == kw["root"]
+            return output
+
+    monkeypatch.setattr(
+        publisher, "_native_store",
+        lambda: SimpleNamespace(
+            w=SimpleNamespace(WindowsOutput=FakeWindowsOutput),
+            native=SimpleNamespace(file_identity=lambda _handle: [1, 2, 3]),
+        ),
+    )
+    monkeypatch.setattr(
+        personal_paper_activation.NativePersonalActivationReader, "read",
+        lambda self: expected,
+    )
+    result = publisher.publish_personal_activation(**kw)
+    assert result["schema"] == "ATLAS_PERSONAL_ACTIVATION_PUBLICATION_V1"
+    assert result["status"] == "NATIVE_VERIFIED"
+    assert result["root"] == kw["root"]
+    assert result["native_root"] == [1, 2, 3]
+    assert result["binding"]["id"] == [4, 5, 6]
+    assert result["paper_start_authorized"] is False
+    assert result["live_trading_authorized"] is False
+
+
 def test_v7_oversized_record_never_consumes_native_activation_root(monkeypatch):
     kw = publisher_inputs(monkeypatch)
     kw["record"]["payload"] = "a" * 65536

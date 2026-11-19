@@ -249,6 +249,10 @@ def publish_personal_activation(
             "native_root": native_root,
             "binding": binding,
             "status": "NATIVE_VERIFIED",
+            # Explicit fail-closed declarations consumed by C-G commissioning.
+            # This is an activation RECORD, never PAPER or live order authority.
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
         }
 
 

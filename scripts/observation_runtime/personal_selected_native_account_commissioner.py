@@ -527,6 +527,170 @@ class NativeSelectedPersonalAccountCommissioner:
         self._state = "TWO_ACCOUNTS_ACKNOWLEDGED"
         return strict(body(result))
 
+    def publish_initialization_activation_and_open_both_once(
+            self, *, root, record_path, policy_path, accounts_path,
+            qd_enrollment_path, perp_enrollment_path, personal_policy,
+            inception_enrollments):
+        """Real E->F handoff under ONE selected owner and original approval.
+
+        Constructs the genuine reader and both native operator authorities from
+        the activation publisher's independently bound native root/file IDs.
+        Never creates the local operator approval or an AUTO_PAPER grant.
+        A partial/uncertain activation or account attempt is terminal.
+        """
+        from app.services.personal_paper_runtime import validate_policy
+        from scripts.observation_runtime.personal_local_authority import (
+            NativePersonalOperatorAuthority,
+        )
+        from scripts.observation_runtime.personal_paper_inception import (
+            validate_personal_inception,
+        )
+
+        self._require("TWO_JOURNALS_ACKNOWLEDGED")
+        approved_policy = validate_policy(personal_policy)
+        if (type(inception_enrollments) is not dict
+                or set(inception_enrollments) != set(LANES)):
+            raise ValueError("PERSONAL_E_F_REVIEWED_TWO_INCEPTIONS_REQUIRED")
+        for lane in LANES:
+            entry = inception_enrollments[lane]
+            actual_lane, native, manifest = validate_personal_inception(entry)
+            if (actual_lane != lane
+                    or native != self.enrollments[lane]
+                    or manifest != self.ledgers[lane].manifest
+                    or entry.get("personal_policy") != approved_policy):
+                raise ValueError("PERSONAL_E_F_ONE_APPROVED_ACCOUNT_POLICY_REQUIRED")
+        activation = self.publish_initialization_activation_once(
+            root=root, record_path=record_path, policy_path=policy_path,
+            accounts_path=accounts_path, qd_enrollment_path=qd_enrollment_path,
+            perp_enrollment_path=perp_enrollment_path,
+        )
+        # Publication may have committed before an unreadable/malformed
+        # receipt returned. Never replay E or proceed to financial FS1/FS3.
+        if (activation.get("root") != root
+                or type(activation.get("native_root")) is not list
+                or len(activation["native_root"]) != 3
+                or any(type(v) is not int or v < 0 for v in activation["native_root"])
+                or activation.get("paper_start_authorized") is not False
+                or activation.get("live_trading_authorized") is not False):
+            self._state = "ACTIVATION_UNKNOWN"
+            raise ValueError("PERSONAL_E_F_ORIGINAL_NATIVE_ACTIVATION_ROOT_REFUSED")
+        operators = {}
+        try:
+            reader = NativePersonalActivationReader(
+                root=root, native_root=activation["native_root"],
+                binding=activation["binding"],
+            )
+            for lane in LANES:
+                operators[lane] = NativePersonalOperatorAuthority(
+                    policy=approved_policy, enrollment=self.enrollments[lane],
+                    reader=reader, clock=self.clock, runtime_id=self.runtime_id,
+                    clock_profile=CLOCK_PROFILE, accounts=self._digest,
+                )
+            result = self.initialize_two_accounts_once(
+                reader=reader, operators=operators,
+                inception_enrollments=inception_enrollments,
+            )
+            return {"schema": "ATLAS_PERSONAL_ORIGINAL_E_F_ACCOUNT_OPENING_V1",
+                    "initial_activation": strict(body(activation)),
+                    "simulated_accounts": strict(body(result)),
+                    "paper_start_authorized": False,
+                    "live_trading_authorized": False}
+        except BaseException:
+            if self._state == "INITIALIZE_ACTIVATION_ACKNOWLEDGED":
+                self._state = "TWO_ACCOUNTS_UNKNOWN"
+            raise
+        finally:
+            for operator in reversed(tuple(operators.values())):
+                operator.revoke()
+
+    def initialize_reviewed_original_two_accounts_once(
+            self, *, operator_scope, initial_activation, personal_policy,
+            inception_enrollments):
+        """One original D-E-F sequence, only under independent human scopes.
+
+        Validate the genuine existing signed-in-session initialization record
+        BEFORE creating either irreversible financial journal. Once effects
+        begin, every uncertainty is terminal. Does not create an approval,
+        switch a provider or authorize PAPER/real-money operation.
+        """
+        from app.services.personal_paper_runtime import (
+            validate_activation_record, validate_policy,
+        )
+        from scripts.observation_runtime.personal_activation_commission import (
+            read_bounded_activation_input,
+        )
+        from scripts.volume_inspector.windows_output import current_sid
+
+        self._require("PREINCEPTION_READY")
+        required = {
+            "root", "record_path", "policy_path", "accounts_path",
+            "qd_enrollment_path", "perp_enrollment_path",
+        }
+        if (type(initial_activation) is not dict
+                or set(initial_activation) != required
+                or any(type(value) is not str or not value
+                       for value in initial_activation.values())
+                or type(operator_scope) is not dict or not operator_scope):
+            raise ValueError("PERSONAL_D_F_EXACT_EXISTING_APPROVAL_INPUTS_REQUIRED")
+        policy = validate_policy(personal_policy)
+        # Catch absent, stale or conflicting E inputs BEFORE D creates a
+        # financial coordination journal. Original E still re-reads and
+        # re-verifies their native root identity and selected-process scope.
+        record = read_bounded_activation_input(
+            initial_activation["record_path"], role="record",
+        )
+        policy_on_disk = read_bounded_activation_input(
+            initial_activation["policy_path"], role="policy",
+        )
+        accounts_on_disk = read_bounded_activation_input(
+            initial_activation["accounts_path"], role="accounts",
+        )
+        qd_on_disk = read_bounded_activation_input(
+            initial_activation["qd_enrollment_path"],
+            role="quality_dips_enrollment",
+        )
+        hl_on_disk = read_bounded_activation_input(
+            initial_activation["perp_enrollment_path"],
+            role="hyperliquid_enrollment",
+        )
+        if (validate_policy(policy_on_disk) != policy
+                or accounts_on_disk != self._digest
+                or qd_on_disk != self.enrollments[LANES[0]]
+                or hl_on_disk != self.enrollments[LANES[1]]):
+            raise ValueError("PERSONAL_D_F_EXISTING_INITIALIZATION_FILES_CONFLICT")
+        now = self.clock()
+        if (type(record) is not dict
+                or record.get("actions") not in (
+                    ["READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"],
+                    ["INITIALIZE_SIMULATED_ACCOUNTS", "READ_ONLY"],
+                )
+                or record.get("accounts") != self._digest):
+            raise ValueError("PERSONAL_D_F_EXACT_INITIALIZATION_SCOPE_REQUIRED")
+        for action in ("READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"):
+            validate_activation_record(
+                record, policy=policy, operator_id=current_sid(),
+                release=self.owner.release_digest, accounts=self._digest,
+                now=now, action=action,
+            )
+        # Stage D is intentionally the FIRST native financial write.
+        # The original one-shot issuer verifies the user's distinct journal
+        # approval, fresh image digests, 5-second UTC and 12 root identities.
+        journals = self.initialize_two_journals_once(
+            operator_scope=operator_scope,
+        )
+        opened = self.publish_initialization_activation_and_open_both_once(
+            **initial_activation, personal_policy=policy,
+            inception_enrollments=inception_enrollments,
+        )
+        return {
+            "schema": "ATLAS_PERSONAL_ORIGINAL_D_F_TWO_ACCOUNT_SEQUENCE_V1",
+            "journals": strict(body(journals)),
+            "activation": strict(body(opened["initial_activation"])),
+            "simulated_accounts": strict(body(opened["simulated_accounts"])),
+            "paper_start_authorized": False,
+            "live_trading_authorized": False,
+        }
+
     def publish_postinception_data_activation_once(
         self, *, root, record_path, policy_path, accounts_path,
         qd_enrollment_path, perp_enrollment_path,

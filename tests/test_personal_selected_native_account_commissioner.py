@@ -61,7 +61,8 @@ def configured(monkeypatch):
                 "opened_at":1794489500}
             self.images=SimpleNamespace(enrollment=target.digest(enrollment))
     class Reader:
-        pass
+        def __init__(self, *, root=None, native_root=None, binding=None):
+            self.root, self.native_root, self.binding = root, native_root, binding
     class Journal:
         def __init__(self, *, job, clock, runtime_id, ledgers, operator_scope):
             events.append("journal_scope_checked")
@@ -81,6 +82,7 @@ def configured(monkeypatch):
         assert kw["release_digest"]==RELEASE
         return {"schema":"ATLAS_PERSONAL_ACTIVATION_PUBLICATION_V1",
                 "status":"NATIVE_VERIFIED",
+                "root":kw["root"], "native_root":[1,2,3],
                 "binding":{"id":[1,2,3],"sha256":"b"*64},
                 "paper_start_authorized":False,
                 "live_trading_authorized":False}
@@ -311,6 +313,242 @@ def third(x):
             "operators":{lane:object() for lane in LANES},
             "inception_enrollments":{
                 lane:{"native_enrollment":x.enrollments[lane]} for lane in LANES}}
+
+
+def original_e_f_ports(monkeypatch):
+    """Typed disposable activation/issuer ports, no real native writes."""
+    x = configured(monkeypatch)
+    policy = {"synthetic_local_review": "TEST_ONLY"}
+    created = []
+
+    from app.services import personal_paper_runtime
+    from scripts.observation_runtime import personal_paper_inception, personal_local_authority
+    monkeypatch.setattr(personal_paper_runtime, "validate_policy", lambda value: value)
+    monkeypatch.setattr(personal_paper_inception, "validate_personal_inception",
+                        lambda entry: (entry["lane"], entry["native_enrollment"],
+                                       entry["parameters"]))
+
+    class Operator:
+        def __init__(self, *, policy, enrollment, reader, clock,
+                     runtime_id, clock_profile, accounts):
+            assert policy == {"synthetic_local_review": "TEST_ONLY"}
+            assert type(reader) is x.Reader
+            assert reader.root == second()["root"]
+            assert reader.native_root == [1, 2, 3]
+            assert reader.binding == {"id": [1, 2, 3], "sha256": "b" * 64}
+            assert clock is x.clock
+            assert runtime_id == "EXACT_LOCAL_PROCESS"
+            assert clock_profile == target.CLOCK_PROFILE
+            assert accounts == {lane: target.digest(x.enrollments[lane])
+                                for lane in LANES}
+            assert enrollment in list(x.enrollments.values())
+            self.revoked = False
+            created.append(self)
+
+        def revoke(self):
+            self.revoked = True
+
+    monkeypatch.setattr(personal_local_authority, "NativePersonalOperatorAuthority",
+                        Operator)
+    inceptions = {
+        lane: {"lane": lane, "native_enrollment": x.enrollments[lane],
+               "parameters": x.ledgers[lane].manifest, "personal_policy": policy}
+        for lane in LANES
+    }
+    return SimpleNamespace(x=x, policy=policy, inceptions=inceptions,
+                           created=created)
+
+
+def test_real_e_f_activation_receipt_binds_both_operators_and_accounts(monkeypatch):
+    data = original_e_f_ports(monkeypatch)
+    x = data.x
+    x.obj.initialize_two_journals_once(**first())
+    outcome = x.obj.publish_initialization_activation_and_open_both_once(
+        **second(), personal_policy=data.policy,
+        inception_enrollments=data.inceptions)
+    assert outcome["schema"] == "ATLAS_PERSONAL_ORIGINAL_E_F_ACCOUNT_OPENING_V1"
+    assert outcome["paper_start_authorized"] is False
+    assert outcome["live_trading_authorized"] is False
+    assert x.obj.phase == "TWO_ACCOUNTS_ACKNOWLEDGED"
+    assert len(data.created) == 2
+    assert all(port.revoked for port in data.created)
+    assert x.events.index("activation_publish") < x.events.index("accounts_publish")
+    with pytest.raises(ValueError, match="REPLAY_OR_UNKNOWN"):
+        x.obj.publish_initialization_activation_and_open_both_once(
+            **second(), personal_policy=data.policy,
+            inception_enrollments=data.inceptions)
+
+
+def test_original_e_f_rejects_policy_conflict_before_activation(monkeypatch):
+    data = original_e_f_ports(monkeypatch)
+    x = data.x
+    x.obj.initialize_two_journals_once(**first())
+    data.inceptions["HYPERLIQUID"]["personal_policy"] = {"changed": True}
+    with pytest.raises(ValueError, match="ONE_APPROVED_ACCOUNT_POLICY"):
+        x.obj.publish_initialization_activation_and_open_both_once(
+            **second(), personal_policy=data.policy,
+            inception_enrollments=data.inceptions)
+    assert x.obj.phase == "TWO_JOURNALS_ACKNOWLEDGED"
+    assert "activation_publish" not in x.events
+    assert data.created == []
+
+
+def test_original_e_f_malformed_native_root_ack_is_terminal(monkeypatch):
+    data = original_e_f_ports(monkeypatch)
+    x = data.x
+    x.obj.initialize_two_journals_once(**first())
+    original = target.commission_native_activation
+
+    def invalid_root(**kwargs):
+        result = original(**kwargs)
+        result["native_root"] = "NOT_A_NATIVE_ROOT_ID"
+        return result
+
+    monkeypatch.setattr(target, "commission_native_activation", invalid_root)
+    with pytest.raises(ValueError, match="ORIGINAL_NATIVE_ACTIVATION_ROOT_REFUSED"):
+        x.obj.publish_initialization_activation_and_open_both_once(
+            **second(), personal_policy=data.policy,
+            inception_enrollments=data.inceptions)
+    assert x.obj.phase == "ACTIVATION_UNKNOWN"
+    assert "accounts_publish" not in x.events
+    with pytest.raises(ValueError, match="REPLAY_OR_UNKNOWN"):
+        x.obj.publish_initialization_activation_and_open_both_once(
+            **second(), personal_policy=data.policy,
+            inception_enrollments=data.inceptions)
+
+
+def test_original_e_f_operator_failure_is_terminal_and_revokes_prior(monkeypatch):
+    data = original_e_f_ports(monkeypatch)
+    x = data.x
+    x.obj.initialize_two_journals_once(**first())
+    from scripts.observation_runtime import personal_local_authority
+    original = personal_local_authority.NativePersonalOperatorAuthority
+    calls = [0]
+
+    def second_operator_fails(**kwargs):
+        calls[0] += 1
+        if calls[0] == 2:
+            raise ValueError("SECOND_ORIGINAL_OPERATOR_REFUSED")
+        return original(**kwargs)
+
+    monkeypatch.setattr(personal_local_authority, "NativePersonalOperatorAuthority",
+                        second_operator_fails)
+    with pytest.raises(ValueError, match="SECOND_ORIGINAL_OPERATOR_REFUSED"):
+        x.obj.publish_initialization_activation_and_open_both_once(
+            **second(), personal_policy=data.policy,
+            inception_enrollments=data.inceptions)
+    assert x.obj.phase == "TWO_ACCOUNTS_UNKNOWN"
+    assert len(data.created) == 1 and data.created[0].revoked
+    assert "accounts_publish" not in x.events
+
+
+def original_d_f_approval_ports(monkeypatch):
+    """Disposable signed-record readback; always explicit, never financial."""
+    data = original_e_f_ports(monkeypatch)
+    from app.services import personal_paper_runtime
+    from scripts.observation_runtime import personal_activation_commission
+    from scripts.volume_inspector import windows_output
+
+    monkeypatch.setattr(type(data.x.clock), "__call__",
+                        lambda _self: 1794489500)
+    monkeypatch.setattr(windows_output, "current_sid",
+                        lambda: "SYNTHETIC_OPERATOR_ONLY")
+    recorded = {"actions": ["READ_ONLY", "INITIALIZE_SIMULATED_ACCOUNTS"],
+                "accounts": data.x.obj._digest}
+
+    disk = {
+        "record": recorded,
+        "policy": data.policy,
+        "accounts": data.x.obj._digest,
+        "quality_dips_enrollment": data.x.enrollments["QUALITY_DIPS"],
+        "hyperliquid_enrollment": data.x.enrollments["HYPERLIQUID"],
+    }
+    expected_paths = {
+        "record": "record_path", "policy": "policy_path",
+        "accounts": "accounts_path",
+        "quality_dips_enrollment": "qd_enrollment_path",
+        "hyperliquid_enrollment": "perp_enrollment_path",
+    }
+
+    def read_record(path, *, role):
+        assert path == second()[expected_paths[role]]
+        return disk[role]
+
+    def validate_record(value, *, policy, operator_id, release, accounts, now,
+                        action):
+        assert value is recorded
+        assert policy == data.policy
+        assert operator_id == "SYNTHETIC_OPERATOR_ONLY"
+        assert release == RELEASE
+        assert accounts == data.x.obj._digest
+        assert now == 1794489500
+        assert action in recorded["actions"]
+        return value
+
+    monkeypatch.setattr(personal_activation_commission,
+                        "read_bounded_activation_input", read_record)
+    monkeypatch.setattr(personal_paper_runtime,
+                        "validate_activation_record", validate_record)
+    data.recorded = recorded
+    data.disk = disk
+    return data
+
+
+def test_original_d_f_one_call_orders_journal_activation_and_both_accounts(
+        monkeypatch):
+    data = original_d_f_approval_ports(monkeypatch)
+    outcome = data.x.obj.initialize_reviewed_original_two_accounts_once(
+        operator_scope=first()["operator_scope"], initial_activation=second(),
+        personal_policy=data.policy, inception_enrollments=data.inceptions)
+    assert outcome["schema"] == "ATLAS_PERSONAL_ORIGINAL_D_F_TWO_ACCOUNT_SEQUENCE_V1"
+    assert outcome["paper_start_authorized"] is False
+    assert outcome["live_trading_authorized"] is False
+    assert outcome["journals"]["native_initial_journal_count"] == 2
+    assert outcome["simulated_accounts"]["status"] == (
+        "TWO_NATIVE_SIMULATED_ACCOUNT_OPENINGS_ACKNOWLEDGED")
+    assert data.x.obj.phase == "TWO_ACCOUNTS_ACKNOWLEDGED"
+    assert data.x.events.index("journal_publish") < (
+        data.x.events.index("activation_publish")
+    ) < data.x.events.index("accounts_publish")
+    assert len(data.created) == 2 and all(op.revoked for op in data.created)
+    with pytest.raises(ValueError, match="REPLAY_OR_UNKNOWN"):
+        data.x.obj.initialize_reviewed_original_two_accounts_once(
+            operator_scope=first()["operator_scope"], initial_activation=second(),
+            personal_policy=data.policy, inception_enrollments=data.inceptions)
+
+
+@pytest.mark.parametrize("invalid", [
+    "wrong_actions", "wrong_accounts", "missing_file", "bad_operator_scope",
+    "policy_file_changed", "accounts_file_changed", "qd_file_changed",
+    "hl_file_changed",
+])
+def test_original_d_f_refuses_bad_approval_before_first_journal(
+        monkeypatch, invalid):
+    data = original_d_f_approval_ports(monkeypatch)
+    kw = {"operator_scope": first()["operator_scope"],
+          "initial_activation": second(), "personal_policy": data.policy,
+          "inception_enrollments": data.inceptions}
+    if invalid == "wrong_actions":
+        data.recorded["actions"] = ["READ_ONLY", "AUTO_PAPER"]
+    elif invalid == "wrong_accounts":
+        data.recorded["accounts"] = {"QUALITY_DIPS": "f" * 64}
+    elif invalid == "missing_file":
+        kw["initial_activation"]["record_path"] = ""
+    elif invalid == "policy_file_changed":
+        data.disk["policy"] = {"invalid": True}
+    elif invalid == "accounts_file_changed":
+        data.disk["accounts"] = {"QUALITY_DIPS": "f" * 64}
+    elif invalid == "qd_file_changed":
+        data.disk["quality_dips_enrollment"] = {"foreign": True}
+    elif invalid == "hl_file_changed":
+        data.disk["hyperliquid_enrollment"] = {"foreign": True}
+    else:
+        kw["operator_scope"] = {}
+    with pytest.raises(ValueError, match="PERSONAL_D_F_"):
+        data.x.obj.initialize_reviewed_original_two_accounts_once(**kw)
+    assert data.x.obj.phase == "PREINCEPTION_READY"
+    assert "journal_publish" not in data.x.events
+    assert "accounts_publish" not in data.x.events
 
 
 def test_real_product_bridge_orders_three_exact_irreversible_phases(monkeypatch):
