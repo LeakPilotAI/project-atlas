@@ -246,3 +246,208 @@ class NativeSelectedQualityDipsSecWatchIssuer:
             "financial_paper_startup_authorized": False,
             "live_trading_authorized": False,
         }
+
+
+class NativeOriginalQDSECWatchCurrentSource:
+    """Original SEC cache -> exact native QD WATCH-only current input.
+
+    This is the real read_current() port previously represented only by a
+    disposable SimpleNamespace. It may provide TWO authentic non-executable
+    SEC research rows, but has no valuation, price, IEX, financial operator,
+    source-publication or PAPER entry permission of its own.
+
+    Original two-account owner / independently activated source-only scope is
+    rechecked on every read, plus both primary SEC original receipts. Source
+    revisions follow the ACKNOWLEDGED original archive's high-water and never
+    restart from revision 1 when this process is recreated.
+    """
+
+    def __init__(self, *, issuer, symbols):
+        if (type(issuer) is not NativeSelectedQualityDipsSecWatchIssuer
+                or type(symbols) not in (list, tuple)
+                or not 1 <= len(symbols) <= len(CIKS)
+                or any(type(s) is not str or s not in CIKS for s in symbols)
+                or len(set(symbols)) != len(symbols)
+                or list(symbols) != sorted(symbols)):
+            raise ValueError("QD_SEC_WATCH_ORIGINAL_SOURCE_ROSTER_REQUIRED")
+        self.issuer = issuer
+        self.symbols = tuple(symbols)
+        self.owner, self.operator, self.clock, self.archive = (
+            issuer.owner, issuer.operator, issuer.clock, issuer.archive,
+        )
+        self._ports = (
+            issuer, issuer.owner, issuer.operator, issuer.clock, issuer.archive,
+        )
+        self._enrollment = digest(self.archive.enrollment)
+        self._last = None
+        self._failed = False
+
+    def _verify(self, now):
+        if (self._failed
+                or type(self.issuer) is not NativeSelectedQualityDipsSecWatchIssuer
+                or any(x is not y for x, y in zip(
+                    (self.issuer, self.owner, self.operator,
+                     self.clock, self.archive),
+                    self._ports, strict=True))
+                or self.archive.enrollment["release_digest"] != self.owner.release_digest
+                or digest(self.archive.enrollment) != self._enrollment
+                or type(now) is not int
+                or not 0 <= self.clock() - now <= 1):
+            raise ValueError("QD_SEC_WATCH_ORIGINAL_SOURCE_OWNER_CHANGED")
+        self.issuer._original(now=now)
+
+    def read_current(self):
+        from app.services.quality_dips_research_only import (
+            project_explicit_research,
+        )
+
+        now = self.clock()
+        self._verify(now)
+        date = datetime.fromtimestamp(now, UTC)
+        received = {
+            symbol: inspect_original_quarter(
+                symbol=symbol, cik=CIKS[symbol], now=date,
+            )
+            for symbol in self.symbols
+        }
+        for symbol, proof in received.items():
+            if (type(proof) is not dict
+                    or proof.get("symbol") != symbol
+                    or proof.get("cik") != CIKS[symbol]
+                    or proof.get("status")
+                    != "DIRECT_SEC_ORIGINAL_AND_COMPANYFACTS_CORROBORATED"
+                    or proof.get("original_filing_and_companyfacts_matched")
+                    is not True
+                    or proof.get("operational_source_accepted") is not False
+                    or proof.get("financial_paper_authorized") is not False
+                    or proof.get("live_order_authorized") is not False
+                    or proof.get("external_provider_requests") != 0):
+                raise ValueError("QD_SEC_WATCH_GENUINE_PRIMARY_FILING_REQUIRED")
+        identity = digest(received)
+        head = self.archive.current()
+        if (type(head) is not dict
+                or type(head.get("revision")) is not int
+                or not 0 <= head["revision"] <= 127):
+            raise ValueError("QD_SEC_WATCH_ORIGINAL_ARCHIVE_HEAD_REQUIRED")
+        prior = None
+        prior_revision = 0
+        if head["revision"]:
+            record = self.archive.read_evidence(head)
+            if type(record) is not dict or type(record.get("sources")) is not dict:
+                raise ValueError("QD_SEC_WATCH_ORIGINAL_ARCHIVE_EVIDENCE_MISSING")
+            source = record["sources"].get("current_input")
+            if (type(source) is not dict
+                    or source.get("enrollment") != self._enrollment
+                    or type(source.get("input")) is not dict
+                    or source["input"].get("schema") != "QD_CURRENT_RESEARCH_INPUT_V1"
+                    or source["input"].get("execution_domain") != "OPERATIONAL"
+                    or source["input"].get("source_id")
+                    != self.archive.enrollment["source_id"]
+                    or source["input"].get("provenance", {}).get("schema")
+                    != WATCH
+                    or source["input"].get("provenance", {}).get("sec_quarters")
+                    != received):
+                raise ValueError("QD_SEC_WATCH_ORIGINAL_ARCHIVED_SOURCE_CONFLICT")
+            prior = source["input"]
+            prior_revision = prior.get("input_revision")
+            if type(prior_revision) is not int or prior_revision < 1:
+                raise ValueError("QD_SEC_WATCH_ORIGINAL_ARCHIVED_REVISION_REQUIRED")
+            if (self._last is not None
+                    and prior_revision > self._last["input_revision"]):
+                self._failed = True
+                raise ValueError("QD_SEC_WATCH_FOREIGN_ARCHIVE_ADVANCE")
+        if self._last is not None:
+            if (self._last["provenance"]["sec_quarters"] != received
+                    or self._last["input_revision"] < prior_revision):
+                self._failed = True
+                raise ValueError("QD_SEC_WATCH_SOURCE_PROVENANCE_OR_REVISION_CHANGED")
+            if 0 <= now - self._last["observed_at"] <= 25:
+                cut = strict(body(self._last))
+            else:
+                cut = None
+        elif (prior is not None
+              and 0 <= now - prior["observed_at"] <= 25):
+            cut = strict(body(prior))
+        else:
+            cut = None
+        if cut is None:
+            revision = max(
+                prior_revision,
+                self._last["input_revision"] if self._last is not None else 0,
+            ) + 1
+            stamp = date.isoformat()
+            rows = [
+                {
+                    "symbol": symbol,
+                    "asset_type": "STOCK",
+                    "timestamp": stamp,
+                    "price": None,
+                    "research_price": None,
+                    "classification": "WATCH",
+                    "evidence_quality": "UNKNOWN",
+                    "valuation_sources": [],
+                    "normalization_sources": [],
+                }
+                for symbol in self.symbols
+            ]
+            board = project_explicit_research(rows, now=date)
+            observations = {}
+            for projected in board:
+                symbol = projected["symbol"]
+                plan = projected["quality_dips_v2"]["quality_dips_v3"]
+                if plan["patient_state"] != "WATCH":
+                    raise ValueError("QD_SEC_WATCH_ORIGINAL_PROJECTION_NOT_WATCH")
+                observations[symbol] = {
+                    "observation_id": (
+                        "SEC_PRIMARY_WATCH:" + digest([symbol, received[symbol]])),
+                    "symbol": symbol,
+                    "strategy_version": "QUALITY_DIPS_V3",
+                    "policy_version": "quality-dips-v3-mos-15-20-25-30-v1",
+                    "evidence_class": "FORWARD_COLLECTION",
+                    "classification": "WATCH",
+                    "prediction": plan,
+                    "missing_data": [],
+                    "execution": "MANUAL_ONLY",
+                    "timestamp": stamp,
+                    "source_timestamp": stamp,
+                }
+            cut = {
+                "schema": "QD_CURRENT_RESEARCH_INPUT_V1",
+                "execution_domain": "OPERATIONAL",
+                "source_id": self.archive.enrollment["source_id"],
+                "input_revision": revision,
+                "observed_at": now,
+                "rows": rows,
+                "observations": observations,
+                "instruments": [],
+                "quotes": {},
+                "monitors": {},
+                "publication": {
+                    "schema": "QD_RANKING_REVISION_V1",
+                    "state": "ACTIVE",
+                    "issuer": WATCH,
+                    "cohort_id": "ORIGINAL_SEC_ONLY_NO_ENTRY",
+                    "generation": revision,
+                    "source_revision": revision,
+                    "issued_at": now,
+                    "expires_at": now + 300,
+                },
+                "provenance": {
+                    "schema": WATCH,
+                    "sec_quarters": received,
+                },
+            }
+        if (cut["provenance"]["sec_quarters"] != received
+                or type(cut.get("observed_at")) is not int
+                or not 0 <= now - cut["observed_at"] <= 30
+                or cut.get("instruments") != []
+                or cut.get("quotes") != {}
+                or cut.get("monitors") != {}
+                or len(body(cut).encode()) > 131072):
+            raise ValueError("QD_SEC_WATCH_GENUINE_NONEXECUTABLE_CURRENT_REQUIRED")
+        self._verify(now)
+        if (self.archive.current() != head
+                or not 0 <= self.clock() - now <= 1):
+            raise ValueError("QD_SEC_WATCH_ORIGINAL_SOURCE_CHANGED_DURING_READ")
+        self._last = strict(body(cut))
+        return strict(body(cut))

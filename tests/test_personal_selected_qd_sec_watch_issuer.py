@@ -405,3 +405,297 @@ def test_one_syndicated_low_mean_high_cannot_be_three_original_issuer_reports(
     assert result["financial_paper_startup_authorized"] is False
     assert s.context["input"]["quotes"] == {}
     assert s.context["input"]["instruments"] == []
+
+
+def _native_original_sec_watch_reader_fixture(monkeypatch, symbols=("MSFT", "AVGO")):
+    """Fixture wraps the actual source/issuer types; no financial roots."""
+    s = setup(monkeypatch, symbols=symbols)
+    authentic_shape = {}
+    for symbol in symbols:
+        authentic_shape[symbol] = {
+            **SEC,
+            "symbol": symbol,
+            "cik": issuer.CIKS[symbol],
+            "external_provider_requests": 0,
+            "original_filing_sha256": "a" * 64,
+            "companyfacts_sha256": "b" * 64,
+            "submissions_sha256": "c" * 64,
+            "diluted_eps_usd": "1.25",
+            "diluted_weighted_average_shares": "1000",
+        }
+    primary = SimpleNamespace(
+        receipts=authentic_shape,
+        calls=[],
+    )
+    def original(*, symbol, cik, now):
+        assert symbol in primary.receipts and issuer.CIKS[symbol] == cik
+        primary.calls.append((symbol,cik,now))
+        return copy.deepcopy(primary.receipts[symbol])
+    monkeypatch.setattr(issuer, "inspect_original_quarter", original)
+    reader = issuer.NativeOriginalQDSECWatchCurrentSource(
+        issuer=s.model, symbols=list(sorted(symbols)),
+    )
+    return SimpleNamespace(**locals())
+
+
+def test_exact_original_sec_cache_research_source_produces_zero_entry_watch(
+        monkeypatch):
+    s=_native_original_sec_watch_reader_fixture(monkeypatch)
+    first=s.reader.read_current()
+    assert first["schema"]=="QD_CURRENT_RESEARCH_INPUT_V1"
+    assert first["execution_domain"]=="OPERATIONAL"
+    assert first["input_revision"]==1
+    assert first["source_id"]==s.s.archive.enrollment["source_id"]
+    assert first["instruments"]==[]
+    assert first["quotes"]=={}
+    assert first["monitors"]=={}
+    assert first["publication"]["issuer"]==issuer.WATCH
+    assert first["provenance"]["sec_quarters"]==s.primary.receipts
+    assert set(first["observations"])=={"MSFT","AVGO"}
+    for row in first["rows"]:
+        assert row["price"] is None
+        assert row["research_price"] is None
+        assert row["evidence_quality"]=="UNKNOWN"
+        assert row["valuation_sources"]==[]
+        assert row["normalization_sources"]==[]
+        assert set(row)=={
+            "symbol","asset_type","timestamp","price","research_price",
+            "classification","evidence_quality","valuation_sources",
+            "normalization_sources",
+        }
+        obs=first["observations"][row["symbol"]]
+        assert obs["classification"]=="WATCH"
+        assert obs["prediction"]["patient_state"]=="WATCH"
+        assert obs["prediction"]["entry_ladder"]["ready"] is False
+        assert obs["execution"]=="MANUAL_ONLY"
+        assert obs["missing_data"]==[]
+    assert s.reader.read_current()==first
+    assert s.s.model.verify_current({
+        "enrollment":s.s.archive.enrollment,
+        "execution_domain":"OPERATIONAL","input":first,
+    },now=STAMP)["no_entry_only"] is True
+    assert s.s.archive.current()["revision"]==0
+
+
+def test_original_sec_watch_reader_integrates_with_genuine_current_producer(
+        monkeypatch):
+    from app.services.quality_dips_current_producer import (
+        QualityDipsCurrentProducer,
+    )
+    s=_native_original_sec_watch_reader_fixture(monkeypatch,("MSFT",))
+    cut=s.reader.read_current()
+    # Update the existing fixture's RAW source content, not its verified
+    # admission, so the native publisher is forced through the real SEC issuer.
+    s.s.fixture.cut.clear()
+    s.s.fixture.cut.update(copy.deepcopy(cut))
+    f=s.s.fixture
+    f.expected_components.clear()
+    original_binding=digest({
+        "enrollment":s.s.archive.enrollment,
+        "execution_domain":"OPERATIONAL",
+        "input":cut,
+    })
+
+    def authenticate_original_sec_only(components, old, packet, sources, now):
+        evidence=sources.get("current_input",{})
+        accepted=evidence.get("acceptance",{})
+        return (
+            f.s.auth.verify_components(components)
+            and packet["bundles"]==[] and packet["monitors"]=={}
+            and evidence.get("input")==cut
+            and accepted.get("schema")==issuer.SCHEMA
+            and accepted.get("binding")==original_binding
+            and accepted.get("no_entry_only") is True
+            and accepted.get("independent_equity_valuation_accepted") is False
+            and accepted.get("executable_market_quote_accepted") is False
+            and accepted.get("financial_paper_startup_authorized") is False
+            and accepted.get("live_trading_authorized") is False
+        )
+    f.s.auth.verify_publication=authenticate_original_sec_only
+    publisher=QualityDipsCurrentProducer(
+        source=s.reader, input_authority=s.s.model,
+        publication_authority=f.s.auth,
+        archive=s.s.archive, candidates=f.candidates,
+        clock=s.s.clock, enrollment=f.s.e,
+        execution_domain="OPERATIONAL",
+    )
+    packet=publisher.publish_current()
+    assert packet["schema"]=="QD_SCANNER_PUBLICATION_V1"
+    assert packet["bundles"]==[]
+    assert packet["monitors"]=={}
+    assert packet["revision"]==1
+    assert publisher.read_publication(.2)==packet
+    original=s.s.archive.read_evidence(s.s.archive.current())
+    assert original["sources"]["current_input"]["input"]==cut
+    accepted=original["sources"]["current_input"]["acceptance"]
+    assert accepted["schema"]=="QD_CURRENT_RESEARCH_VERIFIED_V1"
+    assert accepted["no_entry_only"] is True
+    assert accepted["independent_equity_valuation_accepted"] is False
+    assert accepted["executable_market_quote_accepted"] is False
+    assert accepted["financial_paper_startup_authorized"] is False
+    assert accepted["live_trading_authorized"] is False
+    # No new native write on same ACK'd current cut.
+    assert publisher.publish_current()==packet
+    assert s.s.archive.current()["revision"]==1
+
+
+@pytest.mark.parametrize("fault",[
+    "wrong_original_cik","missing_original_match","pretend_finance",
+    "invented_requests","changed_filing","wrong_owner_phase",
+    "no_g_activation","foreign_archive",
+])
+def test_original_sec_watch_source_refuses_untrusted_filing_or_native_owner(
+        monkeypatch,fault):
+    s=_native_original_sec_watch_reader_fixture(monkeypatch,("MSFT",))
+    original=s.reader.read_current()
+    if fault=="wrong_original_cik":
+        s.primary.receipts["MSFT"]["cik"]="0000000000"
+    elif fault=="missing_original_match":
+        s.primary.receipts["MSFT"]["original_filing_and_companyfacts_matched"]=False
+    elif fault=="pretend_finance":
+        s.primary.receipts["MSFT"]["financial_paper_authorized"]=True
+    elif fault=="invented_requests":
+        s.primary.receipts["MSFT"]["external_provider_requests"]=1
+    elif fault=="changed_filing":
+        s.primary.receipts["MSFT"]["original_filing_sha256"]="f"*64
+    elif fault=="wrong_owner_phase":
+        s.s.owner._phase="PREINCEPTION"
+    elif fault=="no_g_activation":
+        s.s.operator.activation=lambda _action: None
+    else:
+        s.s.archive.current=lambda: {"revision":1,"digest":"f"*64}
+    with pytest.raises((ValueError,KeyError,TypeError)):
+        s.reader.read_current()
+    if fault!="foreign_archive":
+        assert s.s.fixture.s.archive.current()["revision"]==0
+    assert original["instruments"]==[]
+
+
+def test_original_sec_reader_refuses_wrong_roster_or_fixture_substitution(monkeypatch):
+    s=_native_original_sec_watch_reader_fixture(monkeypatch,("MSFT",))
+    with pytest.raises(ValueError,match="SOURCE_ROSTER_REQUIRED"):
+        issuer.NativeOriginalQDSECWatchCurrentSource(
+            issuer=s.s.model,symbols=["MSFT","AVGO"],
+        )
+    with pytest.raises(ValueError,match="SOURCE_ROSTER_REQUIRED"):
+        issuer.NativeOriginalQDSECWatchCurrentSource(
+            issuer=SimpleNamespace(**s.s.model.__dict__),symbols=["MSFT"],
+        )
+    with pytest.raises(ValueError,match="SOURCE_ROSTER_REQUIRED"):
+        issuer.NativeOriginalQDSECWatchCurrentSource(
+            issuer=s.s.model,symbols=["MSFT","MSFT"],
+        )
+
+
+def test_original_sec_source_renews_expired_watch_cut_with_new_input_revision(
+        monkeypatch):
+    s=_native_original_sec_watch_reader_fixture(monkeypatch,("MSFT",))
+    original=s.reader.read_current()
+    assert original["input_revision"]==1
+    monkeypatch.setattr(
+        issuer.NativeVersionSafePaperOperatorClock,"__call__",
+        lambda _self:STAMP+40,
+    )
+    current=s.reader.read_current()
+    assert current["input_revision"]==2
+    assert current["observed_at"]==STAMP+40
+    assert current["publication"]["generation"]==2
+    assert current["publication"]["source_revision"]==2
+    assert current["instruments"]==[]
+    assert current["quotes"]=={}
+    assert current["monitors"]=={}
+    assert current["provenance"]==original["provenance"]
+    assert current["observations"]["MSFT"]["classification"]=="WATCH"
+    assert s.reader.read_current()==current
+    assert s.s.archive.current()["revision"]==0
+
+
+def test_original_selected_qd_worker_factory_composes_real_sec_readback_and_no_entries(
+        monkeypatch):
+    import os
+    from scripts.observation_runtime import (
+        atlas_r20_qd_selected_source_worker as selected_worker,
+    )
+    s=_native_original_sec_watch_reader_fixture(monkeypatch,("MSFT",))
+    cut=s.reader.read_current()
+    s.s.fixture.cut.clear()
+    s.s.fixture.cut.update(copy.deepcopy(cut))
+    f=s.s.fixture
+    f.expected_components.clear()
+    bind=digest({
+        "enrollment":s.s.archive.enrollment,
+        "execution_domain":"OPERATIONAL",
+        "input":cut,
+    })
+    def source_proof(components, old, packet, sources, now):
+        attested=sources.get("current_input",{})
+        accepted=attested.get("acceptance",{})
+        return (
+            f.s.auth.verify_components(components)
+            and packet["bundles"]==[] and packet["monitors"]=={}
+            and attested.get("input")==cut
+            and accepted.get("schema")==issuer.SCHEMA
+            and accepted.get("binding")==bind
+            and accepted.get("no_entry_only") is True
+            and accepted.get("financial_paper_startup_authorized") is False
+        )
+    f.s.auth.verify_publication=source_proof
+    original=s.s.owner
+    original.image=r"D:\AtlasRuntime\releases\SYNTHETIC\python\python.exe"
+    original._identity={
+        "pid":os.getpid(),"creation_filetime":100,
+        "image":"SYNTHETIC_NONFINANCIAL_JOB",
+    }
+    monkeypatch.setattr(
+        selected_worker, "observe_self",
+        lambda:copy.deepcopy(original._identity),
+    )
+    monkeypatch.setattr(selected_worker, "_installed_qd_source",lambda _:True)
+    monkeypatch.setattr(
+        selected_worker,"require_version_safe_release_digest",lambda **_:True,
+    )
+    result=selected_worker.bind_original_selected_sec_watch_source_once(
+        owner=original,operator=s.s.operator,clock=s.s.clock,
+        archive=s.s.archive,qd=s.s.qd,perp=s.s.perp,
+        candidates=f.candidates,publication_authority=f.s.auth,
+        runtime_id="SYNTHETIC_NOT_REAL_OWNER",symbols=["MSFT"],
+    )
+    assert type(result) is selected_worker.SelectedOwnerQDForwardPublisher
+    assert type(result.producer.source) is issuer.NativeOriginalQDSECWatchCurrentSource
+    assert type(result.producer.input_authority) is issuer.NativeSelectedQualityDipsSecWatchIssuer
+    assert result.producer.execution_domain=="OPERATIONAL"
+    actual=result.publish_one()
+    assert actual["status"]=="ORIGINAL_NATIVE_SOURCE_CAS_READBACK_ONLY"
+    assert actual["candidate_bundles"]==0
+    assert actual["independent_source_issuer_accepted"] is False
+    assert actual["valuation_issuer_accepted"] is False
+    assert actual["paper_startup_authorized"] is False
+    assert actual["live_trading_authorized"] is False
+    with pytest.raises(ValueError,match="USED"):
+        result.publish_one()
+    assert s.s.archive.current()["revision"]==1
+
+
+def test_original_selected_qd_worker_factory_refuses_unowned_or_wrong_qd_ports(
+        monkeypatch):
+    from scripts.observation_runtime import (
+        atlas_r20_qd_selected_source_worker as selected_worker,
+    )
+    s=_native_original_sec_watch_reader_fixture(monkeypatch,("MSFT",))
+    f=s.s.fixture
+    original=s.s.archive.current()
+    kwargs={
+        "owner":s.s.owner, "operator":s.s.operator,"clock":s.s.clock,
+        "archive":s.s.archive,"qd":s.s.qd,"perp":s.s.perp,
+        "candidates":f.candidates,"publication_authority":f.s.auth,
+        "runtime_id":"SYNTHETIC_NOT_REAL_OWNER","symbols":["MSFT"],
+    }
+    with pytest.raises(ValueError,match="EXACT_SELECTED_SOURCE_PORTS_REQUIRED"):
+        selected_worker.bind_original_selected_sec_watch_source_once(
+            **{**kwargs, "operator":SimpleNamespace(**s.s.operator.__dict__)},
+        )
+    with pytest.raises(ValueError,match="SOURCE_ROSTER_REQUIRED"):
+        selected_worker.bind_original_selected_sec_watch_source_once(
+            **{**kwargs,"symbols":["MSFT","MSFT"]},
+        )
+    assert s.s.archive.current()==original

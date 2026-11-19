@@ -163,3 +163,63 @@ class SelectedOwnerQDForwardPublisher:
             "paper_startup_authorized": False,
             "live_trading_authorized": False,
         }
+
+
+
+def bind_original_selected_sec_watch_source_once(
+        *, owner, operator, clock, archive, qd, perp, candidates,
+        publication_authority, runtime_id, symbols):
+    """One original selected-worker SEC WATCH source, no user-supplied cut.
+
+    All objects are pre-existing exact native originals, post-inception, with
+    the separate CONNECT_APPROVED_DATA action. Neither this binder nor its
+    result installs a release, initializes accounts, claims IEX/valuation
+    rights, grants PAPER Start, or creates a recurring publisher.
+
+    Only authentic SEC-corroborated WATCH with NO candidate instruments can
+    be supplied until an independently accepted executable source exists.
+    """
+    from app.investment.quality_dips_candidate_evidence import CandidateEvidenceAdapter
+    from scripts.observation_runtime.personal_local_authority import (
+        NativePersonalOperatorAuthority,
+    )
+    from scripts.observation_runtime.personal_selected_qd_sec_watch_issuer import (
+        NativeOriginalQDSECWatchCurrentSource,
+        NativeSelectedQualityDipsSecWatchIssuer,
+    )
+
+    if (type(owner) is not RetainedSelectedNativeOwnerPreflight
+            or type(operator) is not NativePersonalOperatorAuthority
+            or type(clock) is not NativeVersionSafePaperOperatorClock
+            or type(archive) is not NativePersonalResearchArchive
+            or type(candidates) is not CandidateEvidenceAdapter
+            or archive.clock is not clock
+            or operator.clock is not clock
+            or operator.enrollment != qd
+            or owner.release_digest != archive.enrollment["release_digest"]
+            or type(runtime_id) is not str or not runtime_id
+            or not 1 <= len(runtime_id) <= 256):
+        raise ValueError("QD_ORIGINAL_SEC_WATCH_EXACT_SELECTED_SOURCE_PORTS_REQUIRED")
+    source_issuer = NativeSelectedQualityDipsSecWatchIssuer(
+        owner=owner, operator=operator, clock=clock,
+        archive=archive, qd=qd, perp=perp,
+    )
+    original_source = NativeOriginalQDSECWatchCurrentSource(
+        issuer=source_issuer, symbols=symbols,
+    )
+    # Read-only source proof must complete before any native archive CAS.
+    original_source.read_current()
+    publisher = QualityDipsCurrentProducer(
+        source=original_source,
+        input_authority=source_issuer,
+        publication_authority=publication_authority,
+        archive=archive,
+        candidates=candidates,
+        clock=clock,
+        enrollment=archive.enrollment,
+        execution_domain="OPERATIONAL",
+    )
+    return SelectedOwnerQDForwardPublisher(
+        owner=owner, producer=publisher, clock=clock,
+        runtime_id=runtime_id,
+    )
