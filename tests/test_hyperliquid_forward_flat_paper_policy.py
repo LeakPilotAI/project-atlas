@@ -132,6 +132,82 @@ def test_cost_assumptions_refuse_unbounded_and_non_decimal_notional(bad):
         flat.conservative_round_trip_cost_usdc(bad)
 
 
+def _operational_pilot():
+    from copy import deepcopy
+    from test_perp_financial_v2 import manifest as perp_manifest
+    m = deepcopy(perp_manifest())
+    m.update(
+        schema="PAPER_EPOCH_PERP_OPERATIONAL_V1",
+        release="a" * 64,
+        provenance="ACCEPTED_PERP_PAPER_PARAMETERS_V1",
+        opening_cash="1000",
+    )
+    m["perp_policy"].update(
+        symbols=["BTC", "ETH", "SOL"], max_notional="100",
+        maker_bps="1.5", taker_bps="10", slippage_bps="5",
+        fee_schedule_id="ATLAS_CONSERVATIVE_SIMULATED_NO_WALLET_FEE_V1",
+    )
+    cut = {"manifest": deepcopy(m), "state": {"positions": {}}}
+    sample = {"schema": "QD_AUTO_NATIVE_CLOCK_V4",
+              "utc": BASE + 10 * 60, "uncertainty_ms": 139}
+    return m, cut, sample
+
+
+def test_actual_operational_manifest_costs_and_funding_window_preflight_only():
+    m, cut, clock = _operational_pilot()
+    receipt = flat.require_conservative_original_paper_preflight(
+        manifest=m, verified_native_cut=cut, issued_utc_sample=clock)
+    assert receipt["status"] == "NATIVE_POLICY_AND_HOURLY_TIME_WINDOW_ONLY"
+    assert receipt["next_utc_hour"] == BASE + 3600
+    assert receipt["mandatory_flat_by_utc"] == BASE + 3300
+    assert receipt["paper_cost_model"]["taker_fee_bps_per_side"] == "10"
+    assert receipt["paper_cost_model"]["slippage_bps_per_side"] == "5"
+    assert all(receipt[key] is False for key in (
+        "actual_wallet_fee_tier_verified",
+        "historical_settlement_oracle_verified",
+        "independent_source_rights_accepted",
+        "financial_paper_start_authorized",
+        "live_trading_authorized",
+    ))
+
+
+@pytest.mark.parametrize("damage", [
+    "cheap_fee", "cheap_slip", "pending_fee_id", "over_notional",
+    "wrong_symbol", "prior_position", "changed_manifest", "late_start",
+    "hour_edge", "uncertain_ntp", "not_operational", "foreign_clock",
+])
+def test_flat_pilot_refuses_cheaper_or_unsafe_native_finance_before_start(
+        damage):
+    m, cut, clock = _operational_pilot()
+    if damage == "cheap_fee":
+        m["perp_policy"]["taker_bps"] = "4.5"
+    elif damage == "cheap_slip":
+        m["perp_policy"]["slippage_bps"] = "4.999"
+    elif damage == "pending_fee_id":
+        m["perp_policy"]["fee_schedule_id"] = "PENDING_E1_FEE"
+    elif damage == "over_notional":
+        m["perp_policy"]["max_notional"] = "101"
+    elif damage == "wrong_symbol":
+        m["perp_policy"]["symbols"] = ["BTC", "ETH"]
+    elif damage == "prior_position":
+        cut["state"]["positions"]["synthetic"] = {"remaining": "0.1"}
+    elif damage == "changed_manifest":
+        cut["manifest"]["opening_cash"] = "999"
+    elif damage == "late_start":
+        clock["utc"] = BASE + 35 * 60
+    elif damage == "hour_edge":
+        clock["utc"] = BASE
+    elif damage == "uncertain_ntp":
+        clock["uncertainty_ms"] = 1001
+    elif damage == "not_operational":
+        m["schema"] = "PAPER_EPOCH_PERP_FIXTURE_V2"
+    else:
+        clock["schema"] = "FAKE_CLOCK"
+    with pytest.raises(ValueError):
+        flat.require_conservative_original_paper_preflight(
+            manifest=m, verified_native_cut=cut, issued_utc_sample=clock)
+
+
 def test_assumed_fee_and_slippage_are_labelled_not_real_entitlements():
     r = flat.conservative_round_trip_cost_usdc("100")
     assert r["conservative_round_trip_cost_usdc"] == "0.3"

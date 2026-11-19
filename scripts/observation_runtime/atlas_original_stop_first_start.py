@@ -76,6 +76,15 @@ def start_accepted_original_paper_once(
     # No financial session or entry latch is touched if installed code is not
     # the active native image. Owner/clock/sources are revalidated downstream.
     _require_selected_source(owner.release_digest)
+    if source_lane == "HYPERLIQUID":
+        # Even direct original Start callers must not bypass the same
+        # conservative account-fee and hourly-cutoff preflight.
+        require_original_hl_conservative_start_preflight({
+            "source_lane": source_lane, "qd_instrument": qd_instrument,
+            "runtime": runtime, "installation": installation,
+            "operator": operator, "clock": clock, "owner": owner,
+            "grant": grant,
+        })
 
     # No old .start(): the original runtime always closes entries FIRST.
     armed = runtime.arm_stop_first(grant)
@@ -145,8 +154,73 @@ def start_accepted_original_paper_once(
         raise
 
 
+def require_original_hl_conservative_start_preflight(startup):
+    """Read the ACTUAL native HL account and trusted UTC before financial arm.
+
+    No account/Stop/fee tier is created. All local fee/time assertions remain
+    subordinate to accepted original provider sources and activation.
+    """
+    from app.services.unified_native_writer import CanonicalWriterLane
+    from app.services.personal_paper_runtime import PersonalOperatorInstallation
+    from app.services.unified_paper_runtime import UnifiedPaperRuntime
+    from scripts.observation_runtime.personal_local_authority import (
+        NativePersonalOperatorAuthority,
+    )
+    from scripts.observation_runtime.personal_version_safe_release_clock import (
+        NativeVersionSafePaperOperatorClock,
+        require_version_safe_release_digest,
+    )
+    from app.services.hyperliquid_forward_flat_paper_policy import (
+        require_conservative_original_paper_preflight,
+    )
+
+    if (type(startup) is not dict
+            or startup.get("source_lane") != "HYPERLIQUID"
+            or startup.get("qd_instrument") is not None
+            or type(startup.get("runtime")) is not UnifiedPaperRuntime
+            or type(startup.get("installation")) is not PersonalOperatorInstallation
+            or type(startup.get("operator")) is not NativePersonalOperatorAuthority
+            or type(startup.get("clock")) is not NativeVersionSafePaperOperatorClock
+            or type(startup.get("grant")) is not dict
+            or startup["runtime"].installation is not startup["installation"]
+            or startup["operator"].clock is not startup["clock"]
+            or type(startup["runtime"].lanes) is not dict
+            or type(startup["runtime"].portfolio.writers) is not dict
+            or "HYPERLIQUID" not in startup["runtime"].lanes):
+        raise ValueError("ATLAS_HL_CONSERVATIVE_REAL_ORIGINAL_PORTS_REQUIRED")
+    lane = startup["runtime"].lanes["HYPERLIQUID"]
+    writer = startup["runtime"].portfolio.writers.get("HYPERLIQUID")
+    if (type(lane) is not CanonicalWriterLane
+            or lane.writer is not writer
+            or lane._verify() is not None):
+        # Exact canonical lane class/ownership is verified before any cut.
+        raise ValueError("ATLAS_HL_CONSERVATIVE_NATIVE_WRITER_SUBSTITUTED")
+    clock = startup["clock"]
+    operator = startup["operator"]
+    if (require_version_safe_release_digest(
+            clock=clock, runtime_id=operator.runtime_id,
+            release_digest=startup["owner"].release_digest) is not True):
+        raise ValueError("ATLAS_HL_CONSERVATIVE_SELECTED_UTC_REQUIRED")
+    sample = clock.sample()
+    if clock.verify(sample) is not True:
+        raise ValueError("ATLAS_HL_CONSERVATIVE_NATIVE_UTC_UNVERIFIED")
+    proof = require_conservative_original_paper_preflight(
+        manifest=writer.manifest, verified_native_cut=writer._cut(),
+        issued_utc_sample=sample,
+    )
+    again = clock.sample()
+    if (clock.verify(again) is not True
+            or type(again.get("utc")) is not int
+            or not 0 <= again["utc"] - sample["utc"] <= 5
+            or (again["utc"] // 3600 + 1) * 3600 != proof["next_utc_hour"]
+            or proof.get("financial_paper_start_authorized") is not False
+            or proof.get("live_trading_authorized") is not False):
+        raise ValueError("ATLAS_HL_CONSERVATIVE_PRESTART_CUT_EXPIRED")
+    return proof
+
+
 async def run_accepted_original_paper_session(
-        *, startup, seconds, interval=1, intrahour_flat_before_funding=True):
+        *, startup, seconds, interval=1, intrahour_flat_before_funding=False):
     """One bounded genuine PAPER run with mandatory verified financial Stop.
 
     A selected native worker calls this after all external/source/financial
@@ -163,6 +237,12 @@ async def run_accepted_original_paper_session(
             or type(intrahour_flat_before_funding) is not bool):
         raise ValueError("ATLAS_ORIGINAL_EXACT_BOUNDED_SESSION_REQUIRED")
 
+    if (startup.get("source_lane") == "HYPERLIQUID"
+            and intrahour_flat_before_funding is not True):
+        raise ValueError("ATLAS_HL_PRE_FUNDING_STOP_GUARD_REQUIRED")
+    if (startup.get("source_lane") != "HYPERLIQUID"
+            and intrahour_flat_before_funding is True):
+        raise ValueError("ATLAS_HL_ONLY_GUARD_CANNOT_OWN_OTHER_LANE")
     stop_owner, issuer = start_accepted_original_paper_once(**startup)
     try:
         receipt = await run_personal_installed_owner_session(
@@ -181,12 +261,36 @@ async def run_accepted_original_paper_session(
             raise ValueError("ATLAS_ORIGINAL_SESSION_DURABLE_FLAT_REQUIRED")
         return receipt
     except BaseException:
-        # An exception after RUNNING may follow a partially committed Stop.
-        # There is no automatic retry or optimistic flat/cash accounting.
-        stop_owner._runtime.entry_closed.set()
-        stop_owner._runtime.uncertain = True
-        if stop_owner._runtime.state != "STOPPED":
-            stop_owner._runtime.state = "STOP_INCOMPLETE"
+        # Supervision may raise after an ENTRY but before the planned Stop.
+        # Dispatch one existing reducing Stop if still unused; no replay
+        # when the owner has already consumed its one-shot native signal.
+        runtime = stop_owner._runtime
+        runtime.entry_closed.set()
+        if not stop_owner._used:
+            try:
+                receipt = stop_owner.request_stop("SHUTDOWN_FLATTEN")
+                if (type(receipt) is not dict
+                        or receipt.get("schema") != "QD_CONTROL_STOP_V1"
+                        or receipt.get("phase") != "FINISHED"
+                        or type(receipt.get("outcome")) is not dict
+                        or receipt["outcome"].get("status") != "FLATTENED"
+                        or receipt["outcome"].get("position_state") != "FLAT"
+                        or receipt["outcome"].get("process_shutdown") != "VERIFIED_EXIT"
+                        or stop_owner.verify_durable_stop_receipt(
+                            "SHUTDOWN_FLATTEN", receipt) is not True
+                        or runtime.state != "STOPPED"):
+                    raise ValueError("ATLAS_ORIGINAL_SUPERVISION_FLAT_UNVERIFIED")
+            except BaseException as error:
+                runtime.uncertain = True
+                runtime.state = "STOP_INCOMPLETE"
+                raise ValueError(
+                    "ATLAS_ORIGINAL_SUPERVISION_STOP_RECONCILIATION_REQUIRED"
+                ) from error
+        else:
+            # An in-flight or completed Stop cannot be replayed to mask a
+            # lost receipt; independent original reconciliation is required.
+            runtime.uncertain = True
+            runtime.state = "STOP_INCOMPLETE"
         raise
     finally:
         # The financial operation lease must never outlive the bounded run,

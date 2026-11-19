@@ -166,6 +166,10 @@ def test_hyperliquid_lane_does_not_require_equity_open_or_iex_entry(monkeypatch)
     data = fixture_ports(monkeypatch)
     data.kwargs["source_lane"] = "HYPERLIQUID"
     data.kwargs["qd_instrument"] = None
+    monkeypatch.setattr(
+        start, "require_original_hl_conservative_start_preflight",
+        lambda scope: data.events.append("native_hl_fee_funding_preflight"),
+    )
     stop, issuer = start.start_accepted_original_paper_once(**data.kwargs)
     assert issuer.stop_owner is stop
     assert data.runtime.state == "RUNNING"
@@ -249,7 +253,7 @@ async def test_original_bounded_run_exits_only_with_durable_flat_ack(monkeypatch
         data.events.append("financial_supervision")
         assert data.runtime.state == "RUNNING"
         assert seconds == 120 and interval == 1
-        assert intrahour_flat_before_funding is True
+        assert intrahour_flat_before_funding is False
         return owner.request_stop("SHUTDOWN_FLATTEN")
 
     monkeypatch.setattr(
@@ -312,8 +316,10 @@ async def test_original_supervisor_crash_latches_entries_and_revokes_issuer(
             startup=data.kwargs, seconds=120,
         )
     assert data.runtime.entry_closed.is_set()
-    assert data.runtime.state == "STOP_INCOMPLETE"
-    assert data.runtime.uncertain is True
+    assert data.runtime.state == "STOPPED"
+    assert data.runtime.uncertain is False
+    assert data.events.count("shutdown_flatten") == 1
+    assert data.events.count("verify_durable_flat") == 1
     assert data.events.count("issuer_revoke") == 1
 
 
@@ -327,3 +333,162 @@ async def test_original_invalid_run_duration_refuses_before_financial_arm(
         )
     assert data.events == []
     assert data.runtime.state == "STOPPED"
+
+
+@pytest.mark.asyncio
+async def test_hl_only_paper_requires_conservative_time_guard_before_any_start(
+        monkeypatch):
+    data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = "HYPERLIQUID"
+    data.kwargs["qd_instrument"] = None
+    with pytest.raises(ValueError, match="PRE_FUNDING_STOP_GUARD_REQUIRED"):
+        await start.run_accepted_original_paper_session(
+            startup=data.kwargs, seconds=120,
+        )
+    assert data.events == []
+    assert data.runtime.state == "STOPPED"
+
+
+@pytest.mark.asyncio
+async def test_non_hl_paper_cannot_inherit_hl_only_funding_proof(monkeypatch):
+    data = fixture_ports(monkeypatch)
+    with pytest.raises(ValueError, match="HL_ONLY_GUARD_CANNOT_OWN_OTHER_LANE"):
+        await start.run_accepted_original_paper_session(
+            startup=data.kwargs, seconds=120,
+            intrahour_flat_before_funding=True,
+        )
+    assert data.events == []
+    assert data.runtime.state == "STOPPED"
+
+
+@pytest.mark.asyncio
+async def test_original_hl_preflight_denial_cannot_arm_or_bind_stop(monkeypatch):
+    data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = "HYPERLIQUID"
+    data.kwargs["qd_instrument"] = None
+
+    def refused(_):
+        raise ValueError("TEST_ORIGINAL_NATIVE_COST_OR_TIME_REFUSED")
+
+    monkeypatch.setattr(start, "require_original_hl_conservative_start_preflight",
+                        refused)
+    with pytest.raises(ValueError, match="COST_OR_TIME_REFUSED"):
+        await start.run_accepted_original_paper_session(
+            startup=data.kwargs, seconds=120,
+            intrahour_flat_before_funding=True,
+        )
+    # Exact selected-image verification occurs before the native fee/time
+    # check; neither step can arm, bind, or write a financial account.
+    assert data.events == ["selected_source"]
+    assert data.runtime.state == "STOPPED"
+    assert data.runtime.grant is None
+
+
+@pytest.mark.asyncio
+async def test_hl_only_approved_preflight_precedes_all_financial_effects(monkeypatch):
+    from app.services import personal_installed_stop_owner
+    data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = "HYPERLIQUID"
+    data.kwargs["qd_instrument"] = None
+
+    def preflight(received):
+        assert received["runtime"] is data.kwargs["runtime"]
+        assert received["source_lane"] == "HYPERLIQUID"
+        assert received["operator"] is data.kwargs["operator"]
+        data.events.append("native_hl_fee_funding_preflight")
+        return {"financial_paper_start_authorized": False,
+                "live_trading_authorized": False}
+
+    async def supervised(*, owner, seconds, interval,
+                         intrahour_flat_before_funding):
+        assert intrahour_flat_before_funding is True
+        return owner.request_stop("SHUTDOWN_FLATTEN")
+
+    monkeypatch.setattr(start, "require_original_hl_conservative_start_preflight",
+                        preflight)
+    monkeypatch.setattr(personal_installed_stop_owner,
+                        "run_personal_installed_owner_session", supervised)
+    receipt = await start.run_accepted_original_paper_session(
+        startup=data.kwargs, seconds=120,
+        intrahour_flat_before_funding=True,
+    )
+    assert receipt["outcome"]["status"] == "FLATTENED"
+    assert data.events[0:3] == [
+        "selected_source", "native_hl_fee_funding_preflight", "arm",
+    ]
+    assert data.events.count("shutdown_flatten") == 1
+    assert data.events.index("shutdown_flatten") < data.events.index(
+        "issuer_revoke")
+
+
+def test_native_hl_preflight_requires_exact_original_signed_clock_and_cut(
+        monkeypatch):
+    from app.services import unified_native_writer
+    from scripts.observation_runtime import personal_local_authority
+    from scripts.observation_runtime import personal_version_safe_release_clock
+    from app.services import hyperliquid_forward_flat_paper_policy
+
+    data = fixture_ports(monkeypatch)
+    data.kwargs["source_lane"] = "HYPERLIQUID"
+    data.kwargs["qd_instrument"] = None
+    events = data.events
+
+    class OriginalClock:
+        def sample(self):
+            events.append("original_utc_sample")
+            return {"utc": 1795000600, "uncertainty_ms": 139,
+                    "schema": "QD_AUTO_NATIVE_CLOCK_V4"}
+
+        def verify(self, sample):
+            events.append("verify_issued_utc")
+            return True
+
+    class OriginalOperator:
+        runtime_id = "EXACT_DISPOSABLE_TEST"
+        def __init__(self, clock):
+            self.clock = clock
+
+    class OriginalLane:
+        def __init__(self, writer):
+            self.writer = writer
+
+        def _verify(self):
+            events.append("native_lane_verified")
+
+    class OriginalWriter:
+        manifest = {"schema": "TEST_ONLY"}
+        def _cut(self):
+            events.append("native_writer_cut")
+            return {"manifest": self.manifest, "state": {"positions": {}}}
+
+    monkeypatch.setattr(personal_local_authority,
+                        "NativePersonalOperatorAuthority", OriginalOperator)
+    monkeypatch.setattr(personal_version_safe_release_clock,
+                        "NativeVersionSafePaperOperatorClock", OriginalClock)
+    monkeypatch.setattr(unified_native_writer,
+                        "CanonicalWriterLane", OriginalLane)
+    monkeypatch.setattr(personal_version_safe_release_clock,
+                        "require_version_safe_release_digest",
+                        lambda **_: events.append("selected_release_ntp") or True)
+    monkeypatch.setattr(hyperliquid_forward_flat_paper_policy,
+                        "require_conservative_original_paper_preflight",
+                        lambda **_: {
+                            "next_utc_hour": (1795000600 // 3600 + 1) * 3600,
+                            "financial_paper_start_authorized": False,
+                            "live_trading_authorized": False,
+                        })
+    clock = OriginalClock()
+    writer = OriginalWriter()
+    data.kwargs["operator"] = OriginalOperator(clock)
+    data.kwargs["clock"] = clock
+    data.runtime.lanes = {"HYPERLIQUID": OriginalLane(writer)}
+    data.runtime.portfolio = SimpleNamespace(
+        writers={"HYPERLIQUID": writer})
+    proof = start.require_original_hl_conservative_start_preflight(
+        data.kwargs)
+    assert proof["financial_paper_start_authorized"] is False
+    assert events == [
+        "native_lane_verified", "selected_release_ntp",
+        "original_utc_sample", "verify_issued_utc",
+        "native_writer_cut", "original_utc_sample", "verify_issued_utc",
+    ]

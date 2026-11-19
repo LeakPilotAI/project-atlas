@@ -137,6 +137,74 @@ def audit_closed_interval(*, opened_at_utc, closed_at_utc, uncertainty_ms):
     }
 
 
+def require_conservative_original_paper_preflight(
+        *, manifest, verified_native_cut, issued_utc_sample):
+    """Admission-only PAPER fee/funding check on the actual financial cut.
+
+    The caller must have independently verified the original native writer
+    and sample with its own Windows/NTP owner. This pure checker grants no
+    source rights and cannot substitute for a simulated account or Stop.
+    """
+    from app.services.paper_financial_replay import body, number, strict
+    from app.services.paper_perp_transition import (
+        require_operational_fee_policy, validate_manifest,
+    )
+
+    if (type(manifest) is not dict
+            or manifest.get("schema") != "PAPER_EPOCH_PERP_OPERATIONAL_V1"
+            or type(verified_native_cut) is not dict
+            or verified_native_cut.get("manifest") != manifest
+            or type(issued_utc_sample) is not dict
+            or issued_utc_sample.get("schema") != "QD_AUTO_NATIVE_CLOCK_V4"
+            or type(issued_utc_sample.get("utc")) is not int
+            or type(issued_utc_sample.get("uncertainty_ms")) is not int):
+        raise ValueError("HL_FLAT_PILOT_ORIGINAL_NATIVE_MANIFEST_AND_CLOCK_REQUIRED")
+    manifest = strict(body(manifest))
+    validate_manifest(manifest)
+    require_operational_fee_policy(manifest)
+    p = manifest["perp_policy"]
+    # These are deliberately more expensive than the published undiscounted
+    # base and are declared LOCAL SIMULATION assumptions, not wallet rates.
+    if (number(p["taker_bps"]) < Decimal(ASSUMED_TAKER_FEE_BPS_EACH_SIDE)
+            or number(p["slippage_bps"]) < Decimal(ASSUMED_SLIPPAGE_BPS_EACH_SIDE)
+            or number(p["max_notional"]) > Decimal("100")
+            or p["symbols"] != ["BTC", "ETH", "SOL"]
+            or type(verified_native_cut.get("state")) is not dict
+            or type(verified_native_cut["state"].get("positions")) is not dict):
+        raise ValueError("HL_FLAT_PILOT_CONSERVATIVE_NATIVE_POLICY_REQUIRED")
+    positions = verified_native_cut["state"]["positions"]
+    if any(type(row) is not dict or number(row["remaining"]) > 0
+           for row in positions.values()):
+        raise ValueError("HL_FLAT_PILOT_PRIOR_NATIVE_POSITION_RECONCILIATION_REQUIRED")
+    sample = issued_utc_sample
+    candidate = plan_new_entry(
+        now_utc_seconds=sample["utc"],
+        uncertainty_ms=sample["uncertainty_ms"],
+        symbol="BTC", intended_hold_seconds=MAX_SIMULATED_HOLD_SECONDS,
+        native_unverified_positions=0, native_unresolved_close=False,
+    )
+    if candidate["entry_window_structurally_eligible"] is not True:
+        raise ValueError("HL_FLAT_PILOT_PRE_FUNDING_START_WINDOW_REFUSED")
+    return {
+        "schema": "ATLAS_HL_CONSERVATIVE_ORIGINAL_PRESTART_V1",
+        "status": "NATIVE_POLICY_AND_HOURLY_TIME_WINDOW_ONLY",
+        "utc_sample": sample["utc"],
+        "next_utc_hour": candidate["next_funding_at_utc"],
+        "mandatory_flat_by_utc": candidate["mandatory_flat_by_utc"],
+        "native_no_open_positions_observed": True,
+        "paper_cost_model": {
+            "taker_fee_bps_per_side": p["taker_bps"],
+            "slippage_bps_per_side": p["slippage_bps"],
+            "fee_schedule_id": p["fee_schedule_id"],
+        },
+        "actual_wallet_fee_tier_verified": False,
+        "historical_settlement_oracle_verified": False,
+        "independent_source_rights_accepted": False,
+        "financial_paper_start_authorized": False,
+        "live_trading_authorized": False,
+    }
+
+
 def conservative_round_trip_cost_usdc(notional_usdc):
     """Non-authoritative illustrative fees; never provider/account claims."""
     if type(notional_usdc) is not str or len(notional_usdc) > 35:
