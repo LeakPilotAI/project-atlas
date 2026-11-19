@@ -56,7 +56,13 @@ def system(monkeypatch,tmp_path):
             "release_digest":terms.R26_DIGEST,
             "acceptance_id":"R26_APPROVAL_FOR_ORIGINAL_ONLY",
             "writers":{"source":{"schema":"QD_OP_PROCESS_ID_V1",**original_process}},
-            "resources":{}}
+            "resources":{
+                role:{"schema":("QD_AUTO_NATIVE_ROOT_V4" if lane=="QUALITY_DIPS"
+                                else "PERP_AUTO_NATIVE_ROOT_V1"),
+                      "path":"D:\\synthetic\\"+lane+"\\"+role,
+                      "native_id":[1,index+1,1 if lane=="QUALITY_DIPS" else 2]}
+                for index,role in enumerate(scope.ROLES)
+            }}
         originals[lane]=original
         enrollment_pins[lane]=digest(original)
         manifest_pins[lane]=digest("ORIGINAL_MANIFEST_"+lane)
@@ -120,8 +126,16 @@ def system(monkeypatch,tmp_path):
     monkeypatch.setattr(candidate,"require_version_safe_release_digest",lambda **kw:True)
     monkeypatch.setattr(candidate,"validate_policy",lambda p:copy.deepcopy(p))
     monkeypatch.setattr(candidate,"validate_manifest",lambda p:None)
-    monkeypatch.setattr(candidate,"validate_personal_inception",
-                        lambda entry:(entry["lane"],entry["native_enrollment"],entry["parameters"]))
+    def strict_resource_contract(entry):
+        lane=entry["lane"]
+        expected="QD_AUTO_NATIVE_ROOT_V4" if lane=="QUALITY_DIPS" else "PERP_AUTO_NATIVE_ROOT_V1"
+        resources=entry["native_enrollment"]["resources"]
+        assert set(resources)==set(scope.ROLES)
+        for value in resources.values():
+            assert set(value)=={"schema","path","native_id"}
+            assert value["schema"]==expected
+        return entry["lane"],entry["native_enrollment"],entry["parameters"]
+    monkeypatch.setattr(candidate,"validate_personal_inception",strict_resource_contract)
     monkeypatch.setattr(candidate,"ORIGINAL_ENROLLMENT_DIGESTS",enrollment_pins)
     monkeypatch.setattr(candidate,"ORIGINAL_MANIFEST_DIGESTS",manifest_pins)
     monkeypatch.setattr(candidate,"ORIGINAL_ECONOMIC_DIGESTS",economic_pins)

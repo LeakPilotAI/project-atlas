@@ -191,7 +191,8 @@ def prepare_fresh_successor_account_candidates(
         enrollment["clock_source"]=SOURCE
         enrollment["acceptance_id"]=operator_acceptance_ids[lane]
         enrollment["resources"]={
-            role:{"path":roots["lanes"][lane]["roots"][role]["path"],
+            role:{"schema":historical["resources"][role]["schema"],
+                  "path":roots["lanes"][lane]["roots"][role]["path"],
                   "native_id":roots["lanes"][lane]["roots"][role]["native_id"]}
             for role in ROLES
         }
