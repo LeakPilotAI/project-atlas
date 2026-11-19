@@ -22,6 +22,51 @@ SYMBOLS = frozenset(("BTC", "ETH", "SOL"))
 # proposed synthetic accounting only, each side reserves larger charges.
 ASSUMED_TAKER_FEE_BPS_EACH_SIDE = "10"
 ASSUMED_SLIPPAGE_BPS_EACH_SIDE = "5"
+CONSERVATIVE_LOCAL_FEE_POLICY_ID = (
+    "ATLAS_CONSERVATIVE_SIMULATED_NO_WALLET_FEE_V1"
+)
+
+
+def derive_reviewable_conservative_hl_manifest(historical):
+    """Return amended in-memory original account terms, NOT their approval.
+
+    Only the original trusted historical unaccepted fee placeholders may be
+    upgraded to a clearly labelled local PAPER cost assumption. Stage C must
+    receive a separate exact operator-reviewed digest of the complete amended
+    manifest BEFORE creating any financial journal. Data/source and settlement
+    permissions are untouched and remain independently blocked.
+    """
+    from app.services.paper_financial_replay import body, strict
+    from app.services.paper_perp_transition import (
+        require_operational_fee_policy, validate_manifest,
+    )
+    candidate = strict(body(historical))
+    validate_manifest(candidate)
+    if (candidate.get("schema") != "PAPER_EPOCH_PERP_OPERATIONAL_V1"
+            or candidate.get("currency") != "USDC"
+            or candidate.get("opening_cash") != "1000"
+            or candidate.get("strategy") != "HYPERLIQUID_PAPER"
+            or candidate.get("provenance")
+            != "ACCEPTED_PERP_PAPER_PARAMETERS_V1"
+            or type(candidate.get("perp_policy")) is not dict):
+        raise ValueError("HL_REVIEWED_AMENDMENT_ORIGINAL_PAPER_DRAFT_REQUIRED")
+    policy = candidate["perp_policy"]
+    if (policy.get("symbols") != ["BTC", "ETH", "SOL"]
+            or policy.get("max_notional") != "100"
+            or policy.get("maker_bps") != "1.5"
+            or policy.get("taker_bps") != "4.5"
+            or policy.get("slippage_bps") != "2"
+            or policy.get("fee_schedule_id")
+            != "PENDING_E1_VERIFIED_FEE_SCHEDULE"):
+        raise ValueError("HL_REVIEWED_AMENDMENT_EXACT_HISTORICAL_FEE_CUT_REQUIRED")
+    policy.update(
+        taker_bps=ASSUMED_TAKER_FEE_BPS_EACH_SIDE,
+        slippage_bps=ASSUMED_SLIPPAGE_BPS_EACH_SIDE,
+        fee_schedule_id=CONSERVATIVE_LOCAL_FEE_POLICY_ID,
+    )
+    validate_manifest(candidate)
+    require_operational_fee_policy(candidate)
+    return candidate
 
 
 def _second(value):

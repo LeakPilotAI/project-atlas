@@ -64,7 +64,8 @@ STATES = (
 
 def prepare_original_fresh_two_account_inceptions(
         *, self_job, release, clock, runtime_id, personal_policy,
-        operator_acceptance_ids, approved_unstamped_manifest_digests):
+        operator_acceptance_ids, approved_unstamped_manifest_digests,
+        hl_cost_amendment=None):
     """Stage C: create fresh IN-MEMORY original-manifest candidates.
 
     The source is the real selected original release + 12 genuine original
@@ -77,6 +78,10 @@ def prepare_original_fresh_two_account_inceptions(
     immediately under an independent exact one-shot operator scope.
     """
     from copy import deepcopy
+    from app.services.hyperliquid_forward_flat_paper_policy import (
+        CONSERVATIVE_LOCAL_FEE_POLICY_ID,
+        derive_reviewable_conservative_hl_manifest,
+    )
     from app.services.personal_paper_runtime import validate_policy
     from app.services.paper_financial_replay import validate_manifest
     from app.services.quality_dips_autonomous_enrollment import (
@@ -98,6 +103,9 @@ def prepare_original_fresh_two_account_inceptions(
             or type(runtime_id) is not str or not runtime_id
             or type(operator_acceptance_ids) is not dict
             or set(operator_acceptance_ids) != set(LANES)
+            or hl_cost_amendment not in (
+                None, CONSERVATIVE_LOCAL_FEE_POLICY_ID,
+            )
             or type(approved_unstamped_manifest_digests) is not dict
             or set(approved_unstamped_manifest_digests) != set(LANES)
             or any(type(operator_acceptance_ids[k]) is not str
@@ -162,6 +170,17 @@ def prepare_original_fresh_two_account_inceptions(
         enrollment = deepcopy(old["unaccepted_historical_enrollment"])
         scope = deepcopy(old["unaccepted_historical_report_scope"])
         validate_manifest(manifest)
+        if (lane == "HYPERLIQUID" and
+                manifest.get("schema") == "PAPER_EPOCH_PERP_OPERATIONAL_V1"):
+            # The original R15 fee draft is immutable but incompatible with
+            # today's conservative PAPER pilot. Never accept its 4.5/2 bps or
+            # PENDING fee ID as financially approved.
+            if hl_cost_amendment != CONSERVATIVE_LOCAL_FEE_POLICY_ID:
+                raise ValueError(
+                    "PERSONAL_C_CONSERVATIVE_HL_TERMS_REVIEW_REQUIRED"
+                )
+            manifest = derive_reviewable_conservative_hl_manifest(manifest)
+            enrollment["policy_digest"] = digest(manifest["perp_policy"])
         # Approval binds ALL original finance terms except a fresh UTC
         # inception second that could not have been approved in advance.
         financial_terms = {k: v for k, v in manifest.items() if k != "opened_at"}
@@ -305,7 +324,8 @@ def bind_original_native_two_account_commissioner(
 
 def prepare_and_bind_reviewed_original_native_accounts(
         *, self_job, release, clock, runtime_id, personal_policy,
-        operator_acceptance_ids, approved_unstamped_manifest_digests):
+        operator_acceptance_ids, approved_unstamped_manifest_digests,
+        hl_cost_amendment=None):
     """Production C->D admission in ONE selected original process.
 
     Only a reviewed original account/policy permit may enter the existing
@@ -318,6 +338,7 @@ def prepare_and_bind_reviewed_original_native_accounts(
         personal_policy=personal_policy,
         operator_acceptance_ids=operator_acceptance_ids,
         approved_unstamped_manifest_digests=approved_unstamped_manifest_digests,
+        hl_cost_amendment=hl_cost_amendment,
     )
     return bind_original_native_two_account_commissioner(
         self_job=self_job, release=release, clock=clock, runtime_id=runtime_id,

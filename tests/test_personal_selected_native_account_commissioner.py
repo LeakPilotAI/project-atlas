@@ -928,6 +928,99 @@ def original_fresh_stage_c_model(monkeypatch):
     return SimpleNamespace(kw=kw, draft=candidate, roots=roots)
 
 
+def conservative_stage_c_review(monkeypatch):
+    from copy import deepcopy
+    from app.services.hyperliquid_forward_flat_paper_policy import (
+        CONSERVATIVE_LOCAL_FEE_POLICY_ID,
+        derive_reviewable_conservative_hl_manifest,
+    )
+    from test_perp_financial_v2 import manifest as perp_fixture
+
+    x = original_fresh_stage_c_model(monkeypatch)
+    historical = deepcopy(perp_fixture())
+    historical.update(
+        schema="PAPER_EPOCH_PERP_OPERATIONAL_V1",
+        release=RELEASE, provenance="ACCEPTED_PERP_PAPER_PARAMETERS_V1",
+        opened_at=x.kw["clock"]() - 123,
+        epoch="HYPERLIQUID_EPOCH",
+    )
+    historical["perp_policy"].update(
+        maker_bps="1.5", taker_bps="4.5", slippage_bps="2",
+        fee_schedule_id="PENDING_E1_VERIFIED_FEE_SCHEDULE",
+    )
+    x.draft["accounts"]["HYPERLIQUID"][
+        "unaccepted_historical_parameters"] = deepcopy(historical)
+    amended = derive_reviewable_conservative_hl_manifest(historical)
+    x.kw["hl_cost_amendment"] = CONSERVATIVE_LOCAL_FEE_POLICY_ID
+    x.kw["approved_unstamped_manifest_digests"]["HYPERLIQUID"] = target.digest(
+        {k: v for k, v in amended.items() if k != "opened_at"})
+    return SimpleNamespace(x=x, historical=historical, amended=amended)
+
+
+def test_original_stage_c_amended_fee_terms_keep_all_original_native_bindings(
+        monkeypatch):
+    review = conservative_stage_c_review(monkeypatch)
+    x = review.x
+    entries, admission = target.prepare_original_fresh_two_account_inceptions(
+        **x.kw)
+    hl = entries["HYPERLIQUID"]
+    assert admission.release is x.kw["release"]
+    assert hl["parameters"]["perp_policy"]["taker_bps"] == "10"
+    assert hl["parameters"]["perp_policy"]["slippage_bps"] == "5"
+    assert (hl["parameters"]["perp_policy"]["fee_schedule_id"]
+            == x.kw["hl_cost_amendment"])
+    assert (hl["native_enrollment"]["policy_digest"]
+            == target.digest(hl["parameters"]["perp_policy"]))
+    assert (hl["native_enrollment"]["inception_digest"]
+            == target.digest(hl["parameters"]))
+    assert (hl["report_scope"]["policy_digest"]
+            == target.digest(hl["parameters"]))
+    assert hl["parameters"]["release"] == RELEASE
+    assert (hl["parameters"]["opened_at"] == x.kw["clock"]())
+    assert (x.draft["accounts"]["HYPERLIQUID"][
+        "unaccepted_historical_parameters"] == review.historical)
+    assert entries["QUALITY_DIPS"]["parameters"]["fees_bps"] == "2"
+    assert entries["QUALITY_DIPS"]["parameters"]["opening_cash"] == "1000"
+    assert len(hl["native_enrollment"]["writers"]) == 7
+
+
+@pytest.mark.parametrize("damage", [
+    "missing_cost_amendment", "wrong_cost_amendment",
+    "unapproved_historical_digest", "wrong_amended_digest",
+    "mutated_draft_costs", "wrong_account_operator",
+])
+def test_original_stage_c_conservative_fee_amendment_must_be_exactly_reviewed(
+        monkeypatch, damage):
+    from copy import deepcopy
+    from scripts.observation_runtime import (
+        personal_current_selected_dual_account_draft as draft,
+    )
+    review = conservative_stage_c_review(monkeypatch)
+    x = review.x
+    if damage == "missing_cost_amendment":
+        x.kw.pop("hl_cost_amendment")
+    elif damage == "wrong_cost_amendment":
+        x.kw["hl_cost_amendment"] = "FAKE_NO_WALLET_FEE"
+    elif damage == "unapproved_historical_digest":
+        x.kw["approved_unstamped_manifest_digests"]["HYPERLIQUID"] = (
+            target.digest({k: v for k, v in review.historical.items()
+                           if k != "opened_at"}))
+    elif damage == "wrong_amended_digest":
+        x.kw["approved_unstamped_manifest_digests"]["HYPERLIQUID"] = "f" * 64
+    elif damage == "mutated_draft_costs":
+        def foreign_original():
+            source = deepcopy(x.draft)
+            source["accounts"]["HYPERLIQUID"][
+                "unaccepted_historical_parameters"
+                ]["perp_policy"]["taker_bps"] = "2"
+            return source
+        monkeypatch.setattr(draft, "inspect", foreign_original)
+    else:
+        x.kw["operator_acceptance_ids"]["HYPERLIQUID"] = "UNACCEPTED"
+    with pytest.raises(ValueError):
+        target.prepare_original_fresh_two_account_inceptions(**x.kw)
+
+
 def test_stage_c_uses_real_original_bound_drafts_and_actual_original_job(
         monkeypatch):
     x=original_fresh_stage_c_model(monkeypatch)

@@ -153,6 +153,70 @@ def _operational_pilot():
     return m, cut, sample
 
 
+def _historical_unapproved_hl():
+    m, _, _ = _operational_pilot()
+    m["perp_policy"].update(
+        taker_bps="4.5", slippage_bps="2",
+        fee_schedule_id="PENDING_E1_VERIFIED_FEE_SCHEDULE",
+    )
+    return m
+
+
+def test_reviewed_historical_original_fee_amendment_is_copy_only_not_permission():
+    from copy import deepcopy
+    old = _historical_unapproved_hl()
+    unchanged = deepcopy(old)
+    amended = flat.derive_reviewable_conservative_hl_manifest(old)
+    assert old == unchanged
+    assert amended["perp_policy"]["taker_bps"] == "10"
+    assert amended["perp_policy"]["slippage_bps"] == "5"
+    assert amended["perp_policy"]["maker_bps"] == "1.5"
+    assert (amended["perp_policy"]["fee_schedule_id"]
+            == flat.CONSERVATIVE_LOCAL_FEE_POLICY_ID)
+    for unchanged_key in (
+        "instrument_cut", "market_source", "funding_source",
+        "risk_limit", "maintenance_rate", "symbols",
+        "max_notional", "max_positions", "max_leverage",
+    ):
+        assert (amended["perp_policy"][unchanged_key]
+                == old["perp_policy"][unchanged_key])
+    for unchanged_key in (
+        "epoch", "release", "opening_cash", "opened_at",
+        "currency", "provenance", "timezone",
+    ):
+        assert amended[unchanged_key] == old[unchanged_key]
+
+
+@pytest.mark.parametrize("damage", [
+    "already_amended", "foreign_fee", "foreign_cost", "unknown_fee",
+    "lower_notional", "wrong_symbols", "wrong_currency", "wrong_schema",
+    "wrong_provenance",
+])
+def test_historical_fee_overlay_rejects_nonoriginal_or_changed_terms(damage):
+    m = _historical_unapproved_hl()
+    p = m["perp_policy"]
+    if damage == "already_amended":
+        p["taker_bps"] = "10"
+    elif damage == "foreign_fee":
+        p["taker_bps"] = "3"
+    elif damage == "foreign_cost":
+        p["slippage_bps"] = "4"
+    elif damage == "unknown_fee":
+        p["fee_schedule_id"] = "PROVIDER_TIER_NOT_VERIFIED"
+    elif damage == "lower_notional":
+        p["max_notional"] = "90"
+    elif damage == "wrong_symbols":
+        p["symbols"] = ["BTC"]
+    elif damage == "wrong_currency":
+        m["currency"] = "USD"
+    elif damage == "wrong_schema":
+        m["schema"] = "PAPER_EPOCH_PERP_FIXTURE_V2"
+    else:
+        m["provenance"] = "FOREIGN"
+    with pytest.raises(ValueError):
+        flat.derive_reviewable_conservative_hl_manifest(m)
+
+
 def test_actual_operational_manifest_costs_and_funding_window_preflight_only():
     m, cut, clock = _operational_pilot()
     receipt = flat.require_conservative_original_paper_preflight(
