@@ -222,7 +222,13 @@ class NativePersonalWriterOwnership:
             self._verify()
             action, snapshot = self._context(request)
             record = self.authority.activation(action)
-            if type(now) is not int or now != self.authority.clock():
+            # Two successive trusted UTC samples can legitimately straddle
+            # a one-second boundary while the original native activation is
+            # verified. Reject rollback and anything older than ONE second;
+            # do not weaken original owner, SID, lease or NTP requirements.
+            checked_at = self.authority.clock()
+            if (type(now) is not int or type(checked_at) is not int
+                    or not now <= checked_at <= now + 1):
                 raise ValueError('PERSONAL_WRITER_CLOCK')
             result = self.coordinator.wait(self.mutex, 500)
             if result not in (0, 128):
@@ -248,9 +254,11 @@ class NativePersonalWriterOwnership:
 
                     def check(self, candidate, stamp):
                         owner._verify()
+                        verified_at = owner.authority.clock()
                         return (get_ident() == thread and owner.active > 0
                             and type(stamp) is int and now <= stamp <= now + 30
-                            and stamp == owner.authority.clock()
+                            and type(verified_at) is int
+                            and stamp <= verified_at <= stamp + 1
                             and body(candidate) == sealed and body(self.snapshot) == sealed
                             and owner.authority.activation(action) == record)
 
