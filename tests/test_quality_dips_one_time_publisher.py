@@ -518,3 +518,50 @@ def test_split_publication_custody_refuses_before_effects(native):
             files=object(),
         )
     assert n.writes == 0 and not n.ledger.exists()
+
+
+@pytest.mark.parametrize(
+    "issuer_entry_seconds, expected_success",
+    [(3, True), (31, False), (-1, False)],
+)
+def test_original_issuer_delay_must_refresh_writer_lease_clock_without_relaxing(
+    native, issuer_entry_seconds, expected_success
+):
+    """No real money or native personal accounts: deterministic publisher probe.
+
+    The original issuer can perform costly, genuine native activation validation
+    *before* its adjacent writer lease enters. A timestamp sampled before the
+    issuer becomes stale; the writer needs the trusted sample taken after that
+    context has entered. Excessive delay and UTC rollback still refuse prior to
+    any financial file reservation.
+    """
+    n = native
+    original_issuer = n.bootstrap.issuer.lease
+    original_writer = n.publisher.ownership.lease
+
+    @contextmanager
+    def issuer_after_native_validation(scope, stamp):
+        with original_issuer(scope, stamp) as lease:
+            n.now = stamp + issuer_entry_seconds
+            yield lease
+
+    @contextmanager
+    def original_strict_writer(context, stamp):
+        if not (type(stamp) is int and 0 <= n.now - stamp <= 1):
+            raise ValueError("PERSONAL_WRITER_CLOCK")
+        with original_writer(context, stamp) as lease:
+            yield lease
+
+    n.bootstrap.issuer.lease = issuer_after_native_validation
+    n.publisher.ownership.lease = original_strict_writer
+
+    if expected_success:
+        ready = n.publisher.publish()
+        assert ready["source_revision"] == 0
+        assert n.phase() == "ACKNOWLEDGED"
+        assert n.writes == 3
+    else:
+        with pytest.raises(ValueError):
+            n.publisher.publish()
+        assert n.writes == 0
+        assert n.phase() == "UNPUBLISHED"

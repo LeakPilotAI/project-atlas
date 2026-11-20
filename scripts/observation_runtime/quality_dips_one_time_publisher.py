@@ -204,9 +204,21 @@ class OneTimePublisher:
             "process": identity,
         }
         last = now
+
+        def fresh_writer_entry():
+            # Python enters issuer before writer. Its original native
+            # activation verification may take multiple seconds; resample
+            # the SAME trusted clock only after that issuer is admitted.
+            # Keep the original 30s issuer window and the writer's strict
+            # one-second lease check, rather than extending either limit.
+            stamp = b.clock()
+            if type(stamp) is not int or not now <= stamp <= now + 30:
+                raise ValueError("GENESIS_ISSUER_CLOCK_OR_WRITER_REFUSED")
+            return stamp
+
         with (
             b.issuer.lease(strict(body(intent)), now) as issuer,
-            self.ownership.lease(strict(body(context)), now) as owner,
+            self.ownership.lease(strict(body(context)), fresh_writer_entry()) as owner,
         ):
 
             def admitted():
