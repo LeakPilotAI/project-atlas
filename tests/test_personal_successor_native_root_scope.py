@@ -82,7 +82,7 @@ def owner_fixture(monkeypatch):
     p=plan()
     class Historian:
         def __init__(self):
-            self.release=SimpleNamespace(root=Path("D:/AtlasRuntime/releases")/RELEASE)
+            self.release=SimpleNamespace(root=Path("D:/AtlasRuntime/releases")/RELEASE,artifact_digest="c"*64)
             self.valid=True
         def capture(self):
             if not self.valid:raise ValueError("ORIGINAL_JOURNAL_TAMPERED")
@@ -161,3 +161,43 @@ def test_native_root_scope_refuses_changed_financial_namespace(monkeypatch,damag
         a.historian.valid=False
     with pytest.raises(ValueError):
         s.inspect()
+
+
+def test_carried_r27_native_roots_are_bound_to_new_selected_code_only(monkeypatch):
+    """No new mkdir, journal or financial approval; uses a simulated exact proof."""
+    a=owner_fixture(monkeypatch)
+    from scripts.observation_runtime import personal_successor_release_carryforward as carry
+    p=scope.successor_root_plan(
+        successor_release=carry.R27_SOURCE,epoch_nonce=carry.EPOCH_NONCE)
+    new_source="a"*40
+    new_artifact="b"*64
+    a.historian.release.root=Path("D:/AtlasRuntime/releases")/new_source
+    a.historian.release.artifact_digest=new_artifact
+    monkeypatch.setattr(scope,"__file__",str(
+        a.historian.release.root/
+        "scripts/observation_runtime/personal_successor_native_root_scope.py"))
+    for lane in scope.LANES:
+        a.current[0]["lanes"][lane]["epoch"]=p["lanes"][lane]["epoch"]
+        for role in scope.ROLES:
+            a.current[0]["lanes"][lane]["roots"][role]["path"]=p["lanes"][lane]["roots"][role]
+    copied=copy.deepcopy(a.current[0])
+    monkeypatch.setattr(scope,"inspect_two_lane_native_roots",
+                        lambda **kwargs:copy.deepcopy(a.current[0]))
+    def proof(*,plan,selected_code_release,selected_code_digest):
+        assert plan==p
+        assert selected_code_release==new_source
+        assert selected_code_digest==new_artifact
+        return {"original_R27_terms_digest":"1"*64,
+                "original_R27_artifact_digest":carry.R27_ARTIFACT},copied
+    monkeypatch.setattr(carry,"verified_carried_r27_roots",proof)
+    bound=scope.NativeSelectedSuccessorEpochRoots(
+        plan=p,historical_guard=a.historian)
+    assert bound.root_provisioning_terms_digest=="1"*64
+    assert bound.root_provisioning_artifact_digest==carry.R27_ARTIFACT
+    assert bound.exact_selected_release_bound(new_source,new_artifact)
+    assert bound.inspect()["lanes"]==copied["lanes"]
+    with pytest.raises(ValueError,match="SELECTED_CODE_OR_FINANCIAL_OWNER_CHANGED"):
+        bound.exact_selected_release_bound(carry.R27_SOURCE,new_artifact)
+    a.current[0]["lanes"]["HYPERLIQUID"]["roots"]["report"]["native_id"]=[9,8,7]
+    with pytest.raises(ValueError,match="NATIVE_ROOTS_NO_LONGER|NEW_ROOT_ID"):
+        bound.inspect()

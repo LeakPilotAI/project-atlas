@@ -297,8 +297,8 @@ def bind_original_native_two_account_commissioner(
             NativeSelectedSuccessorEpochRoots,
         )
         if (type(successor_root_scope) is not NativeSelectedSuccessorEpochRoots
-                or successor_root_scope.plan['successor_release']
-                   != release.root.name):
+                or successor_root_scope.exact_selected_release_bound(
+                    release.root.name,release.artifact_digest) is not True):
             raise ValueError('PERSONAL_C_D_GENUINE_SUCCESSOR_ROOT_SCOPE_REQUIRED')
     self_job.verify()
     admission.verify(release_digest=release.artifact_digest)

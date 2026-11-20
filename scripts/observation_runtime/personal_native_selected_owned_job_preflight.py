@@ -160,9 +160,8 @@ class RetainedSelectedNativeOwnerPreflight:
                 NativeSelectedSuccessorEpochRoots,
             )
             if (type(successor_root_scope) is not NativeSelectedSuccessorEpochRoots
-                    or successor_root_scope.plan['successor_release'] != release
-                    or successor_root_scope.historical_guard.release.artifact_digest
-                       != release_digest):
+                    or successor_root_scope.exact_selected_release_bound(
+                        release,release_digest) is not True):
                 raise ValueError('SELECTED_OWNER_EXACT_SUCCESSOR_ROOT_SCOPE_REQUIRED')
         self._successor_root_scope = successor_root_scope
         self._roots = self._inspect_roots()

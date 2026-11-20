@@ -115,6 +115,15 @@ def system(monkeypatch,tmp_path):
             self.historical_guard=Historian()
             self.actual=roots
         def inspect(self):return copy.deepcopy(self.actual)
+        def exact_selected_release_bound(self,source,digest_value):
+            if (source!=self.historical_guard.release.root.name
+                    or digest_value!=self.historical_guard.release.artifact_digest):
+                raise ValueError('DISPOSABLE_RELEASE_BINDING_CHANGED')
+            return True
+        @property
+        def root_provisioning_terms_digest(self):return None
+        @property
+        def root_provisioning_artifact_digest(self):return None
     monkeypatch.setattr(candidate,"NativeOriginalSelfJob",Job)
     monkeypatch.setattr(candidate,"NativePersonalReleaseIdentity",Release)
     monkeypatch.setattr(candidate,"NativeVersionSafePaperOperatorClock",Clock)
@@ -250,4 +259,33 @@ def test_stage_c_refuses_new_epoch_identity_or_authority_drift(monkeypatch,tmp_p
     elif damage=="stale_accepted_financial_terms":
         s.args["approved_unstamped_manifest_digests"]["QUALITY_DIPS"]="a"*64
     with pytest.raises((ValueError,TypeError,AttributeError)):
+        candidate.prepare_fresh_successor_account_candidates(**s.args)
+
+
+def test_current_release_terms_and_historical_r27_provision_receipt_are_distinct(
+        monkeypatch,tmp_path):
+    """A root-only R27 scope cannot pretend to be a new account approval."""
+    s=system(monkeypatch,tmp_path)
+    prior_terms="1"*64
+    prior_release="2"*64
+    monkeypatch.setattr(s.Scope,"root_provisioning_terms_digest",
+                        property(lambda self:prior_terms))
+    monkeypatch.setattr(s.Scope,"root_provisioning_artifact_digest",
+                        property(lambda self:prior_release))
+    success=json.loads((tmp_path/"success.json").read_bytes())
+    success["scope"]["terms_review_digest"]=prior_terms
+    success["scope"]["successor_release_digest"]=prior_release
+    (tmp_path/"success.json").write_text(json.dumps(success,sort_keys=True))
+    intent=json.loads((tmp_path/"intent.json").read_bytes())
+    intent["scope"]=success["scope"]
+    (tmp_path/"intent.json").write_text(json.dumps(intent,sort_keys=True))
+    import hashlib
+    success["intent_sha256"]=hashlib.sha256((tmp_path/"intent.json").read_bytes()).hexdigest()
+    (tmp_path/"success.json").write_text(json.dumps(success,sort_keys=True))
+    candidates,_=candidate.prepare_fresh_successor_account_candidates(**s.args)
+    assert set(candidates)==set(scope.LANES)
+    assert candidates["QUALITY_DIPS"]["parameters"]["release"]==ARTIFACT
+    assert ARTIFACT!=prior_release
+    s.packet["accounts"]["QUALITY_DIPS"]["exact_economic_terms"]["opening_cash"]="777"
+    with pytest.raises(ValueError,match="R27_STAGE_C"):
         candidate.prepare_fresh_successor_account_candidates(**s.args)

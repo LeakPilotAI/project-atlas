@@ -97,7 +97,8 @@ def prepare_fresh_successor_account_candidates(
     plan=successor_root_scope.plan
     guard=successor_root_scope.historical_guard
     if (guard.release is not release
-            or plan["successor_release"]!=release.root.name
+            or successor_root_scope.exact_selected_release_bound(
+                release.root.name,release.artifact_digest) is not True
             or Path(__file__).absolute()!=release.root/
                "scripts/observation_runtime/personal_successor_stage_c_candidates.py"
             or self_job.verify() is not True
@@ -122,13 +123,19 @@ def prepare_fresh_successor_account_candidates(
     import json, hashlib
     raw_intent=receipt_path.read_bytes()
     receipt=strict(success_path.read_bytes())
+    bound_review=(successor_root_scope.root_provisioning_terms_digest
+                  or digest(reviewed_successor_terms))
+    bound_artifact=(successor_root_scope.root_provisioning_artifact_digest
+                    or release.artifact_digest)
     if (receipt.get("schema")!=PROVISION_SCHEMA
             or receipt.get("status")!=
                "TWELVE_NEW_EMPTY_ROOTS_NATIVE_ID_VERIFIED_NOT_FINANCIAL_AUTHORITY"
             or receipt.get("intent_sha256")!=hashlib.sha256(raw_intent).hexdigest()
             or receipt.get("scope",{}).get("scope")!=ROOT_SCOPE
-            or receipt["scope"].get("terms_review_digest")!=digest(reviewed_successor_terms)
-            or receipt["scope"].get("successor_release_digest")!=release.artifact_digest
+            or receipt["scope"].get("plan_digest")!=digest(plan)
+            or receipt["scope"].get("successor_release")!=plan["successor_release"]
+            or receipt["scope"].get("terms_review_digest")!=bound_review
+            or receipt["scope"].get("successor_release_digest")!=bound_artifact
             or receipt.get("new_financial_directories_created")!=14
             or receipt.get("new_accounts_opened")!=0
             or receipt.get("new_journals_created")!=0

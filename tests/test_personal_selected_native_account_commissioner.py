@@ -1368,6 +1368,10 @@ def test_c_d_successor_scope_routes_only_distinct_new_epoch_without_reusing_orig
     class RootScope:
         def __init__(self):
             self.plan=plan
+        def exact_selected_release_bound(self,source,digest_value):
+            if source!=RELEASE[:40] or digest_value!=RELEASE:
+                raise ValueError('TEST_RELEASE_OR_DIGEST_CHANGED')
+            return True
     monkeypatch.setattr(personal_successor_native_root_scope,
                         "NativeSelectedSuccessorEpochRoots",RootScope)
     scoped=RootScope()

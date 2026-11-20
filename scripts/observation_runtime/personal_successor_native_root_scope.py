@@ -117,11 +117,21 @@ class NativeSelectedSuccessorEpochRoots:
                     epoch_nonce=plan.get("epoch_nonce"))):
             raise ValueError("R27_SUCCESSOR_GENUINE_HISTORICAL_GUARD_AND_PLAN_REQUIRED")
         release=historical_guard.release
-        expected=Path("D:/AtlasRuntime/releases")/plan["successor_release"]
+        expected=Path("D:/AtlasRuntime/releases")/release.root.name
         if (release.root!=expected
                 or Path(__file__).absolute()!=expected/
                    "scripts/observation_runtime/personal_successor_native_root_scope.py"):
             raise ValueError("R27_SUCCESSOR_SELECTED_INSTALLED_MODULE_REQUIRED")
+        self._carried=None
+        self._carried_roots=None
+        if plan["successor_release"]!=release.root.name:
+            from scripts.observation_runtime.personal_successor_release_carryforward import (
+                verified_carried_r27_roots,
+            )
+            self._carried,self._carried_roots=verified_carried_r27_roots(
+                plan=plan,selected_code_release=release.root.name,
+                selected_code_digest=release.artifact_digest)
+        self._root_release=(release.root.name,release.artifact_digest)
         evidence=historical_guard.capture()
         if (evidence.get("original_journals_verified")!=2
                 or evidence.get("original_financial_account_publications")!=0
@@ -134,6 +144,8 @@ class NativeSelectedSuccessorEpochRoots:
         self._first=self._observe()
         if self._first["existing_empty_root_namespaces"]!=12:
             raise ValueError("R27_SUCCESSOR_TWELVE_ORIGINAL_FRESH_ROOTS_REQUIRED")
+        if self._carried is not None and self._first["lanes"]!=self._carried_roots["lanes"]:
+            raise ValueError("R27_CARRYFORWARD_NATIVE_ROOTS_NO_LONGER_EQUAL_APPROVED_ROOTS")
 
     def _observe(self):
         paths=self.plan["lanes"]
@@ -164,11 +176,44 @@ class NativeSelectedSuccessorEpochRoots:
             raise ValueError("R27_SUCCESSOR_CROSS_LANE_NATIVE_ID_ALIAS")
         return inventory
 
+    def exact_selected_release_bound(self,source,artifact_digest):
+        release=self.historical_guard.release
+        if (type(source) is not str or type(artifact_digest) is not str
+                or (source,artifact_digest)!=self._root_release
+                or release.root.name!=source
+                or release.artifact_digest!=artifact_digest):
+            raise ValueError("R27_CARRYFORWARD_SELECTED_CODE_OR_FINANCIAL_OWNER_CHANGED")
+        if self._carried is not None:
+            from scripts.observation_runtime.personal_successor_release_carryforward import (
+                verified_carried_r27_roots,
+            )
+            now,original=verified_carried_r27_roots(
+                plan=self.plan,selected_code_release=source,
+                selected_code_digest=artifact_digest)
+            if now!=self._carried or original!=self._carried_roots:
+                raise ValueError("R27_CARRYFORWARD_PINNED_OPERATOR_ROOT_APPROVAL_CHANGED")
+        elif self.plan["successor_release"]!=source:
+            raise ValueError("R27_SUCCESSOR_NEW_RELEASE_SCOPE_CHANGED")
+        return True
+
+    @property
+    def root_provisioning_terms_digest(self):
+        if self._carried is not None:
+            return self._carried["original_R27_terms_digest"]
+        return None
+
+    @property
+    def root_provisioning_artifact_digest(self):
+        if self._carried is not None:
+            return self._carried["original_R27_artifact_digest"]
+        return None
+
     def inspect(self):
         if (self.historical_guard is not self._ports[0]
                 or self.historical_guard.release is not self._ports[1]
                 or self.historical_guard.capture().get("original_journals_verified")!=2):
             raise ValueError("R27_SUCCESSOR_OLD_R26_JOURNAL_RECHECK_REFUSED")
+        self.exact_selected_release_bound(*self._root_release)
         actual=self._observe()
         for lane in LANES:
             for role in ROLES:
