@@ -37,6 +37,83 @@ LANES = ('QUALITY_DIPS', 'HYPERLIQUID')
 CURRENT_PHASE = 'CURRENT_READBACK_ONLY'
 
 
+def inspect_enrolled_native_account_roots(enrollments):
+    """Select the exact existing two account epochs, never the legacy default.
+
+    A fresh READ_ONLY process must independently inspect the original
+    enrollment's twelve Windows native root IDs. Historical fixed R26 roots
+    and separately provisioned successor epochs are distinct. Neither a JSON
+    path nor the caller's chosen epoch supplies native identity authority.
+    """
+    from scripts.observation_runtime.personal_existing_native_resource_evidence import (
+        QD_BASE, QD_CUSTODY, HL_BASE, HL_CUSTODY, ROLES,
+        inspect_two_lane_native_roots,
+    )
+    parents = {
+        'QUALITY_DIPS': (QD_BASE.parent, QD_CUSTODY.parent),
+        'HYPERLIQUID': (HL_BASE.parent, HL_CUSTODY.parent),
+    }
+    if type(enrollments) is not dict or set(enrollments) != set(LANES):
+        raise ValueError('OWNER_V2_EXACT_TWO_ENROLLED_NATIVE_ACCOUNTS_REQUIRED')
+    arguments = {}
+    for lane in LANES:
+        enrollment = enrollments[lane]
+        if (type(enrollment) is not dict
+                or type(enrollment.get('epoch')) is not str
+                or not enrollment['epoch']
+                or type(enrollment.get('resources')) is not dict
+                or set(enrollment['resources']) != set(ROLES)):
+            raise ValueError('OWNER_V2_ENROLLED_NATIVE_EPOCH_REQUIRED')
+        resources = enrollment['resources']
+        source, custody = resources['source'], resources['custody']
+        if (type(source) is not dict or type(custody) is not dict
+                or type(source.get('path')) is not str
+                or type(custody.get('path')) is not str):
+            raise ValueError('OWNER_V2_NATIVE_ROOT_PATH_REQUIRED')
+        base = Path(source['path']).parent
+        custody_path = Path(custody['path'])
+        if (base.parent != parents[lane][0]
+                or custody_path.parent != parents[lane][1]
+                or base.name != enrollment['epoch']
+                or custody_path.name != enrollment['epoch']):
+            raise ValueError('OWNER_V2_NATIVE_ROOT_EPOCH_OR_PARENT_CONFLICT')
+        for role in ROLES:
+            resource = resources[role]
+            expected = custody_path if role == 'custody' else base / role
+            if (type(resource) is not dict
+                    or resource.get('path') != str(expected)
+                    or type(resource.get('native_id')) is not list
+                    or len(resource['native_id']) != 3
+                    or any(type(x) is not int or x < 0
+                           for x in resource['native_id'])):
+                raise ValueError('OWNER_V2_NATIVE_ROLE_PATH_OR_ID_CONFLICT')
+        if lane == 'QUALITY_DIPS':
+            arguments.update(qd_base=base, qd_custody=custody_path)
+        else:
+            arguments.update(hl_base=base, hl_custody=custody_path)
+    native = inspect_two_lane_native_roots(**arguments)
+    if (native['native_root_ids_verified'] != 12
+            or native['native_root_total'] != 12):
+        raise ValueError('OWNER_V2_ENROLLED_NATIVE_ROOT_READBACK_REFUSED')
+    seen = set()
+    if set(native['lanes']) != set(LANES):
+        raise ValueError('OWNER_V2_ENROLLED_NATIVE_LANES_CHANGED')
+    for lane in LANES:
+        for role in ROLES:
+            observed = native['lanes'][lane]['roots'][role]
+            resource = enrollments[lane]['resources'][role]
+            identity = tuple(observed['native_id']) if observed.get('native_id') else ()
+            if (observed['native_identity_verified'] is not True
+                    or observed['path'] != resource['path']
+                    or observed['native_id'] != resource['native_id']
+                    or not identity or identity in seen):
+                raise ValueError('OWNER_V2_ENROLLED_NATIVE_ROOT_ID_CHANGED')
+            seen.add(identity)
+    if len(seen) != 12:
+        raise ValueError('OWNER_V2_ENROLLED_NATIVE_ROOT_IDENTITY_ALIAS')
+    return native
+
+
 def verify_original_account_roots(enrollments, custody_readers=None):
     """Existing native metadata/ACL checks; unknown control/custody stays closed.
 
@@ -137,7 +214,6 @@ class NativeReadOnlyRecoveryActivationGuard:
         self.verify_still_running()
 
     def verify_still_running(self):
-        from scripts.observation_runtime.personal_existing_native_resource_evidence import inspect_two_lane_native_roots
         from scripts.observation_runtime.personal_activation_commission import verify_enrollment_native_roots
         if (self.job is not self._ports[0] or body(self.enrollments)!=self._ports[1]
                 or self.release_digest!=self._ports[2] or body(self.identity)!=self._ports[3]
@@ -152,7 +228,7 @@ class NativeReadOnlyRecoveryActivationGuard:
             require_installed_continuity_source(self.release_digest,self._release_admission)
         # Existing original path/root inventory, NOT an empty or financial-cut
         # assertion. No financial control/coordination mutation or acquisition.
-        roots=inspect_two_lane_native_roots()
+        roots=inspect_enrolled_native_account_roots(self.enrollments)
         seen=set()
         for lane,e in self.enrollments.items():
             verify_enrollment_native_roots(e)
