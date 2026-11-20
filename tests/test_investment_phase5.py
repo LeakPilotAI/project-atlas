@@ -624,3 +624,29 @@ def test_failed_record_has_null_outcomes_and_no_price():
     assert rec.as_probability_claim
     with pytest.raises(RuntimeError):
         rec.as_probability_claim()
+
+
+def test_outcome_enrichment_loads_each_symbol_history_once(monkeypatch, tmp_path):
+    import app.investment.scan as scan_mod
+    import app.investment.outcomes as outcomes_mod
+    scanner = object.__new__(InvestmentScanner)
+    scanner.observations_path = tmp_path / "observations.jsonl"
+    scanner.history_root = tmp_path
+    now = datetime(2026, 9, 19, tzinfo=timezone.utc)
+    prior = (now - timedelta(days=1)).isoformat()
+    rows = [{"observation_id": str(i), "symbol": "ABC", "as_of": prior} for i in range(8)]
+    rows.append({"observation_id": "future", "symbol": "XYZ", "as_of": (now + timedelta(days=1)).isoformat()})
+    monkeypatch.setattr(scan_mod, "load_observations", lambda path: rows)
+    monkeypatch.setattr(outcomes_mod, "load_outcomes", lambda path: [])
+    reads, enriched = [], []
+    def history(symbol, **kwargs):
+        reads.append(symbol)
+        return []
+    def enrich(row, bars, **kwargs):
+        enriched.append(row["observation_id"])
+        return True
+    monkeypatch.setattr(scan_mod, "load_bars", history)
+    monkeypatch.setattr(scan_mod, "enrich_observation", enrich)
+    scanner._enrich_past(now=now, outcomes_path=tmp_path / "outcomes.jsonl")
+    assert reads == ["ABC"]
+    assert enriched == [str(i) for i in range(8)]

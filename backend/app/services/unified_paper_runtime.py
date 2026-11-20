@@ -1,0 +1,1006 @@
+﻿"""Inert two-lane supervision over existing engines; no providers or startup hook.
+
+The injected installation lease authenticates actual lane objects. Portfolio
+custody owns durable reservations and cross-process exclusion, not this object's
+thread lock. No default custodian, portfolio allocation or trading grant exists.
+"""
+
+import asyncio
+import sqlite3
+from threading import Event, Lock
+
+from app.services.paper_financial_replay import (
+    ControlCapacityReached,
+    FinancialSourceUncertain,
+    body,
+    digest,
+    strict,
+    text,
+)
+from app.services.paper_portfolio_risk import (
+    LANES,
+    check_portfolio_accounting_update,
+    check_portfolio_cut,
+    check_portfolio_reducing_exit,
+)
+
+
+class UnifiedMarketReadCapability:
+    """Narrow capability passed to GET: no dispatch/start/stop surface."""
+
+    def __init__(self, runtime):
+        if type(runtime) is not UnifiedPaperRuntime:
+            raise ValueError("UNIFIED_VERIFIED_RUNTIME_REQUIRED")
+        self._read = runtime.read_snapshot
+        self._runtime = runtime
+
+    def read(self):
+        value = self._read()
+        from app.services.unified_portfolio_custody import UnifiedPortfolioCustody
+        if type(self._runtime.portfolio) is UnifiedPortfolioCustody:
+            accounts = self._runtime.portfolio.read_accounts(self._runtime.grant)
+            value['accounts'] = accounts
+            value['trade_history'] = self._runtime.portfolio.read_trade_history(self._runtime.grant)
+            if accounts['state'] != 'ACKNOWLEDGED': value['financial_state'] = 'UNKNOWN'
+        return value
+
+
+class UnifiedControlStopBridge:
+    """Existing Control Center stop/loopback transport contract, never startup."""
+
+    def __init__(self, runtime, *, owned_close=None, stop_ledger=None):
+        if type(runtime) is not UnifiedPaperRuntime:
+            raise ValueError("UNIFIED_ACCEPTED_RUNTIME_REQUIRED")
+        self.runtime = runtime
+        self.stop_ledger = stop_ledger
+        self._receipt_persisted = stop_ledger is None
+        self.owned_close = owned_close
+        self._close_binding = owned_close
+        self.stop_lock = Lock()
+        self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "IDLE", "outcome": None}
+
+    @property
+    def session_id(self):
+        # Identity comes from the installed runtime grant, never from a
+        # caller-supplied desktop handoff or a mutable bridge field.
+        grant = getattr(self.runtime, "grant", None)
+        if type(grant) is not dict or type(grant.get("session_id")) is not str:
+            return None
+        value = grant["session_id"]
+        return value if value and len(value) <= 128 else None
+
+    def verify_session(self):
+        # Existing local stop transport retains its independently installed
+        # runtime read check. The new handoff additionally requires session_id.
+        try:
+            self.runtime.read_snapshot()
+            return True
+        except Exception:
+            # A read/lease failure of any ordinary kind cannot authenticate
+            # ownership. Keep the financial stop closed rather than raising
+            # from the ownership probe or granting an optimistic ACK.
+            return False
+
+    def request_stop(self, mode):
+        # Serialize the whole financial-stop plus owned-process-close sequence.
+        # Runtime.stop alone cannot protect the separate close callback.
+        with self.stop_lock:
+            return self._request_stop_locked(mode)
+
+    def _request_stop_locked(self, mode):
+        if mode not in ("SHUTDOWN_FLATTEN", "EMERGENCY") or not self.verify_session():
+            raise ValueError("UNIFIED_CONTROL_SESSION_OR_MODE_UNVERIFIED")
+        if self.progress["phase"] == "FINISHED":
+            if self.progress["outcome"]["mode"] != mode:
+                raise ValueError("UNIFIED_CONTROL_STOP_MODE_CHANGED")
+            ledger = getattr(self, "stop_ledger", None)
+            if ledger is not None:
+                grant = self.runtime.grant
+                if (not getattr(self, "_receipt_persisted", False)
+                        or type(grant) is not dict or type(grant.get("session_id")) is not str
+                        or not grant["session_id"]):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
+                try:
+                    existing = ledger.reserve_existing(grant["session_id"], mode)
+                    if existing["state"] != "FINISHED" or existing["receipt"] != self.progress:
+                        raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
+            return strict(body(self.progress))
+        ledger = getattr(self, "stop_ledger", None)
+        session_id = None
+        if ledger is not None:
+            grant = self.runtime.grant
+            if (type(grant) is not dict or type(grant.get("session_id")) is not str
+                    or not grant["session_id"]):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
+            session_id = grant["session_id"]
+            try:
+                ledger.reserve_fresh(session_id, mode)
+                self._receipt_persisted = False
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_INTENT_UNVERIFIED") from None
+        try:
+            outcome = self.runtime.stop(emergency=mode == "EMERGENCY", reason="UNKNOWN" if mode == "EMERGENCY" else "USER_SHUTDOWN")
+            if (type(outcome) is not dict or outcome.get("state") not in ("STOPPED", "STOP_INCOMPLETE")
+                    or type(outcome.get("lanes")) is not dict):
+                raise ValueError("UNIFIED_FINANCIAL_STOP_OUTCOME_UNVERIFIED")
+        except Exception:
+            # The runtime closes entry admission before attempting financial
+            # drain. A thrown stop cannot certify flat positions or process
+            # exit, and must never be converted into a successful shortcut ACK.
+            self.runtime.entry_closed.set()
+            self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED", "outcome": {
+                "schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
+                "status": "SHUTDOWN_INCOMPLETE", "position_state": "UNKNOWN",
+                "lanes": {}, "cash": None, "process_shutdown": "NOT_REQUESTED",
+                "reason": "FINANCIAL_STOP_UNVERIFIED"}}
+            if ledger is not None:
+                try:
+                    ledger.finish(session_id, mode, self.progress)
+                    self._receipt_persisted = True
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
+            return strict(body(self.progress))
+        financial_flat = complete = outcome["state"] == "STOPPED"
+        process_state = 'NOT_REQUESTED'
+        if self.owned_close is not None:
+            process_state = 'UNVERIFIED'
+            portfolio = self.runtime.portfolio
+            verifier = getattr(getattr(portfolio, 'authority', None),
+                'verify_owned_shutdown' if complete else 'verify_incomplete_owned_shutdown', None)
+            roster_reader = getattr(getattr(portfolio, 'ownership', None), 'owned_roster', None)
+            try:
+                if (self.owned_close is not self._close_binding or verifier is None or roster_reader is None
+                        or (not complete and (self.runtime.uncertain or mode != 'SHUTDOWN_FLATTEN'))
+                        or portfolio.verify_drain(self.runtime.grant) is not True):
+                    raise ValueError('UNIFIED_OWNED_CLOSE_DRAIN_REQUIRED')
+                with portfolio.lease({'grant': self.runtime.grant}) as admitted:
+                    if admitted.owner.check() is not True or portfolio.verify_drain(self.runtime.grant) is not True:
+                        raise ValueError('UNIFIED_OWNERSHIP_CHANGED_BEFORE_CLOSE')
+                    roster = strict(body(roster_reader(self.runtime.grant, portfolio.writers, self.runtime.clock())))
+                    if (type(roster) is not dict or set(roster) != {'schema', 'session_id', 'processes', 'writer_binding', 'account_binding'}
+                            or roster['schema'] != 'ATLAS_UNIFIED_OWNED_ROSTER_V1'
+                            or roster['session_id'] != self.runtime.grant['session_id']
+                            or type(roster['processes']) is not list or not 0 < len(roster['processes']) <= 32
+                            or len({p['pid'] for p in roster['processes']}) != len(roster['processes'])
+                            or any(set(p) != {'pid', 'created', 'image'} or type(p['pid']) is not int or p['pid'] <= 0
+                                   or type(p['created']) is not int or p['created'] <= 0
+                                   or type(p['image']) is not str or not p['image'] for p in roster['processes'])
+                            or roster['writer_binding'] != portfolio.journal.manifest['roster_digest']
+                            or roster['account_binding'] != digest({k: digest(w.manifest) for k,w in portfolio.writers.items()})):
+                        raise ValueError('UNIFIED_EXACT_OWNED_ROSTER_REQUIRED')
+                    context = {'grant': self.runtime.grant, 'roster': roster, 'outcome': outcome}
+                    if not complete:
+                        context['acknowledged_cuts'] = {k:w._cut() for k,w in portfolio.writers.items()}
+                        context['admission'] = portfolio.journal.snapshot()
+                    if verifier(context, self.owned_close, portfolio.components) is not True:
+                        raise ValueError('UNIFIED_OWNED_CLOSE_AUTHORITY_REQUIRED')
+                    if (self.owned_close.close_verified(strict(body(roster))) is not True
+                            or self.owned_close.verify_exit(strict(body(roster))) is not True):
+                        raise ValueError('UNIFIED_EXACT_OWNED_EXIT_UNACKNOWLEDGED')
+                    process_state = 'VERIFIED_EXIT' if complete else 'VERIFIED_EXIT_WITH_UNRESOLVED_POSITIONS'
+            except Exception:
+                # Unexpected owned-process close errors cannot certify exit.
+                # Never retry a possibly partially executed close callback.
+                complete, process_state = False, 'INCOMPLETE'
+        self.progress = {"schema": "QD_CONTROL_STOP_V1", "phase": "FINISHED", "outcome": {
+            "schema": "QD_AUTO_SHUTDOWN_V1", "mode": mode,
+            "status": "FLATTENED" if complete and (self.owned_close is None or process_state == "VERIFIED_EXIT") else "SHUTDOWN_INCOMPLETE",
+            "position_state": "FLAT" if financial_flat else "UNKNOWN" if self.runtime.uncertain else "POSITION_OPEN",
+            "lanes": outcome["lanes"], "cash": None, "process_shutdown": process_state,
+            "reason": "SEPARATE_ACKNOWLEDGED_LANE_OUTCOMES_REQUIRED"}}
+        if ledger is not None:
+            try:
+                ledger.finish(session_id, mode, self.progress)
+                self._receipt_persisted = True
+            except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
+        return strict(body(self.progress))
+
+    def verify_durable_stop_receipt(self, mode, receipt):
+        """Owner-side exact readback; a signal or memory result is never proof."""
+        if mode != 'SHUTDOWN_FLATTEN' or type(receipt) is not dict:
+            return False
+        with self.stop_lock:
+            ledger = self.stop_ledger
+            session = self.session_id
+            if (ledger is None or session is None or not self._receipt_persisted
+                    or receipt != self.progress):
+                return False
+            outcome = receipt.get('outcome')
+            if (receipt.get('schema') != 'QD_CONTROL_STOP_V1'
+                    or receipt.get('phase') != 'FINISHED'
+                    or type(outcome) is not dict
+                    or outcome.get('schema') != 'QD_AUTO_SHUTDOWN_V1'
+                    or outcome.get('mode') != mode
+                    or outcome.get('status') != 'FLATTENED'
+                    or outcome.get('position_state') != 'FLAT'
+                    or outcome.get('process_shutdown') != 'VERIFIED_EXIT'):
+                return False
+            lanes = outcome.get('lanes')
+            if (type(lanes) is not dict
+                    or set(lanes) != {'QUALITY_DIPS', 'HYPERLIQUID'}
+                    or any(type(lanes[lane]) is not dict
+                           or lanes[lane].get('state') != 'ACKNOWLEDGED_FLAT_AND_DRAINED'
+                           for lane in ('QUALITY_DIPS', 'HYPERLIQUID'))):
+                return False
+            try:
+                row = ledger.reserve_existing(session, mode)
+            except Exception:
+                return False
+            return (type(row) is dict and row.get('state') == 'FINISHED'
+                    and row.get('receipt') == receipt)
+
+    def status(self):
+        # Never expose an IDLE/stale snapshot while a financial Stop is in flight.
+        # Readers observe the result only after the serialized stop finishes.
+        with self.stop_lock:
+            if not self.verify_session():
+                raise ValueError("UNIFIED_CONTROL_SESSION_UNVERIFIED")
+            if (self.progress["phase"] == "FINISHED" and getattr(self, "stop_ledger", None) is not None
+                    and not getattr(self, "_receipt_persisted", False)):
+                self.runtime.entry_closed.set()
+                raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED")
+            ledger = getattr(self, "stop_ledger", None)
+            if ledger is not None and self.progress["phase"] == "FINISHED":
+                grant = self.runtime.grant
+                if type(grant) is not dict or type(grant.get("session_id")) is not str or not grant["session_id"]:
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
+                try:
+                    persisted = ledger.reserve_existing(grant["session_id"], self.progress["outcome"]["mode"])
+                    if persisted["state"] != "FINISHED" or persisted["receipt"] != self.progress:
+                        raise ValueError("STOP_RECEIPT_CHANGED")
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RECEIPT_UNVERIFIED") from None
+            if ledger is not None and self.progress["phase"] == "IDLE":
+                grant = self.runtime.grant
+                if type(grant) is not dict or type(grant.get("session_id")) is not str or not grant["session_id"]:
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_LEDGER_SESSION_REQUIRED")
+                try:
+                    existing = ledger.inspect_session(grant["session_id"])
+                except (ValueError, OSError, TimeoutError, KeyError, TypeError, sqlite3.Error):
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_LEDGER_STATUS_UNVERIFIED") from None
+                if existing is not None:
+                    self.runtime.entry_closed.set()
+                    raise ValueError("UNIFIED_STOP_RESTART_RECONCILIATION_REQUIRED")
+            return strict(body(self.progress))
+
+
+class UnifiedPaperRuntime:
+    def __init__(self, *, lanes=None, installation=None, portfolio=None, clock=None):
+        if (type(lanes) is not dict or set(lanes) != set(LANES)
+                or any(x is None for x in (*lanes.values(), installation, portfolio, clock))):
+            raise ValueError("UNIFIED_ACCEPTED_DEPENDENCIES_REQUIRED")
+        self.lanes = dict(lanes)
+        self.installation, self.portfolio, self.clock = installation, portfolio, clock
+        self.grant = None
+        self.state = "STOPPED"
+        self.gate = Lock()
+        self.stop_gate = Lock()
+        self.stop_result = None
+        self.stop_context = None
+        self.run_lock = asyncio.Lock()
+        self.entry_closed = Event()
+        self._stop_requested = Event()
+        self.observations = dict.fromkeys(LANES)
+        self.uncertain = False
+        # Explicit opt-in financial Stop-first commissioning path. Existing
+        # disposable/test-only .start() behavior remains unchanged.
+        self._stop_first_state = 'UNUSED'
+        self._stop_first_issuer = None
+        self._stop_first_instrument = None
+        self._stop_first_initial_source_lane = None
+        # An opt-in hourly PAPER Stop guards live run-loop ENTRY and new
+        # resting orders without changing any legacy source/Stop contract.
+        self._intrahour_supervisor = None
+
+    def _lease(self):
+        # Reuse installed component-lease semantics, not a caller approval file.
+        return self.installation.lease({"schema": "ATLAS_UNIFIED_PAPER_SESSION_V1", "grant": self.grant})
+
+    def _verify(self, lease):
+        if (self.grant is None or lease.check_components({"lanes": self.lanes,
+                "portfolio": self.portfolio, "clock": self.clock}) is not True
+                or lease.check(lease.snapshot) is not True):
+            raise ValueError("UNIFIED_SESSION_OR_COMPONENTS_UNVERIFIED")
+
+    def start(self, grant):
+        from app.services.personal_paper_runtime import PersonalOperatorInstallation
+
+        # The old one-step Start is retained for disposable/historical test
+        # contexts, NEVER for a genuine non-test personal financial session.
+        if (type(self.installation) is PersonalOperatorInstallation
+                and (type(grant) is not dict or grant.get('test_only') is not True)):
+            raise ValueError('UNIFIED_PERSONAL_STOP_FIRST_START_MANDATORY')
+        with self.gate:
+            if self.state != "STOPPED" or self.grant is not None or self.uncertain:
+                raise ValueError("UNIFIED_NEW_SESSION_REQUIRED")
+            self.grant = strict(body(grant))
+            try:
+                with self._lease() as lease:
+                    self._verify(lease)
+                    if self.portfolio.verify_restart(self.grant) is not True:
+                        raise ValueError("UNIFIED_RESTART_UNRESOLVED")
+                    self._verify(lease)
+                self.state = "RUNNING"
+            except BaseException:
+                self.grant = None
+                raise
+
+    def arm_stop_first(self, grant):
+        """Arm an already commissioned personal session, but block ALL entries.
+
+        Requires the existing authenticated PersonalOperatorInstallation and
+        two separate account bindings. The native Stop owner must be bound
+        and source/Job/clock requirements verified before financial RUNNING.
+        This does not create a financial account, issuer or trading grant.
+        """
+        from app.services.personal_paper_runtime import PersonalOperatorInstallation
+
+        if (type(self.installation) is not PersonalOperatorInstallation
+                or set(self.installation.accounts) != {'QUALITY_DIPS', 'HYPERLIQUID'}
+                or type(grant) is not dict
+                or grant.get('test_only') is True
+                or type(grant.get('session_id')) is not str
+                or not 0 < len(grant['session_id']) <= 128):
+            raise ValueError('UNIFIED_STOP_FIRST_REAL_INSTALLED_SESSION_REQUIRED')
+        with self.stop_gate, self.gate:
+            if (self.state != 'STOPPED' or self.grant is not None
+                    or self.uncertain or self._stop_first_state != 'UNUSED'):
+                raise ValueError('UNIFIED_STOP_FIRST_NEW_SESSION_ONLY')
+            # Latch BEFORE any custody restart verification, including failures.
+            self.entry_closed.set()
+            self._stop_first_state = 'ARMING'
+            try:
+                self.grant = strict(body(grant))
+                with self._lease() as lease:
+                    self._verify(lease)
+                    if self.portfolio.verify_restart(self.grant) is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_UNRESOLVED_RESTART')
+                    self._verify(lease)
+                self.state = 'PAUSED'
+                self._stop_first_state = 'ARMED'
+            except BaseException:
+                # The restart check might have partly touched custody. An
+                # unknown result never licenses a second automatic attempt.
+                self.state = 'STOP_INCOMPLETE'
+                self.uncertain = True
+                self._stop_first_state = 'REFUSED'
+                raise
+        return {'state': 'PAUSED', 'entry_closed': True,
+                'native_stop_binding_required': True,
+                'paper_entry_authorized': False,
+                'live_trading_authorized': False}
+
+    def resume_stop_first(self, *, stop_owner, issuer, qd_instrument=None,
+                          source_lane="BOTH"):
+        """Only a genuine current Stop+source issuer can release the entry latch.
+
+        Source/owner verification runs outside gate, because the authentic
+        Stop owner checks a read-only snapshot via the same runtime gate. The
+        stop_gate serializes the final latch with financial Stop dispatch.
+        """
+        import time
+
+        from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+            NativeSelectedPaperOperationIssuer,
+        )
+
+        from app.services.personal_installed_stop_owner import PersonalInstalledPaperStopOwner
+
+        if (type(stop_owner) is not PersonalInstalledPaperStopOwner
+                or type(issuer) is not NativeSelectedPaperOperationIssuer
+                or issuer.stop_owner is not stop_owner
+                or stop_owner._runtime is not self):
+            raise ValueError('UNIFIED_STOP_FIRST_EXACT_INSTALLED_STOP_AND_ISSUER_REQUIRED')
+        verified_at = issuer.verify_prepared_for_start(
+            qd_instrument=qd_instrument, lane=source_lane)
+        with self.stop_gate, self.gate:
+            if (self._stop_first_state != 'ARMED' or self.state != 'PAUSED'
+                    or not self.entry_closed.is_set() or self.uncertain
+                    or self._stop_requested.is_set()
+                    or self.grant is None or self.grant.get('test_only') is True
+                    or stop_owner._used or stop_owner._runtime is not self
+                    or stop_owner.session_id != self.grant.get('session_id')
+                    or issuer.stop_owner is not stop_owner or issuer._revoke
+                    or issuer._session != self.grant['session_id']
+                    or time.monotonic() < verified_at
+                    or time.monotonic() - verified_at > 1):
+                raise ValueError('UNIFIED_STOP_FIRST_UNRELEASED_OR_EXPIRED')
+            # The entire transition is serialized against shutdown; a Stop
+            # already in flight holds stop_gate and cannot be overwritten.
+            self._stop_first_issuer = issuer
+            self._stop_first_instrument = strict(body(qd_instrument))
+            self._stop_first_initial_source_lane = source_lane
+            self._stop_first_state = 'RELEASED'
+            self.state = 'RUNNING'
+            self.entry_closed.clear()
+        return {'state': 'RUNNING', 'native_stop_bound': True,
+                'issuer_operational_recheck_required_for_each_entry': True,
+                'external_live_orders_authorized': False}
+
+    async def poll(self, *, timeout=2):
+        """Observe both lanes independently, including when stocks are closed.
+
+        Ports must be cancellation-safe read-only observers. No signal is a
+        healthy monitoring result, not a forced-entry trigger. This method never
+        invokes financial dispatch, provider start or a legacy mutating GET.
+        """
+        if type(timeout) not in (int, float) or not 0 < timeout <= 2:
+            raise ValueError("UNIFIED_BOUNDED_OBSERVATION_REQUIRED")
+        with self._lease() as lease:
+            self._verify(lease)
+            if self.state not in ("RUNNING", "PAUSED"):
+                raise ValueError("UNIFIED_SESSION_NOT_RUNNING")
+
+        async def observe(lane):
+            try:
+                value = await asyncio.wait_for(self.lanes[lane].observe(), timeout)
+                value = strict(body(value))
+                if (set(value) != {"lane", "at", "connection", "session", "signal", "source"}
+                        or value["lane"] != lane or type(value["at"]) is not int
+                        or not 0 <= self.clock() - value["at"] <= 5
+                        or value["connection"] not in ("CONNECTED", "DISCONNECTED")
+                        or value["session"] not in ("OPEN", "CLOSED", "UNKNOWN")
+                        or self.lanes[lane].verify_observation(value) is not True):
+                    raise ValueError("UNIFIED_OBSERVATION_UNVERIFIED")
+                return value
+            except Exception:  # noqa: BLE001 - isolate and redact a failed read-only lane
+                return {"lane": lane, "at": self.clock(), "connection": "UNAVAILABLE",
+                        "session": "UNKNOWN", "signal": None, "source": None}
+
+        results = await asyncio.gather(*(observe(lane) for lane in LANES))
+        with self.gate, self._lease() as lease:
+            self._verify(lease)
+            if self.state not in ("RUNNING", "PAUSED"):
+                raise ValueError("UNIFIED_SESSION_STOPPED_DURING_OBSERVATION")
+            self.observations = dict(zip(LANES, results, strict=True))
+            return self.snapshot()
+
+    async def run(self, *, seconds, interval=1, stop=None, stop_signal=None,
+                  intrahour_supervisor=None):
+        """Bounded supervision; explicitly injected owner-only desktop Stop.
+
+        The optional Windows event does not create a financial owner or grant.
+        It must already belong to this exact personal installed runtime. A
+        confirmed signal returns the durable two-account Stop receipt; an
+        ambiguous signal raises without replay. Ordinary runs retain the
+        historical read-only snapshot result and are never auto-activated.
+        """
+        if (type(seconds) not in (int, float) or not 0 < seconds <= 86400
+                or type(interval) not in (int, float) or not .05 <= interval <= 5
+                or self.run_lock.locked()):
+            raise ValueError("UNIFIED_BOUNDED_SINGLE_RUN_REQUIRED")
+        if stop_signal is not None:
+            from threading import get_ident
+
+            from scripts.observation_runtime.personal_paper_python_stop_signal import (
+                InstalledPythonPaperStopSignal,
+            )
+
+            from app.services.personal_installed_stop_owner import PersonalInstalledPaperStopOwner
+            owner = getattr(stop_signal, '_owner', None)
+            if (type(stop_signal) is not InstalledPythonPaperStopSignal
+                    or type(owner) is not PersonalInstalledPaperStopOwner
+                    or owner._runtime is not self
+                    or stop_signal._session_id != owner.session_id
+                    or type(self.grant) is not dict
+                    or self.grant.get('session_id') != stop_signal._session_id
+                    or stop_signal._creator_thread != get_ident()
+                    or stop_signal._used or stop_signal._closed
+                    or self.state not in ('RUNNING', 'PAUSED')
+                    or owner.verify_session() is not True):
+                raise ValueError('UNIFIED_ACCEPTED_OWNER_STOP_SIGNAL_REQUIRED')
+        if intrahour_supervisor is not None:
+            from app.services.hyperliquid_intrahour_stop_supervisor import (
+                NativeIntrahourPaperStopSupervisor,
+            )
+
+            # The additional time-based STOP is only a risk reducer attached
+            # to a real Stop-first HL-exposed owner (HL or BOTH lanes).
+            # Never let a planning flag construct an owner or start a session.
+            if (type(intrahour_supervisor) is not NativeIntrahourPaperStopSupervisor
+                    or stop_signal is None
+                    or intrahour_supervisor.owner is not stop_signal._owner
+                    or intrahour_supervisor.runtime is not self
+                    or intrahour_supervisor.session_id != self.grant['session_id']
+                    or self._stop_first_initial_source_lane
+                       not in ('HYPERLIQUID', 'BOTH')
+                    or self._stop_first_state != 'RELEASED'):
+                raise ValueError('UNIFIED_PRE_FUNDING_EXACT_ACCEPTED_STOP_OWNER_REQUIRED')
+            if self._intrahour_supervisor is not None:
+                raise ValueError('UNIFIED_PRE_FUNDING_ONE_ACTIVE_SESSION_ONLY')
+            self._intrahour_supervisor = intrahour_supervisor
+
+        def funding_stop_request():
+            if intrahour_supervisor is None:
+                return None
+            try:
+                proof = intrahour_supervisor.tick()
+                if (type(proof) is dict
+                        and proof.get('status') ==
+                        'ORIGINAL_NATIVE_DURABLE_STOP_FLAT_BEFORE_FUNDING'):
+                    return proof['original_native_stop_receipt']
+                if (type(proof) is dict
+                        and proof.get('status') ==
+                        'STILL_SUPERVISING_NO_FINANCIAL_PERMISSION'):
+                    return None
+                raise ValueError('UNIFIED_PRE_FUNDING_GUARD_PROOF_REFUSED')
+            except BaseException:
+                self.entry_closed.set()
+                self.uncertain = True
+                if self.state in ('RUNNING', 'PAUSED'):
+                    self.state = 'STOP_INCOMPLETE'
+                raise
+
+        def stop_request():
+            if stop_signal is None:
+                return None
+            # Native nonblocking check stays on the same Python owner thread.
+            # It either returns NO_STOP_SIGNAL or independently verifies an
+            # exact FINISHED/FLATTENED two-lane durable SQLite receipt.
+            try:
+                result = stop_signal.poll(0)
+                if type(result) is not dict:
+                    raise ValueError('UNIFIED_OWNER_STOP_RECEIPT_UNVERIFIED')
+                if result.get('status') == 'NO_STOP_SIGNAL':
+                    return funding_stop_request()
+                if (result.get('schema') != 'QD_CONTROL_STOP_V1'
+                        or result.get('phase') != 'FINISHED'):
+                    raise ValueError('UNIFIED_OWNER_STOP_RECEIPT_UNVERIFIED')
+            except BaseException:
+                # Even an uncertain/lost response may follow a partial stop;
+                # never admit another entry or resume a scan in that state.
+                self.entry_closed.set()
+                self.uncertain = True
+                if self.state in ('RUNNING', 'PAUSED'):
+                    self.state = 'STOP_INCOMPLETE'
+                raise
+            self.entry_closed.set()
+            return result
+
+        async with self.run_lock:
+            deadline = asyncio.get_running_loop().time() + seconds
+            try:
+                while (asyncio.get_running_loop().time() < deadline
+                       and not (stop and stop.is_set()) and self.state in ("RUNNING", "PAUSED")):
+                    receipt = stop_request()
+                    if receipt is not None:
+                        return receipt
+                    await self.poll()
+                    # A user may request shutdown while awaiting two sources;
+                    # do not invoke planners or dispatch another trade afterward.
+                    receipt = stop_request()
+                    if receipt is not None:
+                        return receipt
+                    for lane in LANES:
+                        receipt = stop_request()
+                        if receipt is not None:
+                            return receipt
+                        row = self.observations[lane]
+                        planner = getattr(self.lanes[lane], "next_proposal", None)
+                        if planner is None or row["connection"] != "CONNECTED" or row["session"] != "OPEN":
+                            continue
+                        try:
+                            proposal = await asyncio.wait_for(planner(row), 2)
+                        except ControlCapacityReached:
+                            self.stop(reason="RISK_SHUTDOWN")  # Existing bounded flatten/drain; no reset or automatic restart.
+                            break
+                        except FinancialSourceUncertain:
+                            self.entry_closed.set()
+                            self.uncertain, self.state = True, 'STOP_INCOMPLETE'
+                            break
+                        except Exception:  # noqa: BLE001 - isolate read-only strategy planning; never echo provider errors
+                            self.observations[lane] = {**row, "signal": None, "connection": "UNAVAILABLE"}
+                            continue
+                        # Recheck after any awaited planner, before admitting
+                        # its proposed financial action. Stop always wins.
+                        receipt = stop_request()
+                        if receipt is not None:
+                            return receipt
+                        if proposal is not None:
+                            try:
+                                if proposal.get('kind') == 'RESTING_ORDER':
+                                    self.admit_resting(proposal, lane=lane)
+                                elif proposal.get('kind') == 'CANCEL_RESTING_ORDER':
+                                    self.cancel_resting(proposal, lane=lane)
+                                else:
+                                    self.dispatch(lane, proposal)
+                            except ControlCapacityReached:
+                                self.stop(reason="RISK_SHUTDOWN")
+                                break
+                            except ValueError:
+                                if self.uncertain:
+                                    break
+                    # An active stop owner must be checked frequently even if
+                    # the normal strategy scan interval is long.
+                    await asyncio.sleep(min(interval if stop_signal is None else min(interval, .2),
+                                            max(0, deadline - asyncio.get_running_loop().time())))
+            finally:
+                self.pause()  # Never resume automatically after a bounded run.
+                # A completed bounded run is paused/stopped. Unknown Stop
+                # state stays latched by self.uncertain and entry_closed.
+                self._intrahour_supervisor = None
+        return self.read_snapshot()
+
+    def dispatch(self, lane, proposal):
+        return self._dispatch(lane, proposal, shutdown=False)
+
+    def admit_resting(self, proposal, *, lane=None):
+        return self._resting(proposal, cancel=False, lane=lane)
+
+    def cancel_resting(self, proposal, *, lane=None):
+        return self._resting(proposal, cancel=True, lane=lane)
+
+    def _resting(self, proposal, *, cancel, lane):
+        # Only the perp account possesses native pending-order custody.
+        # A stock-lane planner must never drive this financial writer.
+        # Historical direct callers omit lane; a real Stop-first active
+        # entry must supply explicit Hyperliquid provenance. Cancel is
+        # risk-reducing and may retain the legacy omitted-lane Stop port.
+        if (lane not in (None, 'HYPERLIQUID')
+                or (self._stop_first_state == 'RELEASED'
+                    and not cancel and lane != 'HYPERLIQUID')):
+            raise ValueError('UNIFIED_RESTING_EXPLICIT_PERP_LANE_REQUIRED')
+        if not cancel and self._intrahour_supervisor is not None:
+            guard = self._intrahour_supervisor
+            if (guard.runtime is not self or guard.entry_window() is not True):
+                raise ValueError('UNIFIED_HL_INTRAHOUR_RESTING_ENTRY_CLOSED')
+        """Reserve pending exposure before control publication; never a fill."""
+        if self._stop_first_state == 'RELEASED' and not cancel:
+            from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+                NativeSelectedPaperOperationIssuer,
+                PaperSourceUnavailable,
+            )
+
+            # An initial QD-only grant is NOT an implicit 24/7 HL order
+            # permission. Refuse before any financial effect or ambiguous
+            # issuer lease, without falsely poisoning the healthy QD lane.
+            if self._stop_first_initial_source_lane not in ('BOTH', 'HYPERLIQUID'):
+                raise PaperSourceUnavailable(
+                    'UNIFIED_STOP_FIRST_HL_NOT_INCLUDED_IN_INITIAL_SOURCE_SCOPE'
+                )
+            issuer = self._stop_first_issuer
+            attempted = False
+            try:
+                if type(issuer) is not NativeSelectedPaperOperationIssuer:
+                    raise ValueError('UNIFIED_STOP_FIRST_OPERATION_ISSUER_MISSING')
+                with issuer.lease(
+                    qd_instrument=self._stop_first_instrument,
+                    lane="HYPERLIQUID",
+                ) as authority:
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_OPERATION_AUTHORITY_REVOKED')
+                    attempted = True
+                    result = self._resting_bound(proposal, cancel=cancel)
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_RESTING_EFFECT_UNCERTAIN')
+                    return result
+            except PaperSourceUnavailable:
+                # A failed read-only feed precheck has made NO financial
+                # effect. Keep the other lane alive. Any post-effect source
+                # change is uncertain and closes both entry lanes.
+                if attempted:
+                    self.uncertain = True
+                    self.entry_closed.set()
+                raise
+            except BaseException:
+                self.uncertain = True
+                self.entry_closed.set()
+                raise
+        return self._resting_bound(proposal, cancel=cancel)
+
+    def _resting_bound(self, proposal, *, cancel):
+        """Existing account custodian, now guarded by source issuer."""
+        proposal = strict(body(proposal))
+        if proposal.get('kind') != ('CANCEL_RESTING_ORDER' if cancel else 'RESTING_ORDER'):
+            raise ValueError('UNIFIED_EXACT_RESTING_ACTION_REQUIRED')
+        with self.gate, self._lease() as installation:
+            self._verify(installation)
+            if self._stop_first_state == 'ARMED':
+                raise ValueError('UNIFIED_STOP_FIRST_ALL_FINANCIAL_ADMISSIONS_CLOSED')
+            expired = (cancel and self.state in ('RUNNING', 'PAUSED')
+                       and type(proposal.get('order', {}).get('expires_at')) is int
+                       and self.clock() >= proposal['order']['expires_at'])
+            if (self.uncertain or (cancel and not expired and (self.state != 'STOPPING' or not self.entry_closed.is_set()))
+                    or (not cancel and (self.state != 'RUNNING' or self.entry_closed.is_set()))):
+                raise ValueError('UNIFIED_RESTING_ADMISSION_CLOSED_OR_UNKNOWN')
+            lane = self.lanes['HYPERLIQUID']
+            observation = self.observations['HYPERLIQUID']
+            if not cancel and (observation is None or observation['connection'] != 'CONNECTED'
+                    or observation['session'] != 'OPEN' or not 0 <= self.clock() - observation['at'] <= 5):
+                raise ValueError('UNIFIED_RESTING_CURRENT_MARKET_REQUIRED')
+            if lane.verify_resting(proposal, observation) is not True:
+                raise ValueError('UNIFIED_RESTING_STRATEGY_UNVERIFIED')
+            port = getattr(self.portfolio, 'order_lease', None)
+            if port is None:
+                raise ValueError('UNIFIED_ACCEPTED_PENDING_EXPOSURE_CUSTODY_REQUIRED')
+            request = {'lane': 'HYPERLIQUID', 'grant': self.grant, 'proposal': proposal,
+                       'mode': 'CANCEL_PENDING_EXPOSURE_V1' if cancel else 'RESERVE_PENDING_EXPOSURE_V1'}
+            with port(request) as custody:
+                if custody.verify(request) is not True:
+                    raise ValueError('UNIFIED_PENDING_EXPOSURE_UNVERIFIED')
+                lookup = getattr(custody, 'acknowledged', None)
+                prior = lookup(request) if lookup is not None else None
+                if prior is not None:
+                    if prior.get('state') != 'ACKNOWLEDGED' or prior.get('binding') != digest(request):
+                        raise ValueError('UNIFIED_ORDER_REPLAY_UNVERIFIED')
+                    receipt = custody.replay(request, prior)
+                    if custody.verify_receipt(request, receipt) is not True:
+                        raise ValueError('UNIFIED_ORDER_REPLAY_RECEIPT_UNVERIFIED')
+                    return receipt
+                if cancel:
+                    check_portfolio_reducing_exit(custody.policy, custody.before, custody.projected, now=self.clock())
+                else:
+                    check_portfolio_cut(custody.policy, custody.before, now=self.clock())
+                    check_portfolio_cut(custody.policy, custody.projected, now=self.clock())
+                reservation = custody.reserve(request)
+                if reservation.get('state') != 'RESERVED' or reservation.get('binding') != digest(request):
+                    self.uncertain, self.state = True, 'STOP_INCOMPLETE'
+                    raise ValueError('UNIFIED_ORDER_RESERVATION_UNKNOWN')
+                self.uncertain = True
+                try:
+                    receipt = lane.dispatch_resting(proposal, reservation)
+                    if custody.verify_receipt(request, receipt) is not True:
+                        raise ValueError('UNIFIED_ORDER_CONTROL_ACK_UNKNOWN')
+                    self._verify(installation)
+                    if custody.acknowledge(request, receipt) is not True:
+                        raise ValueError('UNIFIED_ORDER_GLOBAL_ACK_UNKNOWN')
+                except BaseException:
+                    self.state = 'STOP_INCOMPLETE'
+                    raise
+                self.uncertain = False
+                return receipt
+
+    def dispatch_shutdown_exit(self, lane, proposal):
+        """Exit-only Stop port; current installation/custody must approve it.
+
+        No caller flag grants authority. The global admission must already be
+        closed and custody independently checks this exact reducing transition.
+        Ordinary strategy dispatch remains forbidden during STOPPING.
+        """
+        return self._dispatch(lane, proposal, shutdown=True)
+
+    def _dispatch(self, lane, proposal, *, shutdown):
+        if (not shutdown and self._intrahour_supervisor is not None
+                and lane == 'HYPERLIQUID'
+                and type(proposal) is dict and proposal.get('kind') == 'ENTRY'):
+            guard = self._intrahour_supervisor
+            if guard.runtime is not self or guard.entry_window() is not True:
+                raise ValueError('UNIFIED_HL_INTRAHOUR_FINANCIAL_ENTRY_CLOSED')
+        if self._stop_first_state == 'RELEASED' and not shutdown:
+            from scripts.observation_runtime.personal_selected_paper_operation_issuer import (
+                NativeSelectedPaperOperationIssuer,
+                PaperSourceUnavailable,
+            )
+
+            # The original source-lane selection was verified with a
+            # real Stop-first issuer while entry admission was CLOSED.
+            # Neither HL-only nor QD-only startup may silently activate
+            # the other lane. No effect was attempted, so do not poison
+            # the already verified/healthy lane on this refusal.
+            if lane in LANES and self._stop_first_initial_source_lane not in ('BOTH', lane):
+                raise PaperSourceUnavailable(
+                    'UNIFIED_STOP_FIRST_' + lane + '_NOT_INCLUDED_IN_INITIAL_SOURCE_SCOPE'
+                )
+            issuer = self._stop_first_issuer
+            attempted = False
+            try:
+                if type(issuer) is not NativeSelectedPaperOperationIssuer:
+                    raise ValueError('UNIFIED_STOP_FIRST_OPERATION_ISSUER_MISSING')
+                with issuer.lease(
+                    qd_instrument=self._stop_first_instrument,
+                    lane=lane,
+                ) as authority:
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_OPERATION_AUTHORITY_REVOKED')
+                    attempted = True
+                    result = self._dispatch_bound(lane, proposal, shutdown=shutdown)
+                    if authority.check() is not True:
+                        raise ValueError('UNIFIED_STOP_FIRST_FINANCIAL_EFFECT_UNCERTAIN')
+                    return result
+            except PaperSourceUnavailable:
+                if attempted:
+                    self.uncertain = True
+                    self.entry_closed.set()
+                raise
+            except BaseException:
+                self.uncertain = True
+                self.entry_closed.set()
+                raise
+        return self._dispatch_bound(lane, proposal, shutdown=shutdown)
+
+    def _dispatch_bound(self, lane, proposal, *, shutdown):
+        """Serialize source-bound admission and delegate to the existing engine.
+
+        The custody lease MUST durably reserve before dispatch, authenticate the
+        projected cut, retain UNKNOWN after an ambiguous effect and authenticate
+        replay receipts. These are required installed ports, never fabricated here.
+        """
+        if lane not in LANES or type(proposal) is not dict:
+            raise ValueError("UNIFIED_EXPLICIT_LANE_REQUIRED")
+        proposal = strict(body(proposal))
+        text(proposal.get("operation_id"))
+        accounting = proposal.get("kind") in ("FUNDING", "MARK")
+        if proposal.get("kind") not in ("ENTRY", "EXIT", "FUNDING", "MARK") or accounting and lane != "HYPERLIQUID":
+            raise ValueError("UNIFIED_EXPLICIT_OPERATION_REQUIRED")
+        if shutdown and proposal["kind"] != "EXIT":
+            raise ValueError("UNIFIED_SHUTDOWN_REDUCING_EXIT_ONLY")
+        with self.gate, self._lease() as installation:
+            self._verify(installation)
+            if self._stop_first_state == 'ARMED' and not shutdown:
+                raise ValueError('UNIFIED_STOP_FIRST_ALL_FINANCIAL_ADMISSIONS_CLOSED')
+            admitted_state = (self.state == "STOPPING" and self.entry_closed.is_set()) if shutdown else self.state in ("RUNNING", "PAUSED")
+            if (self.uncertain or not admitted_state
+                    or (self.state == "PAUSED" or self.entry_closed.is_set()) and proposal["kind"] == "ENTRY"):
+                raise ValueError("UNIFIED_ADMISSION_CLOSED_OR_UNKNOWN")
+            observation = self.observations[lane]
+            if not accounting and (observation is None or observation["connection"] != "CONNECTED"
+                    or observation["session"] != "OPEN"
+                    or not 0 <= self.clock() - observation["at"] <= 5):
+                raise ValueError("UNIFIED_CURRENT_LANE_EVIDENCE_REQUIRED")
+            if self.lanes[lane].verify_proposal(proposal, observation) is not True:
+                raise ValueError("UNIFIED_STRATEGY_DECISION_UNVERIFIED")
+            request = {"lane": lane, "grant": self.grant, "proposal": proposal}
+            if shutdown:
+                request["mode"] = "SHUTDOWN_REDUCING_EXIT_V1"
+            classifier = getattr(self.portfolio, "exit_classification", None)
+            if proposal["kind"] == "EXIT" and classifier is not None:
+                request["exit_classification"] = classifier(lane, proposal, self.grant, self.stop_context if shutdown else None)
+            with self.portfolio.lease(request) as custody:
+                # This lease must exclude every competing financial writer.
+                if custody.verify(request) is not True:
+                    raise ValueError("UNIFIED_PORTFOLIO_CUSTODY_UNVERIFIED")
+                if shutdown:
+                    verifier = getattr(custody, "verify_shutdown_exit", None)
+                    if verifier is None or verifier(request) is not True:
+                        raise ValueError("UNIFIED_SHUTDOWN_CLOSURE_OR_EXIT_UNVERIFIED")
+                # Optional read-only lookup is authenticated by this same held
+                # custody lease. Already acknowledged effects are not re-admitted
+                # as new trades or blocked by subsequently changed market limits.
+                lookup = getattr(custody, "acknowledged", None)
+                if lookup is not None:
+                    previous = lookup(request)
+                    if previous is not None:
+                        if (previous.get("state") != "ACKNOWLEDGED" or previous.get("binding") != digest(request)):
+                            raise ValueError("UNIFIED_REPLAY_BINDING_UNVERIFIED")
+                        receipt = custody.replay(request, previous)
+                        if custody.verify_receipt(request, receipt) is not True:
+                            raise ValueError("UNIFIED_REPLAY_RECEIPT_UNVERIFIED")
+                        return receipt
+                if accounting:
+                    # This must authenticate the actual canonical before/after
+                    # transition and source evidence, not caller-supplied cuts.
+                    verifier = getattr(custody, "verify_accounting", None)
+                    if verifier is None or verifier(request) is not True:
+                        raise ValueError("UNIFIED_CANONICAL_ACCOUNTING_UNVERIFIED")
+                    check_portfolio_accounting_update(custody.policy, custody.before, custody.projected,
+                                                     kind=proposal["kind"], now=self.clock())
+                elif proposal["kind"] == "EXIT":
+                    check_portfolio_reducing_exit(custody.policy, custody.before, custody.projected, now=self.clock())
+                else:
+                    check_portfolio_cut(custody.policy, custody.before, now=self.clock())
+                    check_portfolio_cut(custody.policy, custody.projected, now=self.clock())
+                self._verify(installation)
+                reservation = custody.reserve(request)
+                if reservation["state"] == "ACKNOWLEDGED":
+                    return custody.replay(request, reservation)
+                if reservation["state"] != "RESERVED" or reservation["binding"] != digest(request):
+                    self.uncertain, self.state = True, "STOP_INCOMPLETE"
+                    raise ValueError("UNIFIED_OPERATION_REPLAY_OR_UNKNOWN")
+                # Mark uncertain in memory before even invoking an external writer.
+                # Durable reservation remains the restart authority on any crash.
+                self.uncertain = True
+                try:
+                    receipt = self.lanes[lane].dispatch(proposal, reservation)
+                    if custody.verify_receipt(request, receipt) is not True:
+                        raise ValueError("UNIFIED_UNACKNOWLEDGED_FINANCIAL_EFFECT")
+                    self._verify(installation)
+                    if custody.acknowledge(request, receipt) is not True:
+                        raise ValueError("UNIFIED_ACKNOWLEDGEMENT_UNCERTAIN")
+                except BaseException:
+                    self.state = "STOP_INCOMPLETE"
+                    raise
+                self.uncertain = False
+                return receipt
+
+    def pause(self):
+        with self.gate:
+            if self.state == "RUNNING":
+                self.state = "PAUSED"
+
+    def stop(self, *, emergency=False, reason="UNKNOWN"):
+        self._stop_requested.set()
+        self.entry_closed.set()  # Immediate new-entry closure before waiting for an accepted drain.
+        with self.stop_gate:
+            if self.stop_result is not None:
+                return strict(body(self.stop_result))
+            from app.services.paper_exit_history import stop_command
+            self.stop_context = (stop_command(self.grant, reason, self.clock())
+                if hasattr(self.portfolio, "exit_classification") else None)
+            result = self._stop(emergency=emergency)
+            self.stop_result = strict(body(result))
+            return result
+
+    def _stop(self, *, emergency):
+        # Close global admission before either lane starts its existing drain.
+        with self.gate:
+            self.state = "STOPPING"
+        with self._lease() as lease:
+            self._verify(lease)
+        native = any(getattr(lane, "requires_portfolio_drain", False) for lane in self.lanes.values())
+        if native:
+            close = getattr(self.portfolio, "close_entry_admission", None)
+            try:
+                closed = close is not None and (close(self.grant, stop_context=self.stop_context)
+                    if hasattr(self.portfolio, "exit_classification") else close(self.grant)) is True
+            except Exception:
+                # Unknown admission-close errors cannot certify that new
+                # entries are blocked at the underlying financial custodian.
+                closed = False
+            if not closed:
+                self.uncertain = True
+                self.state = "STOP_INCOMPLETE"
+                return {"state": self.state, "lanes": {lane: {"state": "ADMISSION_UNVERIFIED"} for lane in LANES}, "auto_resume": False}
+        outcomes = {}
+        for lane in LANES:
+            try:
+                result = self.lanes[lane].stop(emergency=emergency)
+                # A malformed or forged lane receipt cannot certify a flat
+                # portfolio, even if the other lane stops successfully.
+                if (type(result) is not dict or type(result.get("state")) is not str
+                        or result["state"] not in ("ACKNOWLEDGED_FLAT_AND_DRAINED", "POSITION_OPEN", "INCOMPLETE")):
+                    raise ValueError("UNIFIED_LANE_STOP_RECEIPT_UNVERIFIED")
+                outcomes[lane] = result
+            except Exception:
+                # A lane may have partially executed its financial drain.
+                # Do not retry or treat an unexpected failure as flat.
+                outcomes[lane] = {"state": "INCOMPLETE"}
+        drain = getattr(self.portfolio, "verify_drain", None)
+        try:
+            drained = not native or drain is not None and drain(self.grant) is True
+            with self._lease() as lease:
+                self._verify(lease)
+        except (ValueError, OSError, TimeoutError):
+            self.uncertain, drained = True, False
+        with self.gate:
+            complete = (not self.uncertain and not emergency and drained
+                        and all(v.get("state") == "ACKNOWLEDGED_FLAT_AND_DRAINED" for v in outcomes.values()))
+            finalize = getattr(self.portfolio, 'finalize_shutdown', None)
+            if complete and finalize is not None:
+                try:
+                    complete = finalize(self.grant, outcomes, self.lanes) is True
+                except (ValueError, OSError, TimeoutError):
+                    self.uncertain, complete = True, False
+            self.state = "STOPPED" if complete else "STOP_INCOMPLETE"
+        return {"state": self.state, "lanes": outcomes, "auto_resume": False}
+
+    def snapshot(self):
+        return {"schema": "ATLAS_UNIFIED_PAPER_VIEW_V1", "state": self.state,
+                "lanes": strict(body(self.observations)), "financial_state": "UNKNOWN" if self.uncertain else "READ_SEPARATE_ACCOUNTS",
+                "total_cash": None, "total_equity": None, "startup_authorized": False}
+
+    def read_snapshot(self):
+        with self.gate, self._lease() as lease:
+            self._verify(lease)
+            view = self.snapshot()
+            for row in view["lanes"].values():
+                if row is not None and not 0 <= self.clock() - row["at"] <= 5:
+                    row.update(connection="STALE", signal=None)
+            view["observed_at"] = self.clock()
+            return view
+
+
+
+
+

@@ -1,0 +1,22 @@
+# Atlas V7 QD installed runtime clock graph — source verified (2026-11-08)
+
+**Result: SOURCE-ONLY V7 CLOCK PROFILE AND CONSISTENT-OWNER ASSEMBLY VERIFIED. No new native release installed, no financial activation, no simulated account creation. PAPER production remains NO-GO (0/9 formal operational prerequisites).**
+
+## What changed
+- `scripts/observation_runtime/personal_paper_activation.py::compose_installed_personal_qd` accepts an explicit, opt-in `clock_profile='V7_INDEPENDENT_NTP_OPERATOR_CLOCK_V1'` only when `type(local_clock) is NativeV7PaperOperatorClock`. The default is `WINDOWS_TIME_OPERATOR_CLOCK_V4` with exact `LocalWindowsClock`, retaining historical behavior.
+- Requires actual clock `require_operational(runtime_id)` before admitting any remaining runtime dependencies. Validates the same exact clock object at engine, current custody, native dependencies, operator authority, read authority and technical checks. Operator identity must declare the same `clock_profile`, same `runtime_id`, same actual activation reader, enrollment and existing financial owner. The technical readiness object must declare that same profile, runtime and clock and remain owned by the same ledger, bootstrap, custody and engine.
+- The existing assembly remains **existing-only**: registered financial authority, native coordination/ledger, native mirror agreement, selected operator activation, IEX market inputs, same writer/session ownership and read-only ledger inspection are mandatory. This code does not construct or activate an account or issue financial source authority. It calls the original `compose_personal_qd` only after all existing custody checks pass.
+- A V7 clock cannot pass as legacy; wrong/empty/unreviewed profiles and foreign clock classes are refused. An operator from a different runtime, or technical checks with a conflicting clock profile, is refused before ledger/native resource access.
+
+## Testing
+- New `tests/test_personal_v7_installed_composition_clock.py`: **16 actual passing tests**, including valid in-memory enrollment, opt-in V7 admission through first custody guard, legacy compatibility, foreign/wrong clock refusal, missing-input refusal, and deeper completely synthetic operator runtime/profile and technical profile mismatch cases.
+- **393 passed, 0 failed** in final broader suite with QD native coordination, runtime current, paper runtime, activation publisher and commissioning, source installation/technical checks, financial authority, paper inception, native read authority, Windows and independent clock tests, and unified commissioning.
+- An earlier failed test-file write left the new uncommitted test file empty; this was detected during testing, fully restored, and all 16 new tests and the entire broad suite were rerun. No native financial or installed code was affected.
+
+## Immutable operational boundaries
+- Selected native installed V7 remains application `af96bec0484a8e43f9965610e071a907a0d316bf`, revision 11, native selector head `933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997`. The newly modified runtime assembly exists only in the working source and **is not in immutable installed V7**.
+- No activation or wallet data created; no real orders or PAPER simulated fills, financial account inception, Hyperliquid writer or provider data mutation. No Project Genesis modifications, OS clock configuration, VPS, Windows startup behavior or desktop shortcut rewiring.
+- Current two-peer public NTP source is **not cryptographically authenticated**. This source-code compatibility does not certify long-lived financial clock safety, source rights, current executable market prices, native financial writer custody or safe Stop/restart.
+
+## Next dependent milestone
+Freeze these source changes into a **new reviewed immutable release candidate** rather than patching selected V7. Require a new exact source inventory, dependency hashes, native code-only install proposal, genuine 180-second independent clock preflight, separate native readback and support/selector authorization. Complete remaining full PAPER gates independently: eligible-session Alpaca IEX data and QD publication; Hyperliquid book, funding settlement oracle and fees; owned QD/HL once-only simulated account inception and runtime financial writer; manual desktop Start/Stop safe flatten/reconcile/restart, read-only dashboard/Discord and sustained supervised PAPER validation. Kalshi newly-listed YES/NO lane requires its own source and fee acceptance.

@@ -1,0 +1,33 @@
+{
+  "schema": "ATLAS_PERSONAL_QD_BINDINGS_PROGRESS_V1",
+  "date": "2026-10-27",
+  "source_commit": "dcf2edde7f929c5284ae9969b64e493210a84e58",
+  "new_release_artifact_digest": "df2c2cea6ee2db53e8773b486aca823a2d04c569ea1908a44871e96d39bf3d98",
+  "installed_files_verified": 10179,
+  "installed_directories_verified": 903,
+  "bytes_verified": 260072131,
+  "old_release_preserved": true,
+  "clock_uncertainty_ms": 180,
+  "market_session": "MARKET_CLOSED",
+  "provider_connections_this_increment": 0,
+  "personal_read_composition_implemented": true,
+  "read_only_host_asgi_verified": true,
+  "personal_stop_owned_close_guard_fixed": true,
+  "financial_controls_default_refuse": true,
+  "tests": {
+    "passed": 377,
+    "failed": 0,
+    "skipped": 0,
+    "deselected": 18,
+    "warnings": 1,
+    "seconds": 9.31
+  },
+  "financial_inception_attempted": false,
+  "financial_pilot_started": false,
+  "financial_pilot_consumed": false,
+  "financial_roots_unchanged_empty": true,
+  "financial_enrollment_complete": false,
+  "actual_desktop_browser_acceptance_executed": false,
+  "status": "BLOCKED_CURRENT_MARKET_RESEARCH_DATA_AND_UNCOMPLETED_FINANCIAL_ENROLLMENT",
+  "report": "docs/QD_PERSONAL_BINDINGS_PROGRESS_2026-10-27.md"
+}

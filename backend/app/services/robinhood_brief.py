@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 import structlog
 
 from app.core.config import get_settings
+from app.services.e48_discord_events import legacy_payload_event, deliver_legacy_payload
 
 log = structlog.get_logger(__name__)
 ET = ZoneInfo("America/New_York")
@@ -175,16 +176,25 @@ class RobinhoodBriefService:
             score = int(min(85, 40 + candidates[0]["pct_from_high"]))
 
         try:
-            ok = await send_discord_alert(
-                symbol="RH",
-                title=f"Atlas · Robinhood Brief · {posture}",
-                description=body[:3900],
-                price=0.0,
-                severity="MEDIUM",
-                opportunity=score,
-                confidence=65,
-                risk=40,
+            payload = {
+                "symbol": "RH",
+                "title": f"Atlas · Robinhood Brief · {posture}",
+                "description": body[:3900],
+                "price": 0.0,
+                "severity": "MEDIUM",
+                "opportunity": score,
+                "confidence": 65,
+                "risk": 40,
+            }
+            typed = legacy_payload_event(
+                lane="SYSTEM",
+                event_type="SESSION",
+                identity=f"robinhood-brief:{datetime.now(ET).strftime('%Y-%m-%d')}",
+                payload=payload,
+                provenance=["robinhood-brief"],
+                material=True,
             )
+            ok = bool((await deliver_legacy_payload(typed, sender=send_discord_alert))["acknowledged"])
             if ok:
                 log.info("Robinhood brief delivered", names=len(candidates))
             else:

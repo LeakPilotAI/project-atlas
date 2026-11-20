@@ -1,0 +1,44 @@
+# Atlas — practical path to a first genuine forward-only PAPER session
+Date: 2026-11-13, America/Chicago
+Status: **PROPOSED METHOD — SOURCE-ONLY, NOT FINANCIALLY APPROVED**
+
+## Recommendation
+
+Stop cycling code-only release versions as though a release install supplies financial readiness. Selected immutable native R21 is already installed and operational for read-only data, with original Windows Job/clock/native 5+7 role verification and real authenticated IEX observation. The original protected 12 financial roots remain **empty**. The remaining work is a **bounded, original-account-authorized PAPER production profile**, not merely one more synthetic pass count.
+
+The suggested launch profile is **HYPERLIQUID intrahour forward-only simulated trading, QUALITY_DIPS research/WATCH initially**. This is a proposed amendment to the prior all-lanes/historical-settlement methodology, not approval to weaken or bypass the currently installed original consensus-oracle financial gate. The long-term Quality Dips V3 15/20/25/30% margins and its independent originating-firm valuation requirements remain intact; don't infer a fair value from a SEC filing or syndicated analyst aggregator. Quality Dips entries must remain blocked until independently accepted source evidence exists. Normal forward PAPER duration of months starts **after** operational commissioning and does not need to be completed before the first PAPER Start.
+
+### A viable alternative to missing Hyperliquid historical settlement-time oracle
+
+Do **not** pretend public `fundingHistory` is original consensus settlement price. Instead, to make historical oracle proof unnecessary for a **new strictly intrahour simulated pilot**, require every simulated BTC/ETH/SOL position to be *genuinely ACKNOWLEDGED closed* **at least five minutes before every UTC hourly funding boundary**, never held across an hour. Prevent opening any new position within the **last 25 minutes** of the hour, regardless of advertised short hold. After each full hour, require a 30-second opening guard before new entries, preserving ceil(verified NTP uncertainty). Limit every intended hold to **20 minutes** and original paper notional to the existing **100 USDC** per simulated proposed position.
+
+**Critical fail-closed rule:** an unverified pending position, uncertain close, unknown native ledger, bad market snapshot or unavailable Stop means **NO NEW ENTRIES**. Never claim funding zero, synthesize a fill, waive funding, assume a close, or mark an unresolved session profitable. The original owner must prove flat from durable native FS1/FS3 + ACKed Stop/custody and original runtime source rights. If flat is unprovable at boundary, halt and require real original settlement reconciliation; do not allow this policy to cure missing original consensus evidence by assertion.
+
+**Simulated execution costs:** for prospective PAPER planning only, reserve a stated hypothetical 10 bps fee + 5 bps slippage **per side** (for a 100 USDC notional, 0.30 USDC for a synthetic round trip), plus any independently verified actual spread/impact when the actual source implementation is authorized. The assumption is not an accepted provider fee tier, current user fee, complete worst-case fill guarantee, or final financial accounting policy. Per official public Hyperliquid docs, market data and historical funding rates exist on the free info endpoint, but original hourly funding-rate records are not sufficient to authenticate the historical oracle or user's actual funding transfer. The official info `userFees` is user-address-specific. Do not connect a real financial wallet or use paid historical archives.
+
+### Implemented and tested in the single D: main project
+
+New **source-only**, pure policy module:
+`backend/app/services/hyperliquid_forward_flat_paper_policy.py`
+
+Adversarial regression:
+`tests/test_hyperliquid_forward_flat_paper_policy.py`
+
+The module computes a UTC funding boundary, conservative mandatory flat deadline, 25-minute block on new entries, 20-minute max hold, 30-second postboundary guard, and an extra second for integer UTC quantization plus the measured independent NTP uncertainty, and strict refusal on unknown native positions. It rejects fake/invalid UTC inputs, unknown coins, oversized holds and mock costs, and refuses any proposed interval crossing the actual funding cutoff. Crucially, every output says `simulated_paper_financial_order_authorized=false`, `live_money_order_authorized=false`, `native_ledger_proof_verified=false`, `original_historical_oracle_evidence_accepted=false`, and does not authorize funding waiver. Original `require_consensus_settlement_oracle` is unchanged.
+
+**Real execution evidence:** 52/52 new proposal-boundary tests PASSED; a 410-test wider regression PASSED covering preexisting original HL consensus-settlement verifier, selected financial Stop-first guards, selected simulated account issuer, original coordination-journal permit, actual QD source discipline, Alpaca IEX data-only and live public HL quote/funding parsers. Ruff clean on new code. No original financial native files touched; no broker order endpoints.
+
+## The actual minimum acceptance sequence (still outstanding)
+
+1. **Local operator policy choice:** explicitly review and accept the *different* forward-only intrahour Hyperliquid PAPER method, with Quality Dips initially WATCH-only, 20-min hold/25-min no-entry and no overnight/through-hour simulated funding exposure. This source-only proposal does **not** itself create an approval or grant.
+2. **Bounded genuine operator-signed-in-session financial enrollment:** selected original Windows Job, original native 5 QD + 7 HL role identities, fresh independent native UTC, exact policy/account manifests, two approved 1,000-unit opening images, exact Windows SID and current operator scope. Existing `PERSONAL_PAPER_OPERATOR_ACK_2026-10-25.json` expressly says financial inception and paper startup **false**; V4 is only native-fixture permission, V5 acceptance is missing. User's general chat request is not an independently verified local native operator receipt.
+3. **Once-only original coordination:** only with valid original scope publish both coordination journals under `NativeOriginalTwoJournalPreinceptionPermit`. Then separate original activation `READ_ONLY+INITIALIZE_SIMULATED_ACCOUNTS`, original FS1/FS3 once-only account inceptions for QD 1,000 USD and HL 1,000 USDC, read-back, postinception `CONNECT_APPROVED_DATA` activation. Never fabricate two native account ACKs or populate a partial financial root outside its one-shot permit.
+4. **Financial data and clock rights:** re-audit Alpaca free personal single-venue IEX entitlement (not SIP NBBO); use only actual qualified provider subscriptions and distinct original, current issuer evidence. Public HL quotes must be authenticated to source/UTC and original nonlive user policy. No live wallet and no paid provider. The proposed intrahour strategy needs actual original **native no-position-across-hour proof** and a separately reviewed amendment to funding accounting, not legacy historical oracle.
+5. **Original stop-first owner acceptance:** real `resume_stop_first(source_lane='HYPERLIQUID')` with independently granted issuer, no QD financial entry, durable actual native open/close/accounting and unchanged fail-closed Stop. Run actual short locally supervised 24/7 PAPER session, test Stop/flatten, crash/restart reconciliation, dashboard and Discord messages; then enable manual desktop Start/Stop for ongoing months-long monitored PAPER. Do not enable autostart, paid feeds, VPS, options/futures, or live money.
+6. **Later QD executable entries:** maintain original Quality Dips WATCH source until primary-source company fundamentals, independent originating analyst valuation targets, non-stale quote source/rights, 15/20/25/30% rules and original source archive rollover are validated. This is a distinct later lane admission, not covered by initial HL-only pilot.
+
+## Operational truth
+
+**Selected R21: only read-only market observation currently verified. R22 clock improvement: tested source-only, not installed. Financial PAPER accounts: ZERO initialized. Current source proposal: only source-only code, NOT integrated into the installed owner's financial dispatcher. Full two-lane PAPER production is NO-GO.**
+
+This plan identifies the next *real* acceptance work and avoids the false claim that passing a unit test removes operator/data rights or simulates months of actual financial operation. All future code, tests, logs, scratch and documents stay in the one main `D:\Work\Project Atlas` project. The original `D:\AtlasRuntime`, `D:\AtlasCustody`, `D:\AtlasPaper` protected native roots are existing identity-bound financial roots and must not be deleted or moved. Run the project-specific Windows temp cleanup at the end of each execution.

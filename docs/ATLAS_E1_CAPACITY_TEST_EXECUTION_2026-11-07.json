@@ -1,0 +1,22 @@
+﻿{
+    "schema":  "ATLAS_E1_CAPACITY_TEST_EXECUTION_V1",
+    "status":  "OFFLINE_DESIGN_TESTS_PASS_NATIVE_INTEGRATION_NOT_EXECUTED",
+    "observed_at_local":  "2026-11-07T03:35:04.7428996-06:00",
+    "python":  "backend/.venv/Scripts/python.exe",
+    "successful_selection":  "tests/test_paper_capacity_continuation_design.py",
+    "successful_result":  {
+                              "passed":  20,
+                              "failed":  0,
+                              "exit_code":  0
+                          },
+    "guarded_selections":  [
+                               "tests/test_personal_native_pipeline_capacity.py",
+                               "tests/test_unified_source_capacity_native.py"
+                           ],
+    "guarded_attempt_result":  "AIP06_GUARDED_SESSION_REQUIRED; 20 preceding tests passed in combined attempts, but native integration refused; no guarded acceptance performed",
+    "operational_workload_bound_proven":  false,
+    "native_capacity_accepted":  false,
+    "rollover_accepted":  false,
+    "startup_authorized":  false,
+    "next_action":  "Run native integration only through an authorized guarded AIP-06 harness; independently accept bounded workload headroom before first supervised PAPER session."
+}

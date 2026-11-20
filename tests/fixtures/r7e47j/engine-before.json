@@ -1,0 +1,24 @@
+{
+  "exit_code": 0,
+  "timeout": false,
+  "start": "2026-10-18T22:28:31.937160-05:00",
+  "end": "2026-10-18T22:28:32.136645-05:00",
+  "elapsed_seconds": 0.18699999999989814,
+  "args": [
+    "--host",
+    "npipe:////./pipe/dockerDesktopLinuxEngine",
+    "info",
+    "--format",
+    "{\"ID\":{{json .ID}},\"ServerVersion\":{{json .ServerVersion}},\"OSType\":{{json .OSType}}}"
+  ],
+  "stdout_bytes": 88,
+  "stderr_bytes": 0,
+  "within_output_bound": true,
+  "stdout": "{\"ID\":\"1b4f668e-97b1-4e02-8647-454cf431e1b2\",\"ServerVersion\":\"29.8.1\",\"OSType\":\"linux\"}\n",
+  "stderr": "",
+  "payload": {
+    "ID": "1b4f668e-97b1-4e02-8647-454cf431e1b2",
+    "ServerVersion": "29.8.1",
+    "OSType": "linux"
+  }
+}

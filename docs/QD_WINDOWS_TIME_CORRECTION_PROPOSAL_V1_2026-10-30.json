@@ -1,0 +1,77 @@
+{
+  "schema": "ATLAS_WINDOWS_TIME_CORRECTION_PROPOSAL_V1",
+  "status": "PROPOSED_NOT_AUTHORIZED_NOT_EXECUTABLE_AUTHORITY",
+  "diagnosis": "docs/QD_WINDOWS_TIME_SOURCE_DIAGNOSIS_V1_2026-10-30.md",
+  "operator_authorized": false,
+  "administrator_required": true,
+  "read_only_alternative": {
+    "command": "C:\\Windows\\System32\\w32tm.exe /query /configuration /verbose",
+    "maximum_seconds": 20,
+    "settings_changes": false
+  },
+  "conditional_correction": {
+    "preconditions": [
+      "EXPLICIT_OPERATOR_APPROVAL_OF_THIS_EXACT_SCOPE",
+      "ACCEPTED_WINDOWS_ADMINISTRATOR_EXECUTION",
+      "W32TIME_ALREADY_RUNNING_MANUAL_UNCHANGED",
+      "NTP_SOURCE_REMAINS_TIME_WINDOWS_COM_0X9",
+      "EFFECTIVE_CONFIGURATION_AND_POLICY_ORIGIN_VERIFIED",
+      "NO_CONFLICTING_POLICY_OR_CONCURRENT_CONFIGURATION_CHANGE",
+      "ORIGINAL_TYPED_VALUES_RECORDED_PRIVATELY_BEFORE_ANY_WRITE",
+      "CURRENT_REACHABILITY_AND_VALID_SOURCE_EVIDENCE_PRESENT"
+    ],
+    "settings": [
+      {
+        "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\W32Time\\Config",
+        "name": "MaxPollInterval",
+        "type": "REG_DWORD",
+        "expected_original": 15,
+        "proposed": 6
+      },
+      {
+        "path": "HKLM\\SYSTEM\\CurrentControlSet\\Services\\W32Time\\Config",
+        "name": "UpdateInterval",
+        "type": "REG_DWORD",
+        "expected_original": 360000,
+        "proposed": 100
+      }
+    ],
+    "configuration_reload_maximum": 1,
+    "normal_observation_maximum_seconds": 180,
+    "total_including_rollback_maximum_seconds": 300,
+    "success_requires": {
+      "atlas_uncertainty_maximum_ms": 1000,
+      "synchronization_age_maximum_seconds": 120,
+      "source_configuration_unchanged": true,
+      "genuine_native_clock_evidence": true,
+      "clock_continuity_and_authentication": true
+    },
+    "rollback": {
+      "trigger": "ERROR_OR_NO_QUALIFYING_CLOCK_AT_END_OF_BOUND",
+      "restore_only_original_two_typed_values": true,
+      "restore_only_if_current_values_still_belong_to_this_experiment": true,
+      "on_foreign_change": "STOP_PRESERVE_DO_NOT_OVERWRITE",
+      "rollback_configuration_reload_maximum": 1,
+      "manual_time_adjustment": false,
+      "financial_state_rollback": false,
+      "historical_diagnostics_preserved": true
+    }
+  },
+  "changes_prohibited": [
+    "SOURCE_OR_PEER_OR_DNS_CHANGE",
+    "FIREWALL_RULE_OR_SYSTEM_NETWORK_CHANGE",
+    "SERVICE_START_STOP_RESTART_OR_STARTUP_TYPE_CHANGE",
+    "EXPLICIT_RESYNC_OR_MANUAL_CLOCK_SET",
+    "OTHER_REGISTRY_OR_TIME_PROVIDER_CHANGES",
+    "ATLAS_THRESHOLD_OR_EVIDENCE_AGE_CHANGE",
+    "CLOCK_EVIDENCE_FABRICATION_OR_SYNTHETIC_SUBSTITUTION",
+    "MARKET_PROVIDER_CONNECTION",
+    "INSTALLATION_PROMOTION_OR_ENROLLMENT",
+    "FINANCIAL_PUBLICATION_OR_ACCOUNT_INCEPTION",
+    "PAPER_OR_LIVE_TRADING",
+    "GENESIS_ACCESS"
+  ],
+  "successful_clock_does_not_authorize_startup": true,
+  "source_change_or_firewall_change_justified_by_current_evidence": false,
+  "guaranteed_fix": false
+}

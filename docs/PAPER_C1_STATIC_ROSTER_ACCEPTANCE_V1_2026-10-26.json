@@ -1,0 +1,191 @@
+{
+  "schema": "ATLAS_C1_STATIC_ACCEPTANCE_ROSTER_V1",
+  "status": "PROPOSED_NOT_ACCEPTED",
+  "runtime_consumable": false,
+  "startup_authorized": false,
+  "gate_promotions": 0,
+  "operational_action_authorized": false,
+  "reviewer": "UNASSIGNED",
+  "ownership_evidence_owner": "UNASSIGNED",
+  "scope": "ACTUAL_COMPONENT_SOURCE_MAP_NOT_OBSERVED_OPERATIONAL_ROSTER",
+  "roles": {
+    "QD_DECISION": {
+      "component": "backend/app/services/quality_dips_autonomous_paper.py",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "QD_SOURCE": {
+      "component": "scripts/volume_inspector/operational_autonomous_store.py",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "QD_PROJECTION": {
+      "component": "scripts/volume_inspector/financial_reporting.py::ProjectionTarget",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "QD_REPORT": {
+      "component": "scripts/volume_inspector/financial_reporting.py::ReportService",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "QD_COORDINATION": {
+      "component": "backend/app/services/quality_dips_operational_runtime.py",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "QD_RANKING_PUBLICATION": {
+      "component": "backend/app/services/paper_source_publication.py::QualityDipsSourcePublication",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "PERP_SOURCE": {
+      "component": "backend/app/services/unified_native_writer.py::NativeFinancialWriter",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "PERP_PROJECTION": {
+      "component": "scripts/volume_inspector/financial_reporting.py::ProjectionTarget",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "PERP_REPORT": {
+      "component": "scripts/volume_inspector/financial_reporting.py::ReportService",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "PERP_ORDERS": {
+      "component": "scripts/volume_inspector/resting_order_store.py",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "PERP_FUNDING": {
+      "component": "backend/app/services/perp_source_planner.py",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "PERP_MARK": {
+      "component": "backend/app/services/perp_source_planner.py",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "PERP_MARKET_PUBLICATION": {
+      "component": "backend/app/services/paper_source_publication.py::PerpSourcePublication",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "GLOBAL_CUSTODY": {
+      "component": "backend/app/services/unified_portfolio_custody.py",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    },
+    "SESSION_RESERVATION": {
+      "component": "backend/app/services/quality_dips_personal_dependencies.py::PersonalSessionReservations",
+      "status": "STATIC_SOURCE_MAPPED_NOT_ENROLLED",
+      "writer_id": null,
+      "process_pid_creation_image": null,
+      "native_resource_identity": null,
+      "accepted_resource_path": null,
+      "enrollment_receipt": null
+    }
+  },
+  "exclusions": {
+    "LEGACY_INVESTMENT": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    },
+    "LEGACY_PREDICTION": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    },
+    "LEGACY_MANUAL_PERP": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    },
+    "LEGACY_JOURNAL": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    },
+    "RESEARCH_MUTATION": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    },
+    "INCEPTION_PUBLISHER": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    },
+    "RECOVERY_WRITER": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    },
+    "LEGACY_SCANNER_FINANCIAL_MIRROR": {
+      "status": "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+      "receipt": null
+    }
+  },
+  "required_observations": [
+    "exact release/account/session/native root and child mappings",
+    "retained ownership vs mere PID/creation/image identity",
+    "complete actual writer inventory including child writers",
+    "entry-close,pending/UNKNOWN refusal,full final drain and exact owned closure",
+    "same-user/admin exclusion limitation formally disposed"
+  ],
+  "read_only_actual_preflight_authorized": false,
+  "same_account_malicious_exclusion_proven": false
+}

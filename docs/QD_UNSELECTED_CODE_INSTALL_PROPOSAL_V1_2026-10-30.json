@@ -1,0 +1,27 @@
+{
+  "schema": "QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1",
+  "status": "PROPOSAL_NOT_PERMISSION",
+  "source_commit": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "archive": "D:/Work/Project Atlas/logs/diagnostics/qd-evidence-promotion-package-d08ba9cbba2c405c/archive/atlas-source.zip",
+  "archive_sha256": "0e65fae1891fc8d406f086a6aa711781053aa7d9a6b3cf1c9c7963f709c87677",
+  "inventory_sha256": "8a19ec246e3055c105a5b6a59523dba05dfad3d439bfaf3cceb892c831a384bd",
+  "dependency_receipt": "D:/Work/Project Atlas/logs/diagnostics/qd-d-runtime-coordination-installation-20261028.json",
+  "dependency_sha256": "93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91",
+  "destination": "D:/AtlasRuntime/releases/2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "receipt_path": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-2c039af29dfefd1df77e0caa3db3fdf5ed188118.json",
+  "selected": false,
+  "adapter_source_sha256": {
+    "scripts/install_verified_release.py": "92fe450914682f570ce8a554d4aea28cced645c018d7543bc7455b66b95dd977",
+    "scripts/native_install_candidate.py": "d026b57b1fc91e4b4f245e1c01d3b543e3231c1a261c1e2f0ac823712b6df8f1",
+    "scripts/native_install_plan.py": "10bf8c2dd5d2ffdc3a92a576183a701e022c8e53bf5f948a6ad2fcaeb028263f"
+  },
+  "limits": {
+    "seconds": 600,
+    "entries": 40000,
+    "bytes": 1073741824
+  },
+  "financial_enrollment": false,
+  "provider_activation": false,
+  "paper_startup": false,
+  "promotion": false
+}

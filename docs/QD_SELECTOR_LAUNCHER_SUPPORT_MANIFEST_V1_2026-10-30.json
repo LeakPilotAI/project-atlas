@@ -1,0 +1,141 @@
+{
+  "application_archive_sha256": "0e65fae1891fc8d406f086a6aa711781053aa7d9a6b3cf1c9c7963f709c87677",
+  "application_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "clock": {
+    "issuer": "EXISTING_LOCAL_WINDOWS_CLOCK_BINDING_NO_NEW_UTC_AUTHORITY",
+    "maximum_evidence_age_seconds": 120,
+    "maximum_uncertainty_ms": 1000
+  },
+  "financial_startup_authorized": false,
+  "installation_authorized": false,
+  "limits": {
+    "application_seconds": 120,
+    "complete_stop_seconds": 8,
+    "readiness_seconds": 180,
+    "record_bytes": 65536,
+    "selection_records": 128,
+    "total_attempted_requests": 96
+  },
+  "missing_from_frozen_application": [
+    "scripts/build_release_candidate.py",
+    "scripts/install_verified_release.py",
+    "scripts/installed_nonfinancial_launcher.py",
+    "scripts/native_install_candidate.py",
+    "scripts/native_install_plan.py",
+    "scripts/release_selection.py",
+    "scripts/release_selection_store.py",
+    "scripts/windows/Atlas-Installed-Nonfinancial.psm1"
+  ],
+  "native_selection_root": "D:\\AtlasRuntime\\selection",
+  "promotion_authorized": false,
+  "providers_authorized": false,
+  "required_installed_application_sources": [
+    {
+      "path": "scripts/observation_runtime/personal_release_identity.py",
+      "sha256": "26699619e91ce71cdc4963702023d7f5302284e96b709a56135335c02fe77ac7"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_paper_inception.py",
+      "sha256": "3eeaf78da1b40e3fcf44e7980195c8dd390085c8c4c4aaa4a33d70c16e485e83"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_windows_clock.py",
+      "sha256": "a1d21ca5f55579ebbc690347fee3b902c26ea4c5d7e1f6ae292945a4f174571e"
+    },
+    {
+      "path": "scripts/observation_runtime/disposable_host_owner.py",
+      "sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5"
+    },
+    {
+      "path": "scripts/observation_runtime/desktop_observation.py",
+      "sha256": "38a5fb3c4065689d436edea53c7ad4cbd007a35218563f144fd84a5ae222bf45"
+    },
+    {
+      "path": "scripts/observation_runtime/observation_status.js",
+      "sha256": "cfe149620950970eef6019d410de26be4e9cb6e38666141b97afa02f844e356e"
+    },
+    {
+      "path": "scripts/volume_inspector/windows_output.py",
+      "sha256": "c304f3fd38dcd5dbedb5456bdb4eb41219b1ce12729aff64456ab42e84380926"
+    },
+    {
+      "path": "scripts/volume_inspector/snapshot_store.py",
+      "sha256": "f28b27414969d11184c21487a02fba5176e47b6ad9f59fb23eca8f9efcc552a9"
+    },
+    {
+      "path": "scripts/volume_inspector/shared_fence.py",
+      "sha256": "d807df950d4190f8f85fa8aedac9fc1fb5589d145d42f29e74c1f0916af7d9dd"
+    },
+    {
+      "path": "backend/app/static/dashboard_hub.html",
+      "sha256": "2c46722cac79bb9a948d76e69f123adad9fa40812d15f6343b754472c74d846f"
+    },
+    {
+      "path": "backend/app/static/dashboard_shell.html",
+      "sha256": "355b9c2dd3afed235204b95686afbed97c3cd9ec61afe1d34e0ec67be955bffa"
+    },
+    {
+      "path": "backend/app/static/quality_dips.html",
+      "sha256": "aa5c6ca2f1927abbfd2e666dd67a1645ab32876a67a5cced4214a3498b7bbe28"
+    },
+    {
+      "path": "backend/app/static/investment.html",
+      "sha256": "c73e5619f1162beb598a9bee46ae5d767a58a410718ecc0544cfc388226c69db"
+    },
+    {
+      "path": "backend/app/static/archive.html",
+      "sha256": "c27224adba72f8fc2dbb633b290ecfccae73938d10b2aa8c92791a57673b3000"
+    },
+    {
+      "path": "backend/app/static/command_center.html",
+      "sha256": "66f2715714fc7a9bb502568d32569500bfa898c361a503945e8ce941b5e88b63"
+    }
+  ],
+  "schema": "QD_NONFINANCIAL_LAUNCHER_SUPPORT_V1",
+  "selector_resource_provisioned": false,
+  "source_base_commit": "58e49def772a0265218360329ca2a883ffd5902b",
+  "status": "SOURCE_ONLY_REVIEW_INVENTORY_NOT_INSTALLATION_OR_AUTHORITY",
+  "support_sources": [
+    {
+      "bytes": 21894,
+      "path": "scripts/build_release_candidate.py",
+      "sha256": "1514fb56888615d94741c8d8bb6ed28f0a69708b64e57ed23917407c124a63d3"
+    },
+    {
+      "bytes": 15894,
+      "path": "scripts/install_verified_release.py",
+      "sha256": "7e383d14b0404f5d23fcbca75408a612dbf4bb413fade116cba14b9f52764fc6"
+    },
+    {
+      "bytes": 28716,
+      "path": "scripts/installed_nonfinancial_launcher.py",
+      "sha256": "b8200acd5d0d3b020e30948347ab1046006234033dea6c6c280a07721d137da0"
+    },
+    {
+      "bytes": 11517,
+      "path": "scripts/native_install_candidate.py",
+      "sha256": "d026b57b1fc91e4b4f245e1c01d3b543e3231c1a261c1e2f0ac823712b6df8f1"
+    },
+    {
+      "bytes": 6010,
+      "path": "scripts/native_install_plan.py",
+      "sha256": "10bf8c2dd5d2ffdc3a92a576183a701e022c8e53bf5f948a6ad2fcaeb028263f"
+    },
+    {
+      "bytes": 13639,
+      "path": "scripts/release_selection.py",
+      "sha256": "eece09f373f1264288df6de55368b8b934c04c70b5162ac922f221e3ed2fd0c6"
+    },
+    {
+      "bytes": 10760,
+      "path": "scripts/release_selection_store.py",
+      "sha256": "8ad82ad8e7c1b5923e88d3daa5a1e42bbf7534f540749ee29aa98295a1d84532"
+    },
+    {
+      "bytes": 7104,
+      "path": "scripts/windows/Atlas-Installed-Nonfinancial.psm1",
+      "sha256": "5f21c6d6579e2d79fe3a1e73bf45c7e0fb1dbf220d7714b2661ba31f7a6c2e0a"
+    }
+  ],
+  "target_scripts_is_namespace_package": true
+}

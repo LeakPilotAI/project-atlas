@@ -1,0 +1,75 @@
+# AIP-06 Windows adapters and compatibility closure — November 5, 2026
+
+**BLOCKED — observation adapters are source-validated; the native outer-owner and full scenario assembly are not complete.** AIP-06 remains BLOCKED, completion 5/18, PAPER NO, production NO-GO. This report does not convert missing source implementation into a mere request for native test authorization. No authorization was created, requested, redeemed, consumed or reused.
+
+Base: `b3c1ad3c99df67f3ec746eccd1cb6ef93b513506`; branch `chatgpt/atlas-rebuild-v1`. The unrelated research-test modification is preserved. No native acceptance, native financial-worker launch, installed Atlas operation, selector mutation, provider/account access, Discord delivery, PAPER/live order, automatic startup, networking/Windows Time configuration or Genesis modification occurred. B1/C1/D1/E1 and all 21 decisions remain unchanged.
+
+## Prerequisite classification
+
+|Prerequisite|Classification|Concrete evidence / exact missing boundary|
+|---|---|---|
+|Pinned Windows file observations|RESOLVED — source/injected qualification|`PinnedWindowsRead` accounts original read-only handles through the existing allocation interface; verifies native file ID, final path, ordinary single-link file, ACL, exact byte count/hash and before/after metadata; observes close before releasing the ticket. Ambiguous acquisition keeps the reservation and latches failure. Actual complete runtime/native/ACL acceptance remains separate.|
+|Independent process/Job/resource observation mechanics|RESOLVED — source/injected qualification|`WindowsProcessEvidence` uses the existing `NativeProcessObserver` (retained kernel handle plus independent CIM), current observer-process identity and live admission history. Post-exit evidence uses the exact retained handle without querying/reopening an exited PID. `WindowsJobEvidence` queries original complete Job membership/limits/accounting; `WindowsCapacityEvidence` reads actual usage interfaces and separately reopened ledger state. Neither headroom nor a counter snapshot is a successful load test.|
+|Independent native reader hosting and grader authority|BLOCKED|The separate reader must actually run under an independently admitted retained launch, with inherited local handles and qualified physical IPC. Typed raw-provider collection is now connected through `IndependentGrader.inspect_windows`; `grade_native` remains closed. No owner-authored summary, PID or native boolean can provide authority. Native reader hosting, current native cuts and the complete original financial-verifier/Stop result projection remain unproved/unconnected.|
+|Concrete outer-owner/controller assembly|BLOCKED — source contract mismatch remains|`WindowsAcceptanceOwner` now performs current guarded-owner identity/capacity/root observations and reports the exact startup incompatibility. `reserve` and `verify_controller` explicitly refuse `CONTROLLER_BOOTSTRAP_ROLE_AND_SHARED_SESSION_BINDING_NOT_CONNECTED`; `launch_controller` refuses authorization before even querying a process. It is not a working controller launcher. See the exact mismatch below.|
+|Exact scenario/source-case admission|RESOLVED — source connection only|`aip06_native_scenario_bindings` maps the immutable 17-step schedule, exact race roles, prospective shared-ledger ticket, 6s IPC and 8s complete Stop contracts. Existing reviewed source cases now reach the existing guarded pytest driver through exact node IDs, not a whole-module substitute. Distinct case selections use deterministic create-new temporary namespaces; repeated selection cannot overwrite earlier evidence.|
+|Complete native fault/load/capacity execution|BLOCKED — missing source producers/context|All 17 bindings require a qualified per-case physical context. No default context producer is installed. Seven schedule rows have no reviewed native source case/producer: F05,F06,F09,F11,F12,BOOTSTRAP-IPC-FAULTS,OWNERSHIP-PROBES. Their concrete fault/load drivers remain absent. The registry refuses before reservation; it does not implement these producers by renaming a mock or a source-case label.|
+|Async compatibility|BLOCKED — observed host fallback conflicts with unchanged guard|Read-only observation: the current test host has no built-in `_socket.socketpair`, and the default policy is `WindowsProactorEventLoopPolicy`. Its relevant six files match the D: runtime byte-for-byte. The reviewed fallback invokes bind/listen/connect; the unchanged guard rejects bind/connect. No socket/event loop or D: process was created. The D: branch is an explicitly labelled inference, not native execution proof. No alternative transport is approved or implemented.|
+|Current runtime and root ACL acceptance|BLOCKED — host-specific acceptance incomplete|Six current runtime file hashes were reread, and normal-permission ACL reads succeeded for the runtime directory, executable and diagnostics parent. Runtime directory/executable report protected ACLs; the diagnostics parent reports inherited ACLs. This is not complete handle-bound identity/ACL/loaded-origin qualification. All ten prospective native fixture roots remain absent.|
+|Fresh single-use authorization|PENDING|No issuer, redemption path, approval or acceptance run was supplied. Previous consumed grants remain consumed. Do not request a native execution grant against these unresolved source contracts.|
+
+## Exact owner/physical-context mismatch
+
+The current control plane's `OwnerLaunch.verify` requires a direct command naming `aip06_acceptance_controller.py` and formal role `acceptance_supervisor`. The qualified `WindowsChildEndpoints.command` instead produces the exact fenced command `python -B -m scripts.observation_runtime.aip06_child_bootstrap --inherited-session <nonce>`; the logical target is carried through its private bootstrap contract. `launch_role` admits the formal supervisor role only for the pinned legacy probe target and exact legacy arguments. Other targets receive worker role. `ChildBootstrap` independently refuses the controller entry as a legacy supervisor (`SUPERVISOR_ONLY_PINNED_LEGACY_TARGET`). New tests invoke those actual source checks and preserve the refusal.
+
+There is also a bootstrap ordering boundary: the current native `NativeController.initialize` creates/binds E and the shared ledger, whereas the outer control-plane preflight expects every prospective root absent before mutation. An adapter for an already initialized guard cannot stand in for a create-new preflight before that guard exists. It must not create a second ledger or adopt an existing E to hide this distinction.
+
+No direct raw launcher, supervisor alias, process-name allowlist, extra admitted role, guard reset or changed native command comparison was introduced. The remaining source work is concrete: resolve the pinned controller request versus fenced bootstrap/role contract; connect precreation observation/escrow to one shared root ledger after authorization; implement the controller's inherited dispatcher/reader handoff and qualified per-case context lifetime; preserve original native command/creation/Job/handle verification. This is not satisfied by passing JSON flags or externally constructing an `OwnerLaunch`.
+
+## Concrete independent readers
+
+`WindowsReaderSet` requires the exact existing concrete provider types and distinct instances for HANDLES,JOB,LEDGER,FINANCIAL,RESTART,OBJECTS,CIM,IP_HELPER,NETSTAT,PROCESS. Owner summary callbacks are rejected. The observer must execute in its own independently retained process, distinct from the observed owner/worker; the source test host does not thereby become a commissioned native observer.
+
+The collection path calls `ThreeReaderCleanup` unchanged, then the concrete `StrictProcessCleanup.collect` with a fresh after-socket cut. State 0, PID-0 LISTENING, missing readers, enumeration exceptions, retained listeners and stale process cuts still refuse. Raw Windows records remain labelled `WINDOWS_OBSERVER_ADAPTER_NOT_NATIVE_ACCEPTANCE_AUTHORITY`; they cannot be passed as the injected summary schema to claim native PASS.
+
+`ColdLedgerEvidence` reconstructs the existing immutable journal under an independently held head and makes no new commit. `BootstrapObjectEvidence` invokes the original bootstrap object verifier/retained continuity checks and records release history without inventing financial ACKs. `ColdArchiveEvidence` reopens the original evidence hash chain without writing. `RetainedFinancialEvidence` explicitly labels cached typed responses `RETAINED_RESPONSE_NOT_NEW_COLD_REOPEN`; it does not claim a new readback or replace original accounting, account separation, source/projection/report/global ACK and StopVerification checks.
+
+## Scenario bindings and remaining producers
+
+The 10 existing reviewed cases (F01–F04,F07,F08,F10 and STOP-1/2/3) now have an exact-node connection to `run_reviewed_tests`. The driver rejects unknown/additional/missing/result-mismatched node IDs, skipped/incomplete cases and missing durable JUnit. Default module-mode behavior is preserved. No native source case was executed in this milestone; the connection is tested with the original guard, injected files and simulated pytest reports.
+
+F05 still needs real session-revocation cuts before the next native effect; F06 needs real source/clock/provider expiry cuts; F09 needs each original inception durability interruption; F11 needs actual bounded native pressure, measured aggregate capacity and available reserved Stop; F12 needs native producer/source/continuation/notification binding. Bootstrap/IPC and ownership groups need their exact guarded producer/case orchestration. Existing component APIs and source tests do not by themselves implement these native groups. Native per-case contexts must preserve one shared accounting history, ancestry, Job membership, original roles/targets and source pins, and must not reset or reuse a finished guard's authority. All missing contexts/producers currently fail closed.
+
+## Compatibility and runtime evidence limits
+
+The read-only host diagnostic queries class/extension attributes and hashes files; it does not construct a loop/socket, call socketpair, bind/connect, change loop policy, or execute the D: runtime. Existing offline fallback-body tests continue to prove the unchanged real guard refuses bind using injected sockets. There is no claim of a Windows defect or of native-compatible async behavior. An approved transport/environment design decision remains required; no unrestricted loopback or alternate transport exemption was added.
+
+Raw environment evidence is private: `windows-adapter-static-review.json`. Raw ACL evidence is private: `windows-adapter-acl-review-v2.json`. The first ACL serialization exceeded its depth; that original is retained and the complete scalar V2 record is authoritative for this limited static review. ACLs were not changed. The historic 9,566-file/880-directory/252,648,893-byte inventory is still historical byte/stat evidence, not current full native acceptance. Expected live process identities must be obtained from original handles and current CIM/Job/reader cuts in the eventual authorized fixture; no PID, birth or ACL is fabricated for the absent roots.
+
+Unchanged limits remain 600s total,540s work,60s reserved cleanup,8,192 entries,256MiB accounted,512 entries/32MiB Stop reserve,eight aggregate processes including owner,512MiB aggregate/256MiB child private memory and120 billion CPU ns. Original IPC,bootstrap,READY,race,reader and complete8s Stop deadlines are unchanged. No real Stop timing or load result is claimed.
+
+## Decision and next action
+
+**BLOCKED.** Completed observation and exact-case source connections are useful validated progress; they do not close the missing owner/physical-context/fault producer implementations. The next source milestone must resolve that explicit controller/physical-context contract and implement the missing producers before seeking native authorization. The async incompatibility also needs a separately reviewed, policy-compliant design/environment decision. No native acceptance, installed retry, alternative acceptance policy or AIP-07 follows automatically. Financial/PAPER commissioning remains NO-GO.
+
+
+## Validation appendix
+
+Final focused command: **248 passed,0 failed/skipped**,9.281s under180s outer bound. Recovered75-module broader command: **1874 passed,5 native-launch deselected,0 failed/skipped,2 existing warnings**,154.875s under360s outer bound. Removing61 overlaps gives **2061 distinct completed Python passes**, including **66 new** adapter cases. Node selected dashboard contracts: **42 passed,0 failed/skipped**. Current crashes/timeouts: **0/0**. Native acceptance/financial-worker executions: **0/0**. Scoped no-cache Ruff `--select F` passes.
+
+The earlier expanded focused attempt had247 passes and1 new fixture failure: the cold-archive test referenced `x.now` instead of the fixture's `x.s.now`. Corrected and the complete affected248-case set reran successfully; original failure evidence remains `windows-adapter-final-focus.*`. No safety assertion or strategy requirement changed to fix it. The older180s timeout and later326.687s joined-five-case pass remain historical; the expensive full joined file was not unnecessarily repeated in this milestone. No new recurrence of that timeout occurred.
+
+Source pin candidate SHA256 `bffc7d50648fc1e9d6800f4b03b09a00d980bf48ba4310a8cac0dd4ea2c79f91`; **99 current source pins** independently reread; original96-pin manifest preserved as private `windows-adapter-manifest-before.json`. All10 prospective native roots absent. Private exact commands/JUnit/retained test-host exit and handle evidence: `windows-adapter-validated-focus.*`,`windows-adapter-broad.*`,`full-windowsadapter.*`,`windows-adapter-node.*`. Summary and evidence hashes: `windows-adapter-result.json`. Complete packet/recovery history is retained.
+
+Read-only current target byte observations (all six equal the observed host's corresponding bytes; D runtime not executed):
+
+|Target relative path|SHA256|Bytes|
+|---|---|---|
+|python.exe|4d6f5f81a4bca11191c4c7c6b43632694d0a4ce74e068619d8fdc161d469859a|104952|
+|python312.dll|9a0e3435aaa680d868150f87ab3e388ad2eebc22f87e036155c7b4eda8cd2120|6945272|
+|DLLs/_socket.pyd|3efa4636cf9e350856f6927d67a4c2564bf9bd2758a00bbf17d3aece5b60016d|85496|
+|Lib/socket.py|423c823130b3e26ebf5bd5645cf1d263d5e3e23c1ffcd02ddd54acb60eb7d6b5|38798|
+|Lib/asyncio/proactor_events.py|b00ece2377455b6dd2069e8e7d1efd6f79b635b37feb4fc5b47471477e2d3f86|34397|
+|Lib/asyncio/windows_events.py|0f94acdfd79706099961bb265a0e6431e744234cac3f572209a1653a5321fda7|33488|
+
+The initial direct static-review helper lacked the repository import path and stopped before writing evidence; its source path was corrected. The authoritative static result is `windows-adapter-static-review.json`. The first ACL JSON depth warning is preserved; the complete scalar V2 snapshot is used. Neither diagnostic changed system configuration or created a socket/event loop.

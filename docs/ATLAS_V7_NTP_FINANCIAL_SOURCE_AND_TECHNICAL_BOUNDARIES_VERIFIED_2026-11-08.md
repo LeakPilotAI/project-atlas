@@ -1,0 +1,15 @@
+# Atlas V7 independent NTP source-install and technical financial readiness ? 2026-11-08
+
+**Source-only verified, not installed or activated. Full financial PAPER NO-GO, 0 of 9 operational prerequisites accepted.**
+
+## Changes
+- scripts/observation_runtime/personal_source_install_authority.py now accepts the exact NativeV7PaperOperatorClock **only** under explicit V7_INDEPENDENT_NTP_OPERATOR_CLOCK_V1. The historical LocalWindowsClock is still the default. The same native activation reader, Windows operator SID, approved-data action, policy, bound initial image digest, enrollment, native root and once-only lease remain required. An already-entered failed native lease remains consumed; errors before entry do not falsely claim a write occurred. Clock identity/profile mutations fail closed.
+- scripts/observation_runtime/personal_installation_technical.py recognizes the **same** explicit V7 clock type/profile. The existing actual native release, writer ownership, initial inception, current pin, ledger image, source authority, financial integrity, Stop capacity and runtime clock checks remain unmodified. The V7 clock is bound to the same operator, engine, reader and ownership graph; it cannot be inserted into a partially old-clock runtime.
+- tests/test_personal_v7_clock_financial_source_gates.py adds 5 targeted cases: explicit source clock profile, once-only native writer semantics, tampered clock/profile, V7 synthetic pre-inception read-only technical readiness without account creation, and mixed old/new runtime refusal without financial DB mutation.
+- Focused test run: **33 passed, zero failures**. Broad source/publisher/activation/technical/inception/operator/financial/clock/unified preflight tests: **263 passed, zero failures**.
+
+## Evidence and limitations
+- The selected native V7 revision 11 was independently verified in the preceding milestone: source af96bec0484a8e43f9965610e071a907a0d316bf, head 933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997, immutable artifact 94374eda7eea82ac1c44905b21ab56b524128bc49e4253f3522838d230961827. The selected installed V7 application was NOT mutated by this checkpoint.
+- This checkpoint adds **workspace source compatibility**, NOT a fully wired V7 financial runtime. Existing activation publication/commissioning and personal_paper_activation composition still restrict clock types separately, and must be reviewed without mechanical global replacement. No native activation or simulated account writer authority was minted.
+- No new external provider read or live trading, no account balances, no Genesis changes, no paid VPS, no Windows clock settings or desktop shortcut alteration. Public UDP NTP remains unauthenticated; financial issuer trust and runtime clock-loss/Stop certification remain unapproved.
+- Next: reconcile the actual activation publisher/commissioning entrypoints and complete *one consistent* V7-only native runtime graph. Then build a separately reviewed new release and pass native readback, current provider data, simulated account inception and owned Start/Stop/soak prerequisites before any full PAPER activation.

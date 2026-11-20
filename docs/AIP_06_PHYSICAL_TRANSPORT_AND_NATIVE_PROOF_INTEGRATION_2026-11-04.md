@@ -1,0 +1,101 @@
+# AIP-06 physical transport and native proof integration
+
+November 4, 2026. Branch `chatgpt/atlas-rebuild-v1`.
+Starting checkpoint: `5492fc67f7059daf9f358df3714fa9686e5ab3ff`.
+
+**SOURCE INTEGRATION BLOCKED.** Concrete providers and connections below are implemented and offline-tested, but the native child entry, complete descendant staging/graph, query/probe execution and whole-session release composition are not complete. AIP-06 remains BLOCKED; overall completion remains **5/18**. PAPER: NO. Production: NO-GO.
+
+## Scope and recovery
+
+Recovered the canonical roadmap and recovery state, integrated completion audit, native readiness review, fixture guard integration, Windows adapter and session/Stop reports. Git HEAD and branch matched the directive. The unrelated research-test edit and all private logs/backups remain preserved. No installed state was inspected or changed. Historical UNSELECTED revision 6 remains historical evidence; this task does not claim a fresh selector read.
+
+Only source implementation, injected Windows responses and ordinary offline disposable tests were used. No new native authorization was consumed. No Windows backend loader, native financial worker, native acceptance/Stop cycle, installed application, provider, real Discord transport or account activation was executed. The ten proposed native roots remain absent. ctypes buffers in tests are process-local simulated API responses, not Windows kernel observations.
+
+## Implemented source connections
+
+### Physical anonymous-pipe provider
+
+`aip06_windows_endpoints.WindowsChildEndpoints` supplies the previously absent `command`, `prepare`, `channel`, `receive_guard_receipt`, `communicate` and `close` methods. It uses the actual session's prospective allocator for four anonymous pipe pairs, observed buffer capacities and `CreditedPipeEndpoint`. Only the four child data/credit ends and original parent/Job handles enter the explicit inheritance list. It introduces no TCP transport, named-pipe discovery, PID reopening or raw subprocess fallback.
+
+The bounded initial descriptor carries exact argv, account scope, source/image pins, nonce and native parent/child binding. `InheritedChannel.open` validates the private descriptor and native inherited-identity observer before constructing the existing versioned `Channel`. The parent builds `ParentFrames` and the original `Broker` around the retained peer; received OUTPUT is recorded before consumption. Guard installation still requires its exact receipt before RELEASE. Communication requires the actual EXIT target and enforces output bounds; EXIT remains informational, not a financial ACK.
+
+Physical-session factories now require an initialized `AggregateJobBudget`. The native controller automatically selects that concrete envelope when its explicitly supplied factory declares the physical requirement. Missing aggregate evidence refuses before a session may allocate or launch. No parent-owned original handle is closed by the transport's close method: the session still owns the final handle-release loop after verified exit.
+
+**Child entry is not complete.** The physical decoder is not a complete inherited loader. `ChildBootstrap.main` still refuses `AIP06_NATIVE_CHILD_LAUNCH_PORT_NOT_BOUND`; it does not parse environment integers into authority. Pre-BIND child API/COM reservations, concrete guard/root/runtime setup, watchdog/native-services composition and final inherited-handle closure still need the actual entry connection. A test explicitly preserves this refusal. The new provider must not be described as an executable native harness.
+
+### Native-object and descendant evidence
+
+`aip06_native_objects.WindowsObjectCalls` provides bounded read-only type information, native process/thread identity, primary-token data, Job membership, file metadata and independently comparable Event/Mutant/Semaphore/Timer objects. Unknown types and sockets refuse. It never uses an object-name query to establish ownership. `RetainedPeerHandles` duplicates only from the original retained peer process, independently duplicates again and compares kernel objects, enforces reserved kind/owner, and keeps its own charged duplicate until independent close/exit proof. File/image paths use the fixed-root/source-pin rules and exact native file identity. Current peer processes/threads and primary-token SID/type are checked; an executable filename is not ownership.
+
+`RemoteHandleProofs.child` now exports exact original parent/launch/runtime/Job handles and request identity. `DeclaredDescendants` requires a prior exact launch reservation/declaration, duplicates those handles through the retained peer, constructs the existing strict `RetainedLaunchBinding`, and binds the aggregate envelope before accepting a transferred lifetime. Its release path requires original-handle exit, empty child Job and independently verified closure of every retained duplicate. Missing declarations, mismatched ancestry/command/birth or incomplete transfer remain failures, with already allocated duplicates retained for bounded cleanup.
+
+**The complete descendant connection remains BLOCKED.** Actual Windows descendants inherit the non-breakaway parent Job chain. A new offline case reproduces that native roster shape: the parent's current strict binding sees the additional member and correctly refuses **before** transfer/adoption. A pre-resume, original-handle staging transaction and complete independently verified descendant graph must be connected before this import can work for the financial crash/race children. The implementation does not filter that member out or add it to an allowlist. Broker prelaunch declaration/transfer routing is still missing; a decoder alone is insufficient.
+
+COM interface pointers and API failures returning no handle are not kernel HANDLEs that the parent can independently duplicate. Their remote release declarations now remain **reserved and not closed** until original peer exit is verified. `defer_native_release` explicitly returns `closed=False`, `release_pending_peer_exit=True`, `financial_ack=False`; it cannot refund capacity or satisfy release/financial acceptance. Registered kernel objects still require the stronger live-handle release path. This permits conservative accounting without inventing remote COM-close evidence. Ordinary file/directory effect-completion and bootstrap reservations still require their complete parent proof wiring.
+
+### Aggregate Windows Job budget
+
+`aip06_job_budget.AggregateJobBudget` adds a common native envelope including the controller and nested worker Jobs. Suspended children enter that envelope before leaf assignment/resume. The controller's original handle, complete root roster, every child birth and effective root/leaf limits are checked repeatedly. Unexpected, escaped, reused or unbound process evidence refuses. Physical session creation/guard boundaries and retained binding/exit now call this provider.
+
+Root active-process and memory ceilings retain the canonical eight-process/512 MiB limits; leaf Jobs retain 256 MiB per child and kill-on-close. The root does not kill its own controller on ordinary handle closure. Prospective resource tickets include the original controller duplicate and envelope Job; existing pipe/image/thread/launch and bootstrap charges remain in the same ledger. Memory from an unbound suspended child still contributes to the aggregate bound. Exited child CPU is retained after handle closure and is not reset on reader restart.
+
+The existing Windows per-Job time setting is a **user-mode** limit. It is not represented as a hard kernel-plus-user CPU cap. The provider independently checks cumulative Job user+kernel accounting and full retained process CPU lifetimes, including a conservative controller bootstrap prefix, against the unchanged 120-second cap. It rejects rollback, termination by a limit, parent/child accounting discrepancy and aggregate overuse even when individual leaves are within limits. Actual scheduling/monitoring/cleanup latency remains unproved; do not infer native capacity or Stop acceptance from injected counters.
+
+`WindowsFileCalls.allocation_unit` now reads D: geometry. `NativeController.initialize` refuses before fixture mutation unless the observed unit is exactly the existing 4096-byte accounting basis. It neither substitutes 4096 for an unavailable measurement nor changes canonical rounding or limits. The existing initialization-failure resource-closure/runtime inventory work remains incomplete.
+
+**The aggregate envelope is not yet integrated into complete three-sample Stop release.** It must remain observable across samples, while the unchanged `StopVerification.finish` requires every charged resource to be released. A new negative case proves that a retained envelope Job cannot silently bypass that check. The optional bounded Stop finalization callback is implemented, but the full controller/envelope lifetime and repeated-sample sequencing are not connected. No persistent controller handle is silently exempted; no new acceptance contract or resource-budget reset is introduced.
+
+### Concrete cleanup providers and Stop assembly
+
+`aip06_cleanup_providers` contains actual in-process CIM full-table enumeration and IP Helper decoding for both address families. CIM requires authoritative end-of-enumeration; timeout/partial enumeration cannot become an empty table. COM references, worker and probe costs use the existing allocation interfaces. Native object type decoding validates the response status, length and in-buffer pointer before reading it.
+
+`GuardedNetstat` routes through `FixtureGuard.query`, preserves actual exit/output/identity/closure evidence and offers no external-command fallback. The guard now removes the query timeout from child creation options; the bounded timeout still applies to result collection. This fixes a concrete path where an allowed query's `timeout` would otherwise be rejected as an undeclared creation option.
+
+`ThreeReaderCleanup` requires complete fresh CIM/IP Helper/netstat tables, preserves scoped protocol/address-family/local/remote endpoint/state/owner fields, and requires exact three-reader agreement. State 0, PID-0 active/listening, missing ownership, active owned connections, stale or conflicting rows refuse. Normal unanimous terminal CLOSED/TIME_WAIT observations do not become listeners, and reader omission is never affirmative absence. Only scoped records are persisted.
+
+`StrictProcessCleanup` runs after the socket cut, requires the current controller CIM identity, original process/Job/handle closure and an independently complete process query, and rejects survivors, duplicate PIDs, reuse, omitted controller or changed command/image/ancestry. It rechecks the aggregate after CIM. The controller's `bind_cleanup` concretely connects these providers to `OwnedStopAssembly` and `GuardedStopCollector`; constructing the composition does not execute a query or Stop.
+
+**Native query and legacy-probe execution are still missing.** `WindowsSessionPort.query_result` and the bounded, retained query-child/native netstat invocation are not implemented. `legacy_probe`, `NativeController.probe_case` and the independent legacy-probe exit/release verifier remain unbound. Their original refusal is preserved. The provider binding is not proof that these executable paths exist, and no synthetic READY or probe success is substituted.
+
+### IPC timing correction
+
+The old receive freshness check compared message send time with the time reception **started**. A valid peer sending while the receiver waited could therefore appear to come from the future. It now compares with the current reception time, while retaining sequence/hash/account/identity validation, the six-second freshness bound and the caller's unchanged absolute deadline. New coverage sends a real fixture Channel frame during the read wait. Existing stale, replayed, account-conflicting and malformed ACK refusals remain intact.
+
+## Actual source completeness gate
+
+The companion boundary index records current source hashes and scoped call sites; it is a static audit, not dynamic or native coverage.
+
+| Required entry point | Concrete source / enforcement | Ownership and accounting / release evidence | Offline coverage | Remaining requirement |
+| --- | --- | --- | --- | --- |
+| `NativeController.initialize` | Observed D: unit; selected aggregate factory; existing guard/ledger bootstrap | Current parent original handle; prospective native allocations | Missing/incompatible geometry; prior bootstrap/native identity cases | Complete initialization-failure closure and exact runtime/import/ACL inventory qualification. |
+| `NativeSessionFactory -> WindowsSessionPort` | Physical factory requires aggregate; suspended root then leaf assignment | Original process/thread/image/Job handles and exact current roster | Actual factory/guard tests; root/leaf mutation, memory/CPU/roster/refusal/restart | Native-only launch/timing proof after the remaining source entry gaps close. |
+| `WindowsChildEndpoints` methods | Actual anonymous pipe allocation, descriptor, credited transport, Channel, Broker, guard receipt, output/EXIT | Eight reserved parent pipe ends; exact inherited parent/Job and four peer ends | In-memory Win32 pipe responses driving the actual descriptor and Channel code; identity/capacity/framing conflicts | Not connected to a complete preaccounted child entry; no native pipe test performed. |
+| `InheritedChannel -> ChildBootstrap.main` | Decoder validates handles/origin binding; original bootstrap remains fenced | Original inherited handles must be independently observed | Missing/malformed/foreign evidence refuses; main's refusal preserved | **BLOCKED:** pre-BIND allocation lease, actual loader/guard/root/runtime/watchdog construction and inherited-handle cleanup. |
+| `RemoteResources -> RetainedPeerHandles` | Concrete typed object checks and independent duplicate comparison; deferred COM path | Existing shared ledger; no release/refund before observed close/peer exit | Type/status/pointer/conflicting object/foreign process/token and deferred-release cases | Remaining file/directory effect and no-allocation/bootstrap proof routing. |
+| `RemoteHandleProofs.child -> DeclaredDescendants` | Original-handle proof codec/import/release; no name/PID adoption | Prior declared slot, pinned request, strict retained ancestry and aggregate | Missing declaration and inherited parent-Job conflict; refusal before duplicate/adoption | **BLOCKED:** suspended staging and complete descendant graph/forwarding transaction. |
+| `AggregateJobBudget` | Root and leaf limits, complete member check, original-handle cumulative CPU | Controller/child/bootstrap/IPC/probe tickets share the ledger; full lifetime CPU retained | Parent prefix, counters, root/leaf changes, overuse, PID reuse, failed assignment, restart | **BLOCKED:** complete persistent-envelope/three-sample release composition; hard native timing unproved. |
+| `NativeController.bind_cleanup` | Actual CIM, IP Helper, guarded netstat, process collector and financial Stop construction | Original native sessions, shared allocation interfaces and source query | Constructor performs no queries/launch; source collectors tested | `query_result` and actual bounded query/native helper are missing. |
+| `CimTables / TcpTables / ThreeReaderCleanup` | Full-table authoritative EOF, complete both-family parsing, three-reader exact fresh agreement | Known original worker identities/endpoints; no PID-0/State-0 exception | Timeout/truncation/capacity/state/owner/family/disagreement/terminal negatives | Native observations after executable query composition and separate authorization. |
+| `StrictProcessCleanup / GuardedStopCollector` | Socket cut first; fresh strict process cut last; original eight seconds | Current controller and retained exited sessions/Job/handles; no false closure | Original ACK/drain/restart/Stop failures preserved; new process omissions/conflicts and held-envelope refusal | Whole Stop resource finalization, native query/probe and actual eight-second lifecycle remain pending. |
+| Legacy ownership probe | Original unsupported-source refusal unchanged | No broad role/PID allowlist or synthetic exit/READY | Prior refusal protections retained | **BLOCKED:** concrete `legacy_probe`, `probe_case`, original-handle release verifier and full child/supervisor lifecycle. |
+
+**Gate result: FAIL â€” source integration is not complete.** Do not prepare a runnable native approval package or request execution for this incomplete assembly. Next work remains source-only: implement the preaccounted inherited entry and parent effect proofs, staged descendant protocol/full Job graph, bounded native query/legacy probe, and complete whole-controller envelope release. These are implementation gaps, not an invented operator permission requirement. No AIP-07 or V6 retry begins here.
+
+## Validation
+
+Final Python: **1,683 passed, 0 failed/errors/skipped; 5 financial-child launch cases deliberately deselected**. Focused source/provider selection: **445 passed**, overlapping broader tests. **107 new cases**; all **1,576** prior case identities independently preserved. Python module selection, exact case-ID comparison, working-byte pins and JUnit hashes are retained with the diagnostic record.
+
+Node: **42 passed, 0 failed/skipped/cancelled**. Standalone polling/transport/render contract: PASS, separate from that count. The existing Starlette/httpx and Discord `audioop` warnings remain. No dependency was installed or upgraded. Ruff unused-import/undefined-name checks pass; new files are formatted without caches.
+
+Final JUnit: `logs/diagnostics/aip-06-physical-proof-20261104/verified-final.xml`.
+SHA-256: `97202d7de71412f245b2bb402f4844b0d6347763076ddb3c1c77b72e54de29fa`.
+
+Intermediate failures remain preserved: first expanded focused run 383 passed/12 failed, exposing the ledger-cut drift during aggregate BIND and token type-field collision, plus new fixture expectations for OUTPUT servicing and cached capacities. After correction: 57 new cases, then 75 new cases, then 429 focused passes; later 105 new cases and 443 focused passes. The first broader run passed 1,681 cases with the same five launch cases deselected. The final expanded run includes the receive-wait and held-envelope regressions; overlapping counts are not added. No failure, missing native proof or later cleanup is retroactively called PASS.
+
+The unrelated `tests/test_free_research_pipeline.py` retains SHA-256 `4836c60e65a9b48b36e08b3df824e4bdf0dde7e0667ffd835a742ca43b602ffb` and is excluded from staging. Raw diagnostics, test outputs, prior failures and backups remain private under `logs/diagnostics/aip-06-physical-proof-20261104`. TEMP/TMP were confined there; bytecode, pytest cache and lint cache were disabled. All ten proposed native roots remain absent.
+
+## Native API basis and limitations
+
+Microsoft documents [nested Job inheritance and aggregate accounting](https://learn.microsoft.com/en-us/windows/win32/procthread/nested-jobs), and [Job user-time limits](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_limit_information) separately from [total user/kernel accounting](https://learn.microsoft.com/en-us/windows/win32/api/winnt/ns-winnt-jobobject_basic_accounting_information). These support the source model, not a passing run on this computer. [CompareObjectHandles](https://learn.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-compareobjecthandles) supplies independent kernel-object comparison. [NtQueryObject](https://learn.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryobject) documents bounded type information and warns that the native API can change; an unsupported response refuses.
+
+No Windows defect is claimed. No current clock, provider entitlement, executable quote, financial custody, installation acceptance or native cleanup result is asserted. No existing source/clock/three-reader/Stop/browser/financial threshold was weakened. B1/C1/D1/E1, all 21 decisions, USD/USDC separation, QD ranking and Hyperliquid maker/funding rules remain preserved. **PAPER: NO. Production: NO-GO.**

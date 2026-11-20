@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import List, Optional, Sequence
 
+from app.investment.action_gate import InvestmentReadiness, evaluate_investment_readiness
 from app.investment.alerts import AlertDecision, AlertStore, commit_alert, evaluate_alert
 from app.investment.allocation import build_plan, format_plan, persist_plan
 from app.investment.enums import InvestmentAlertState, ThesisState
@@ -18,15 +19,8 @@ from app.investment.research_models import ResearchRecord
 def can_personalize(rec: ResearchRecord, portfolio: PortfolioInput) -> bool:
     if not portfolio.is_complete_for_personalized_plan():
         return False
-    if rec.thesis in (ThesisState.BROKEN, ThesisState.UNKNOWN):
-        return False
-    if rec.classification in (
-        InvestmentAlertState.NO_ACTION,
-        InvestmentAlertState.WATCH,
-        InvestmentAlertState.THESIS_BROKEN,
-    ):
-        return False
-    return True
+    readiness = evaluate_investment_readiness(rec)
+    return readiness.ladder_eligible and readiness.stance is InvestmentReadiness.ACCUMULATE
 
 
 def process_research(
@@ -46,13 +40,15 @@ def process_research(
     store = store or AlertStore(persist=False)
     decision = evaluate_alert(rec, store, now=now)
     commit_alert(rec, decision, store, now=now)
+    readiness = evaluate_investment_readiness(rec)
 
     plan: Optional[AllocationPlan] = None
     port = portfolio or PortfolioInput()
-    if rec.thesis is ThesisState.BROKEN:
-        plan = build_plan(rec, port, previous=previous_plan, now=now)
+    if readiness.stance is InvestmentReadiness.STAND_DOWN:
+        if rec.thesis is ThesisState.BROKEN:
+            plan = build_plan(rec, port, previous=previous_plan, now=now)
         if paper:
-            paper.cancel_open(rec.symbol, reason="THESIS BROKEN — STOP ACCUMULATING")
+            paper.cancel_open(rec.symbol, reason="QUALITY GATE STAND DOWN")
     elif can_personalize(rec, port):
         plan = build_plan(rec, port, previous=previous_plan, now=now)
         if paper and plan and plan.is_actionable():
@@ -78,6 +74,9 @@ def process_research(
         "plan": plan,
         "alert_text": alert_text,
         "research": rec,
+        "readiness": readiness.as_dict(),
+        "investment_domain": "EQUITY_INVESTMENT",
+        "execution_mode": "MANUAL_ONLY",
     }
 
 
@@ -95,13 +94,15 @@ def format_dashboard(
         "_Separate from Hyperliquid paper / /paper / /research._",
         "",
         "INVESTMENT OPPORTUNITIES",
-        "Asset | Classification | Price | Drawdown | Score | Evidence | Thesis | Risk",
+        "Asset | Classification | Price | Drawdown | Score | Evidence | Thesis | Risk | Readiness",
     ]
     for r in records:
         dd = "n/a" if r.drawdown.current_drawdown is None else f"{r.drawdown.current_drawdown:.0%}"
+        readiness = evaluate_investment_readiness(r)
         lines.append(
             f"{r.symbol} | {r.classification.value} | {r.price} | {dd} | "
-            f"{r.opportunity_score}/100 | {r.evidence_quality.value} | {r.thesis.value} | {r.components.risk}"
+            f"{r.opportunity_score}/100 | {r.evidence_quality.value} | {r.thesis.value} | "
+            f"{r.components.risk} | {readiness.stance.value}"
         )
     lines += ["", "ACTIVE ACCUMULATION PLANS"]
     active = [p for p in plans if p.status == "ACTIVE" and p.is_actionable()]
@@ -148,6 +149,10 @@ def format_dashboard(
         "DATA QUALITY",
         "See scripts/investment_health.py for collection monitor, readiness, and PIT audit.",
         "Field completeness is a diagnostic, not confidence.",
+        "",
+        "QUALITY-DIP ACTION GATE",
+        "Only STOCK / ETF records with sufficient evidence, complete core scoring, and an intact thesis can produce an actionable accumulation ladder.",
+        "UNDER_PRESSURE and low-evidence names stay PREPARE; BROKEN thesis is STAND_DOWN.",
         "",
         "INVESTMENT OPPORTUNITY",
         "Rows above are research classifications, not orders.",

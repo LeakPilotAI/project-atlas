@@ -1,0 +1,55 @@
+﻿{
+    "schema":  "ATLAS_B1_RISK_REVIEW_HANDOFF_V1",
+    "status":  "REVIEW_REQUIRED_NOT_ACCEPTED",
+    "source_packet":  "docs/PAPER_B1_AUTONOMOUS_ACCEPTANCE_PACKET_V4_2026-10-26.json",
+    "candidate_release":  "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "operator_intent":  {
+                            "autonomous_within_explicit_session":  true,
+                            "manual_per_trade_confirmation_required":  false,
+                            "automatic_restart_allowed":  false,
+                            "USD_USDC_cash_consolidation_allowed":  false,
+                            "normal_stop":  "FRESH_EVIDENCE_FLATTEN_OR_EXPLICIT_INCOMPLETE",
+                            "emergency_stop":  "CLOSE_DISPATCH_PRESERVE_EVIDENCE"
+                        },
+    "quality_dips_proposed":  {
+                                  "currency":  "USD",
+                                  "opening_simulated_cash":  "1000",
+                                  "max_entry_notional":  "100",
+                                  "max_positions":  1,
+                                  "long_only":  true,
+                                  "leverage_allowed":  false,
+                                  "fractional":  "ONLY_IF_VERIFIED_SUPPORTED",
+                                  "synthetic_fees_bps_per_side":  "2",
+                                  "synthetic_slippage_bps_per_side":  "2"
+                              },
+    "hyperliquid_proposed":  {
+                                 "currency":  "USDC",
+                                 "opening_simulated_cash":  "1000",
+                                 "scope":  "BTC_ETH_SOL",
+                                 "existing_risk_usd":  "1",
+                                 "existing_max_positions":  3,
+                                 "existing_session_stop_R":  "-3",
+                                 "accepted_policy_digest":  null,
+                                 "accepted_leverage_margin_fee_funding_conversion_policy":  null
+                             },
+    "unresolved_decisions":  [
+                                 "Independent acceptance of both account scopes and release/epoch/resource bindings",
+                                 "Authenticated historical exclusion and legacy obligation disposition",
+                                 "Risk-policy digests and exposure aggregation within each lane",
+                                 "Perp leverage, margin, funding, fee and liquidation model acceptance",
+                                 "Currency conversion evidence or explicit fail-closed refusal; never assume USD/USDC parity",
+                                 "Independent reviewer and evidence owner assignment"
+                             ],
+    "fail_closed_defaults":  [
+                                 "No cross-currency netting",
+                                 "No automatic reboot restart",
+                                 "No provider activation",
+                                 "No PAPER startup",
+                                 "No inception publication",
+                                 "No live money orders"
+                             ],
+    "independent_acceptance":  null,
+    "startup_authorized":  false,
+    "runtime_consumable":  false,
+    "note":  "Review handoff only; not a policy decision, reviewer designation or operational authorization."
+}

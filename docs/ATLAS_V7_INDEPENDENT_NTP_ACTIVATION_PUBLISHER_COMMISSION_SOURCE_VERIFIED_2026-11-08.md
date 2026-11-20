@@ -1,0 +1,24 @@
+# Atlas V7 independent-NTP activation publishing/commissioning source ? verified 2026-11-08
+
+**Status: SOURCE-ONLY VERIFIED. No activation published, no financial accounts initialized, and the selected installed native V7 revision 11 remains unchanged. All nine formal financial PAPER operational prerequisites remain unaccepted (NO-GO).**
+
+## What changed
+
+- \`scripts/observation_runtime/personal_activation_publisher.py\` now supports an explicit \`clock_profile='V7_INDEPENDENT_NTP_OPERATOR_CLOCK_V1'\` to accept **only** the genuine \`NativeV7PaperOperatorClock\` and exact V7 installed artifact digest \`94374eda7eea82ac1c44905b21ab56b524128bc49e4253f3522838d230961827\`. The default remains the original \`WINDOWS_TIME_OPERATOR_CLOCK_V4\` / exact \`LocalWindowsClock\`; existing legacy activation safety tests pass.
+- The V7 publisher requires the original Windows operator identity, exact same-process runtime, successful genuine clock operational verification, verified issued UTC sample, expected \`ATLAS_NTP_V1:time.cloudflare.com+time.google.com\` origin and bounded integer 0?1000ms uncertainty before entering native custody. It retains \`validate_activation_record\` for **each explicitly requested action**, policy, account/release binding, nonempty approved actions, bounded serialized record, create-only native root, independent native readback and exact SHA commitment. No default operator action or issuer is minted.
+- \`scripts/observation_runtime/personal_activation_commission.py\` retains existing strict two distinct real native QD/HL account enrollment checks, verified actual Windows native resource IDs, exact enrolled account digests, supplied policy and action checks *before* opening a clock. The V7-specific profile is accepted only if **both** expected source ID equals \`ATLAS_NTP_V1:time.cloudflare.com+time.google.com\` and supplied release digest equals the exact installed V7 artifact digest. Only then, after all the preexisting native enrollment validations, does it instantiate \`NativeV7PaperOperatorClock(runtime_id=...)\` and hand it to the publisher with the explicit V7 clock profile.
+- The CLI adds opt-in \`--clock-profile\` with only exact V7/legacy choices, defaulting to legacy. Source-only CLI behavior does **not** initialize native QD/HL accounts, automatically approve activation, connect a provider for trading, or create/repair a private financial writer. The acquired clock is always revoked in a \`finally\` block.
+- New \`tests/test_personal_v7_activation_publisher_and_commission.py\` tests publisher refusing wrong release/operator/profile/type, invalid source ID/uncertainty/issued-sample verification, oversized record before any native custody, commissioning refusal for absent paired enrollments/foreign NTP source/wrong release, and synthetic completely prevalidated dual-account path reaching only a **replaced inert publisher** and revoking its clock. No test emits an actual financial activation. Existing Windows-clock test injection/semantics remain intact.
+
+## Checks executed
+
+- Legacy + new publisher/commissioning focused tests: **28 passed, zero failed**.
+- Broader activation/source-install/technical/financial authority/inception/local operator/old & new NTP/unified PAPER commissioning tests: **277 passed, zero failed**.
+- Test cleanup rerun: **23 passed, zero failed**.
+- Neither a real commission command nor native publisher was invoked. No V7 installed code was rewritten. Current native selected V7 revision 11 and exact selector head \`933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997\` must remain intact.
+
+## Next necessary dependency
+
+- The actual **installed runtime assembly** in \`scripts/observation_runtime/personal_paper_activation.py::compose_installed_personal_qd\` still has an exact LocalWindowsClock type guard. Migrate that as a separate V7-only clock-profile path, asserting an entirely consistently owned clock graph (operator, technical checks, engine, custody, reader and financial authority all share the same object), and refuse mixed clock instances. Do not accept V7 merely based on a clock sample or JSON representation.
+- After that, build and independently install a **new versioned immutable native application** containing the source changes, with new source/adapter/proposal pins and strictly read-only, nonfinancial selection. Do not modify or repin historical V7 in place.
+- Financial source rights (Alpaca eligible-session quotes, Hyperliquid books/funding oracle/fees), actual independent simulated QD+HL account inception/writer custody, authenticated owner and desktop one-click Stop flatten/recovery with long PAPER soak, read-only dashboards/alerts, and separately Kalshi YES/NO feed verification remain open. Two public UDP NTP peers are **not cryptographically authenticated**, and continuous financial clock-loss handling is not certified. Nothing here authorizes PAPER startup.

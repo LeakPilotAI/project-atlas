@@ -1,0 +1,63 @@
+{
+  "automated_desktop_start_stop_certified": false,
+  "blocked_on_real_provider_data_or_operational_evidence": [
+    "Verify Alpaca free IEX data entitlement and current eligible equity/ETF quotes; do not infer Robinhood market coverage",
+    "Verify Hyperliquid live public price book and source rights without resetting remaining requests",
+    "Qualify Kalshi newly listed single YES/NO market timestamps, public books and future PAPER execution (separate lane)",
+    "Supervised first real PAPER simulated entry, mark, risk, durable Stop, restart and operator observation",
+    "Sustained multi-session PAPER soak and accounting evidence before months-ready acceptance"
+  ],
+  "credentials_accessed": false,
+  "decision": "NO_GO",
+  "financial_gate_override": false,
+  "financial_operating_gates_accepted": 0,
+  "financial_operating_gates_total": 9,
+  "frozen_successor_source_candidate_verified": true,
+  "hyperliquid_current_book_verified": false,
+  "hyperliquid_forward_paper_writer_enrolled": false,
+  "hyperliquid_public_request_attempts_remaining": 2,
+  "kalshi_new_listing_paper_engine_commissioned": false,
+  "kalshi_target_strategy": "NEWLY_LISTED_SINGLE_YES_NO_PRICE_DISCOVERY_V1",
+  "legacy_desktop_launcher_ready": false,
+  "live_trading_authorized": false,
+  "native_installation_modified": false,
+  "not_blocked_by_stock_market_hours_but_requires_separate_permission": [
+    "Review and independently authorize one exact, low-impact, code-only successor native installation",
+    "After verified native readback, separately authorize the successor code-only selection",
+    "Independently enroll genuine local QD and Hyperliquid PAPER financial writers, native activation and operator leases",
+    "Qualify independent continuous financial clock, native ledger and risk/Stop custody under an accepted owner"
+  ],
+  "offline_evidence_compiled": true,
+  "orders_submitted": false,
+  "paper_trading_authorized": false,
+  "personal_paper_native_account_enrollment_verified": false,
+  "personal_paper_native_activation_candidates": 0,
+  "provider_connections_opened": false,
+  "quality_dips_current_quotes_verified": false,
+  "quality_dips_forward_paper_writer_enrolled": false,
+  "quality_dips_research_assets": 13487,
+  "schema": "ATLAS_R15_OFFLINE_PREPRODUCTION_CLOSEOUT_V1",
+  "selected_native_release": "R14",
+  "selected_native_revision": 13,
+  "selected_r14_missing_successor_source_fixes": {
+    "backend/app/services/unified_writer_roster.py": {
+      "selected_native_contains_successor_fix": false,
+      "selected_r14_sha256": "e70ba05f7d297702bc14629fa458efee313573af7dba1687ff7fc22ba4c0a1c5",
+      "successor_workspace_sha256": "d26f821afee33855c8543f649f40f9f2fe25529043770dce59ecb8105945f697"
+    },
+    "scripts/observation_runtime/personal_version_safe_release_clock.py": {
+      "selected_native_contains_successor_fix": false,
+      "selected_r14_sha256": "4054239941084707ede0e5d434bb39bb4b572b6eb80bfcee7a94c00b2b2af1d3",
+      "successor_workspace_sha256": "7357b0d537a2e4b7728b896337bfee48f8856ced5b6e2410c56c623191ea17c5"
+    }
+  },
+  "selected_release_modified": false,
+  "successor_archive_sha256": "f6cb597a53373efee929c306ae42537e16abcbcf6e57f7bd23ee92e8570160c0",
+  "successor_code_only_install_authorized": false,
+  "successor_code_only_install_plan_verified": true,
+  "successor_code_selection_authorized": false,
+  "successor_native_installation_executed": false,
+  "successor_native_plan_bytes": 263545933,
+  "successor_native_plan_files": 10526,
+  "successor_source_commit": "2c79a8d846d6b33669008114732ae5896153812a"
+}

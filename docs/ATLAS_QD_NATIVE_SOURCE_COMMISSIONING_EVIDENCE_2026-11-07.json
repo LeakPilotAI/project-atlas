@@ -1,0 +1,36 @@
+{
+  "schema": "ATLAS_QD_NATIVE_SOURCE_COMMISSIONING_EVIDENCE_V1",
+  "root": "D:\\AtlasCustody\\QualityDips\\qd-native-source-0a50578893fd7d85",
+  "native_root": [
+    4004218753,
+    2883584,
+    1430494
+  ],
+  "empty_native_root_verified": true,
+  "release_selection_revision": 6,
+  "release_selection_action": "ROLLBACK",
+  "selected_release": null,
+  "source_enrollment_created": false,
+  "activation_created": false,
+  "source_image_initialized": false,
+  "paper_startup_authorized": false,
+  "blocking_reason": "INSTALLED_RELEASE_UNLISTED_NAMESPACE_308_EXTRA_FILES; RELEASE_SELECTION_REFUSED",
+  "previous_selected_release_native_verification": {
+    "source_commit": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "verified_by": "NativeInstalledReleaseVerifier.open",
+    "result": "PASSED_EARLIER_BUT_NOW_INVALIDATED_BY_UNLISTED_FILES",
+    "selected_now": false,
+    "selection_write_performed": false
+  },
+  "release_selection_attempt": {
+    "action": "SELECT",
+    "outcome": "REFUSED_BEFORE_PUBLICATION",
+    "error": "PERSONAL_RELEASE_UNLISTED_NAMESPACE",
+    "unexpected_files": 308,
+    "unexpected_directories": 42,
+    "inventory_missing_files": 0,
+    "repair_attempted": false,
+    "selection_published": false,
+    "detail": "Installed release Python interpreter invocation created/uncovered unlisted bytecode cache files; immutable release requires separate recovery/reinstallation review."
+  }
+}

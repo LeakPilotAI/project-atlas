@@ -1,0 +1,115 @@
+﻿{
+    "schema":  "ATLAS_D1_AUTHORITY_BACKUP_GAP_INVENTORY_V1",
+    "status":  "READ_ONLY_INVENTORY_NOT_ACCEPTANCE",
+    "observed_at_local":  "2026-11-07T03:33:06.6869062-06:00",
+    "source_manifest":  "docs/PAPER_D1_DEPENDENCY_ENROLLMENT_MANIFEST_V1_2026-10-26.json",
+    "dependency_count":  11,
+    "dependencies":  [
+                         {
+                             "dependency":  "account_scope",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-lane\u003e/\u003caccepted-epoch\u003e/enrollment/"
+                         },
+                         {
+                             "dependency":  "issuer_and_session",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-lane\u003e/\u003caccepted-epoch\u003e/issuer/"
+                         },
+                         {
+                             "dependency":  "current_high_water",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-lane\u003e/\u003caccepted-epoch\u003e/current/"
+                         },
+                         {
+                             "dependency":  "clock",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-profile\u003e/clock/"
+                         },
+                         {
+                             "dependency":  "native_financial_resources",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasPaper/\u003caccepted-lane\u003e/\u003caccepted-epoch\u003e/"
+                         },
+                         {
+                             "dependency":  "writer_roster",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-profile\u003e/writers/"
+                         },
+                         {
+                             "dependency":  "source_publication_custody",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-lane\u003e/\u003caccepted-epoch\u003e/source-publications/"
+                         },
+                         {
+                             "dependency":  "provider_credentials",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasRuntime/secure/providers/\u003caccepted-provider\u003e/"
+                         },
+                         {
+                             "dependency":  "runtime_release",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasRuntime/releases/\u003caccepted-sha\u003e/"
+                         },
+                         {
+                             "dependency":  "backup_recovery",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-profile\u003e/recovery/"
+                         },
+                         {
+                             "dependency":  "continuation_custody",
+                             "issuer":  "UNASSIGNED",
+                             "evidence_owner":  "UNASSIGNED",
+                             "accepted":  false,
+                             "location_status":  "PROPOSED_TEMPLATE_NOT_PROVISIONED_OR_ACCEPTED",
+                             "installation_location":  "D:/AtlasCustody/\u003caccepted-profile\u003e/segments/"
+                         }
+                     ],
+    "current_drive_metadata":  {
+                                   "drive":  "D:",
+                                   "filesystem":  "NTFS",
+                                   "drive_type":  "Fixed",
+                                   "health_status":  "Healthy",
+                                   "not_an_independent_backup_domain":  true
+                               },
+    "unresolved":  [
+                       "All D1 dependency issuers and evidence owners require authentic assignment",
+                       "Actual enrollment and custody resource identities are not accepted",
+                       "Independent offline backup failure domain and custodian are unassigned",
+                       "Read-only authenticated restore evidence and power-loss recovery acceptance are absent",
+                       "Existing D drive cannot prove independent backup or rollback resistance",
+                       "No financial high-water rollback, blind replay, or invented fixture authority"
+                   ],
+    "directory_mutation_authorized":  false,
+    "runtime_consumable":  false,
+    "startup_authorized":  false
+}

@@ -1,0 +1,27 @@
+{
+  "asset_class": "US_ETF",
+  "dashboard": {
+    "name": "774c9e3d78533579dfd5a9900e7853a92654a942904d915c0dcefd9cf56df949.html",
+    "sha256": "774c9e3d78533579dfd5a9900e7853a92654a942904d915c0dcefd9cf56df949"
+  },
+  "network_authorized": false,
+  "observed_at": "2026-10-20T14:01:10+00:00",
+  "provenance": {
+    "name": "cdbbcdee47acc6dae79a4f13841b8bd2f4e6755212e6516e983f68ac69bdb69f.json",
+    "sha256": "cdbbcdee47acc6dae79a4f13841b8bd2f4e6755212e6516e983f68ac69bdb69f"
+  },
+  "recovery_authorized": false,
+  "report": {
+    "name": "376642989bd866c73af473cd9d948c2b27e98a75b7055b73399a76b8776e843b.json",
+    "sha256": "376642989bd866c73af473cd9d948c2b27e98a75b7055b73399a76b8776e843b"
+  },
+  "schema": "ATLAS_CHART_ARCHIVE_V1",
+  "scope": "SYNTHETIC_REVIEWED_SUBSET_V1",
+  "source": {
+    "name": "d58a52fe329ea7b4935fd93201b8ac3b337fe8a09d82a3e53382b110107cc3cd.json",
+    "sha256": "d58a52fe329ea7b4935fd93201b8ac3b337fe8a09d82a3e53382b110107cc3cd"
+  },
+  "source_authenticated": false,
+  "startup_authorized": false,
+  "trading_authorized": false
+}

@@ -2,22 +2,81 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter
 
 router = APIRouter(prefix="/diagnostics", tags=["diagnostics"])
 
 
-@router.get("/research")
-async def diagnostics_research() -> Dict[str, Any]:
+@router.get("/extended-hours")
+async def diagnostics_extended_hours() -> dict[str, Any]:
+    """Observe only this API's loaded collector; no enable/collect/repair action."""
+    from app.services.extended_hours_research import extended_hours_research_service
+
+    return extended_hours_research_service.status()
+
+
+@router.get("/quote-dispatch")
+async def diagnostics_quote_dispatch() -> dict[str, Any]:
+    """Read bounded quote-dispatch counters without fetching or creating work."""
+    from app.investment.quality_dip_quotes import quality_dip_quote_service
+
+    return quality_dip_quote_service.provider_status()
+
+
+@router.get("/gaming-runtime")
+async def diagnostics_gaming_runtime() -> dict[str, Any]:
+    """Allowlisted observations from this API process; no configuration mutation."""
+    import os
+
+    from app.core.config import get_settings
+    from app.services.perp_micro_coach import perp_micro_coach
+
+    settings = get_settings()
+
+    def active(name: str) -> bool:
+        task = getattr(perp_micro_coach, name, None)
+        return task is not None and not task.done()
+
+    return {
+        "pid": os.getpid(),
+        "run_id": os.getenv("ATLAS_DESKTOP_RUN_ID"),
+        "gaming_environment": os.getenv("ATLAS_GAMING_MODE"),
+        "gaming_mode": settings.atlas_gaming_mode,
+        "configured_discovery_seconds": settings.perp_micro_scan_seconds,
+        "effective_discovery_seconds": settings.effective_perp_micro_scan_seconds,
+        "management_seconds": settings.perp_micro_manage_seconds,
+        "paper_management_enabled": settings.perp_micro_paper_enabled,
+        "coach_running": perp_micro_coach.running,
+        "discovery_task_active": active("_task"),
+        "management_task_active": active("_manage_task"),
+        "read_only": True,
+        "execution_authority": False,
+    }
+
+# Heavy research is read-only but may scan large durable JSONL histories. Keep the
+# desktop/API surface responsive while a single background refresh completes.
+_RESEARCH_RESPONSE_BUDGET_SECONDS = 2.5
+# Heavy JSONL research can hold the CPython GIL long enough to starve /health even
+# when it runs in a worker thread. Do not rebuild it on every dashboard poll.
+_RESEARCH_CACHE_TTL_SECONDS = 60.0
+_research_cache: Optional[Dict[str, Any]] = None
+_research_cache_monotonic: float = 0.0
+_research_task: Optional[asyncio.Task] = None
+
+
+def _research_payload() -> Dict[str, Any]:
     from app.services.funnel_research import funnel_research
     from app.services.paper_pipeline import paper_pipeline
     from app.services.shadow_research import shadow_research
 
     payload = funnel_research.research_payload()
-    shadow = shadow_research.funnel_stats(24.0)
+    # research_payload already contains the expensive shadow aggregation. Reuse it
+    # instead of scanning the shadow history yet again.
+    shadow = payload.get("shadow") or {}
     return {
         "last_24h": paper_pipeline.last_24h(),
         "bottleneck": payload.get("bottleneck"),
@@ -29,8 +88,92 @@ async def diagnostics_research() -> Dict[str, Any]:
         "shadow": shadow,
         "why_no_trade": payload.get("why_no_paper_trades"),
         "effective_config": paper_pipeline.effective_config(),
-        "research_text": funnel_research.research_summary_text(),
+        # Avoid research_summary_text(), which recomputes the full research payload.
+        "research_text": "ATLAS research snapshot loaded. Detailed research remains read-only.",
+        "operational_surface": {"state": "FRESH", "background_refresh": False},
     }
+
+
+def _research_warming_payload() -> Dict[str, Any]:
+    from app.services.paper_pipeline import paper_pipeline
+
+    return {
+        "last_24h": paper_pipeline.last_24h(),
+        "bottleneck": None,
+        "funnel": None,
+        "funnel_text": paper_pipeline.funnel_24h_text(),
+        "independent_gates": {},
+        "distributions": {},
+        "sensitivity": {},
+        "shadow": {},
+        "why_no_trade": None,
+        "effective_config": paper_pipeline.effective_config(),
+        "research_text": "Research snapshot is refreshing in the background.",
+        "operational_surface": {
+            "state": "WARMING",
+            "background_refresh": True,
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        },
+    }
+
+
+@router.get("/research")
+async def diagnostics_research() -> Dict[str, Any]:
+    global _research_cache, _research_cache_monotonic, _research_task
+
+    loop = asyncio.get_running_loop()
+    now = loop.time()
+
+    if _research_task is not None and _research_task.done():
+        try:
+            _research_cache = _research_task.result()
+            _research_cache_monotonic = now
+        except Exception:
+            pass
+        _research_task = None
+
+    cache_age = now - _research_cache_monotonic if _research_cache is not None else None
+    if _research_cache is not None and cache_age is not None and cache_age < _RESEARCH_CACHE_TTL_SECONDS:
+        fresh = dict(_research_cache)
+        fresh["operational_surface"] = {
+            "state": "FRESH",
+            "background_refresh": False,
+            "cache_age_seconds": round(cache_age, 3),
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+        return fresh
+
+    if _research_task is None:
+        _research_task = asyncio.create_task(asyncio.to_thread(_research_payload))
+
+    # Once a usable snapshot exists, never make a dashboard poll wait behind the
+    # expensive refresh. Serve last-good data immediately while one refresh runs.
+    if _research_cache is not None:
+        stale = dict(_research_cache)
+        stale["operational_surface"] = {
+            "state": "STALE_WHILE_REFRESHING",
+            "background_refresh": True,
+            "cache_age_seconds": round(cache_age or 0.0, 3),
+            "read_only": True,
+            "live_capital_allowed": False,
+            "automatic_real_money_execution": False,
+        }
+        return stale
+
+    try:
+        result = await asyncio.wait_for(
+            asyncio.shield(_research_task), timeout=_RESEARCH_RESPONSE_BUDGET_SECONDS
+        )
+        _research_cache = result
+        _research_cache_monotonic = loop.time()
+        _research_task = None
+        return result
+    except asyncio.TimeoutError:
+        return _research_warming_payload()
 
 
 @router.get("/paper")
@@ -52,9 +195,69 @@ async def diagnostics_root() -> Dict[str, Any]:
     return base
 
 
+@router.get("/runtime-latency")
+async def diagnostics_runtime_latency() -> Dict[str, Any]:
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+
+    from app.services.runtime_watchdog import runtime_watchdog
+
+    loop = asyncio.get_running_loop()
+    started = loop.time()
+    await asyncio.sleep(0)
+    event_loop_yield_ms = round((loop.time() - started) * 1000.0, 3)
+    from app.investment.latest_index import latest_index
+    from app.investment.history import _bar_cache
+    from app.api.live import _live_snapshot
+    from app.api.investment_board import _quality_snapshots
+    from app.api.validation import _summary_snapshot, _edge_snapshot
+    snapshots = {"live": _live_snapshot, "quality50": _quality_snapshots[50],
+                 "quality100": _quality_snapshots[100], "validation": _summary_snapshot,
+                 "edge": _edge_snapshot}
+    return {
+        "event_loop_yield_ms": event_loop_yield_ms,
+        "event_loop_stalls": runtime_watchdog.snapshot(),
+        "runtime_metrics": runtime_watchdog.metrics(),
+        "read_models": {name: {"refreshes": cache.refreshes, "duration_ms": cache.duration_ms,
+                                "in_flight": cache.task is not None, "error": cache.error}
+                        for name, cache in snapshots.items()},
+        "bounded_indexes": {"investment_files": len(latest_index.files),
+                            "investment_rows_parsed": latest_index.parsed_rows,
+                            "daily_history_files": len(_bar_cache)},
+        "perp_alert_delivery": perp_alert_delivery_service.reconciliation_status(),
+        "read_only": True,
+        "execution": "PAPER_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
+
+
+@router.get("/paper-reconciliation")
+async def diagnostics_paper_reconciliation() -> Dict[str, Any]:
+    from app.services.perp_alert_delivery import perp_alert_delivery_service
+    from app.services.perp_paper_observability import reconciliation_summary
+
+    # Never make a dashboard/diagnostic request pay for a full durable-history
+    # scan. The observability layer caches by journal signature and TTL; the scan
+    # itself remains off the event loop on a cache miss.
+    current = await asyncio.to_thread(reconciliation_summary)
+    return {
+        "current": current,
+        "runtime": perp_alert_delivery_service.reconciliation_status(),
+        "read_only": True,
+        "execution": "PAPER_ONLY",
+        "live_capital_allowed": False,
+        "automatic_real_money_execution": False,
+    }
+
+
 @router.get("/discord")
 async def diagnostics_discord() -> Dict[str, Any]:
-    from app.alerts.discord import bot, get_subscriber_ids, is_discord_ready
+    from app.alerts.discord import (
+        bot,
+        get_subscriber_ids,
+        is_discord_ready,
+        subscription_store_reliable,
+    )
     from app.core.config import get_settings
 
     s = get_settings()
@@ -65,6 +268,7 @@ async def diagnostics_discord() -> Dict[str, Any]:
         "discord_bot_connected": bool(getattr(bot, "is_ready", lambda: False)()),
         "discord_ready": ready,
         "subscriber_count": len(get_subscriber_ids()),
+        "subscription_store_reliable": subscription_store_reliable(),
         "owner_ids": s.discord_owner_id_list,
         "can_fetch_user": ready,
         "can_send_dm": ready and (len(get_subscriber_ids()) > 0 or bool(s.discord_owner_id_list)),

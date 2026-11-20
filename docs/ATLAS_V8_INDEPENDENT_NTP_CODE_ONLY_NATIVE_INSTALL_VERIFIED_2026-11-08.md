@@ -1,0 +1,32 @@
+# Atlas V8 independent-NTP code-only native installation — VERIFIED (2026-11-08)
+
+**Actual result: V8 native application code INSTALLED AND INDEPENDENTLY VERIFIED, UNSELECTED. The selected installed V7 revision 11 remains unchanged. PAPER financial startup remains NO-GO: 0/9 unified QD/HL operational prerequisites accepted.**
+
+## Exact source and installer authority
+
+- Immutable reviewed V8 source commit `c8cc4846508b29483d10a0b4c4353f8a26f1fc9c`. V8 996 source files archive `logs/diagnostics/atlas-v8-qd-paper-clock-code-source-candidate-20261108/atlas-source.zip` SHA-256 `d09717b36eaf9f484c4e7fa9dc5193aa6a1a147e8c7df5c0d0859bcee9f02a54`, selected inventory SHA-256 `0b97513bfb318d3c656deef4061e9fe8de85af870cf7b87fcf77e6d894c47c6e`, pinned existing 9,566 Python/native runtime dependencies SHA-256 `93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91`.
+- Exact separate create-only R1 review proposal `docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V8_R1_2026-11-08.json` SHA-256 `6c0cc73f024dcf3343e36810eb78a2904e30d7e11c969166d49140fd6c269533`. Reviewed current installer adapter source SHA-256 `39ada814be1448789d255476f202ea83b90175deed4d33e574e881c61bf34ed0`, 2 other source adapters independently pinned. Executable code-only adapter source checkpoint `295b9a3b` (`release: pin V8 dual-NTP unselected code-only installer`). V7's historic source/proposal hashes remain immutable; attempted historical V7 reuse must refuse against the new adapter.
+- Pre-install in clean tracked Git source verified exact proposal, adapter, source archive, dependency SHA, native plan of **10,562 files**, old V7 selected native r11 head `933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997`, V8 target/receipt/pending journal all **absent**. No adoption, repair or preexisting native effect.
+- Source and native-plan/financial operator/source/activation safety regression: **492 passed, zero failures**. All finance and startup/selection flags in the proposal are false.
+
+## Actual one-shot native operation
+
+- Fresh independent **Google+Cloudflare NTP 180.0-second uninterrupted single-lease preflight PASSED**, **37 samples**, conservative uncertainty **139ms initial and final**, using no Windows Time UTC authority. No clock continuity/tolerance limits were relaxed.
+- After that clock admission, one exact code-only `python -B -m scripts.install_verified_release --execute-approved-unselected` command executed using the immutable V8 R1 proposal and exact approved proposal hash. The CLI selected genuine `IndependentNtpClock`, not a caller-supplied substitute.
+- Actual complete guarded operation **exit 0** after **480.72 seconds** including preflight, native code-only copy and installed-runtime readback. A durable create-only native installation journal and final receipt were created. The native source directory `D:\AtlasRuntime\releases\c8cc4846508b29483d10a0b4c4353f8a26f1fc9c` exists; none of the three V8 installation effects were present at admission. No second install or partial repair was attempted.
+- Final native V8 receipt: `logs/diagnostics/qd-unselected-release-c8cc4846508b29483d10a0b4c4353f8a26f1fc9c.json`, exact SHA-256 **`ecb94e00e262e371caea494b1cc552352c892fa437a3b5f4946b54f7f863ae34`**. Installed native verified artifact digest SHA-256 **`65c4b4661ec6aef7359e9dae716a416327379f5082a5b309ccdb5a148a569c95`**. Receipt flags `selected=false`, `financial_effects=false`, `provider_connections=false`, `operational_acceptance=false`.
+
+## Second, independent actual installed-process verification
+
+- Launched a *separate* `D:\AtlasRuntime\releases\c8cc4846508b29483d10a0b4c4353f8a26f1fc9c\python\python.exe -I -B -S -`, isolated, no user site and no bytecode writes; imports were restricted to the installed V8 paths.
+- Independently reopened the complete actual installation receipt, checked exact ZIP/inventory SHA pins, all nonfinancial status flags, exact source/receipt/directory paths, artifact digest based on retained source file inventory, and V7 native r11 selected hash. Reopened **10,562 native files and 914 native directories** through `NativePersonalReleaseIdentity` with identity/content verification. Source and artifact SHA matched.
+- Second verification **exit 0**, runtime **14.69 seconds**; all native file/directory handles were closed, **0 retained**. Receipt and V7 selection head were unchanged during verification.
+- Existing selected V7 release `af96bec0484a8e43f9965610e071a907a0d316bf` at selector r11 remains the only selected application. No new selector r12 record and no installed V8 nonfinancial support root was created.
+
+## Next uncompleted deployment and financial milestones
+
+1. **V8 code-only support and selection:** Existing source `NativeV7PaperOperatorClock` and `atlas_v7_commissioning_ntp_probe` still bind the specific selected V7 receipt/head and support installation, while native support/selection adapter is also V7-pinned. Do NOT select V8 until a separately reviewed genuine V8 support receipt/ACK and fail-closed version-specific selector and clock handoff are ready, with source package/adapter hashes and native ownership independently verified. A new reviewed release might be needed if the actual financial runtime clock is still V7-bound.
+2. **Financial PAPER acceptance:** independent market-session Alpaca IEX executable prices and Quality Dips publication, Hyperliquid BTC/ETH/SOL executable books/funding/oracle/fees and provider use rights, separate once-only native QD USD and Hyperliquid USDC simulated financial account inception and writer custody, owned Windows manual Start/Stop flatten and restart/reconcile, dashboard/Discord and supervised sustained PAPER observation. Kalshi newly listed YES/NO lane separately uncommissioned. None of the nine unified QD+HL PAPER gates is accepted by a code-only install.
+3. **Risk boundary:** two public NTP peers are **unauthenticated**; financial clock provenance, clock-loss safe Stop behavior and continuous writer source governance remain separately unapproved. Do not quietly promote a successful read-only clock or code-only installation into financial authorization.
+
+**No actual trading orders, simulated account balances, native financial ledger/account writes, private brokerage/wallet access, Project Genesis changes, VPS, Windows Time service settings, Windows boot startup or desktop shortcut edits took place during this milestone.**

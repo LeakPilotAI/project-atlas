@@ -1,0 +1,10 @@
+{
+  "repository": "docker.io/library/python",
+  "resolved_tag": "3.12-slim-bookworm",
+  "platform": "linux/amd64",
+  "index_digest": "sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258",
+  "platform_manifest_digest": "sha256:2ed6491b93cd49272ee6de2b5a38440c3448360322c089fc23e370722d74179d",
+  "config_digest": "sha256:4f228bc1cbcfc794e4878312cfc241d368eff55a21c08d1e2bb263116c4ef524",
+  "registry_metadata_only": true,
+  "base_layers_downloaded": false
+}

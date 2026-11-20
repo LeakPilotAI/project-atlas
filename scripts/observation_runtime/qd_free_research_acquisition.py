@@ -1,0 +1,310 @@
+"""Bounded genuine Alpaca/SEC acquisition; diagnostic only, never source authority.
+
+Explicit SEC contact required. No financial writer, operational publication or
+operator activation. Existing free-provider refusal reasons remain authoritative.
+"""
+import argparse
+import json
+import os
+import re
+import sys
+from datetime import UTC, datetime
+from pathlib import Path
+
+REPO = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO / "backend"))
+from scripts.observation_runtime.qd_research_diagnostic_journal import journal_diagnostic, inspect_diagnostic_journal, plan_interrupted_journal_recovery, export_recoverable_journal, verify_recovery_export
+from app.investment.alpaca_iex import Credentials
+from app.investment.free_research_providers import FreeResearchBundle
+from app.investment.free_research_transport import FreeResearchClient, ResearchRefused
+from app.investment.quality_dips_v2_valuation import build_normalization_window
+
+
+def inspect_free_research(*, symbol, contact, credentials_path, client_factory=FreeResearchClient,
+                          bundle_factory=FreeResearchBundle):
+    if (type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}", symbol) is None
+            or type(contact) is not str
+            or re.fullmatch(r"ProjectAtlas/1\.0 [A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", contact) is None
+            or contact.lower().endswith(('.invalid', '.test', '.example', '@example.com', '@example.org', '@example.net'))):
+        raise ResearchRefused("QD_REAL_SYMBOL_AND_SEC_CONTACT_REQUIRED")
+    credentials = Credentials.load(credentials_path)
+    now = lambda: datetime.now(UTC)
+    client = client_factory(cache_root=REPO / "logs" / "diagnostics" / "qd-free-research-acquisition",
+                            now=now, sec_user_agent=contact, credentials=credentials,
+                            max_attempts=12, seconds=60)
+    if client.domain != "TLS_PUBLIC_PROVIDER":
+        raise ResearchRefused("QD_REAL_PROVIDER_TRANSPORT_REQUIRED")
+    data = bundle_factory(client=client, now=now).load(symbol)
+    if type(data) is not dict or data.get("paper_eligible") is not False:
+        raise ResearchRefused("QD_RESEARCH_NOT_DIAGNOSTIC")
+    # Only explicit target estimates may satisfy the existing V2/V3 window.
+    # Derived ratios and daily closes are not independent fair-value targets.
+    targets = ("target_low_price", "target_mean_price", "target_high_price")
+    valuation = data["valuation"]
+    target_available = {name: bool(valuation[name].availability) for name in targets}
+    if any(target_available.values()):
+        # Acquisition alone never attests independent issuer/source custody.
+        raise ResearchRefused("QD_UNATTESTED_TARGET_PRICE_PRESENT")
+    window = build_normalization_window([], now=now())
+    if window["complete"] or window["source_count"] != 0:
+        raise ResearchRefused("QD_UNEXPECTED_NORMALIZATION_ESTIMATES")
+    return {"schema": "ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1",
+            "symbol": symbol, "transport": "TLS_PUBLIC_PROVIDER",
+            "provider_receipt_count": len(data["receipts"]),
+            "completed_daily_bar_count": len(data["bars"]),
+            "fundamental_metric_count": len(data["fundamentals"]),
+            "normalization_estimates_accepted": False,
+            "explicit_target_availability": target_available,
+            "normalization_source_count": window["source_count"],
+            "refusals": data["refusals"],
+            "operational_source_accepted": False,
+            "paper_fill_authorized": False, "live_order_authorized": False}
+
+
+
+def inspect_prices_only(*, symbol, contact, credentials_path, client_factory=FreeResearchClient,
+                        bundle_factory=FreeResearchBundle):
+    """ETF-compatible read-only price history, without claiming SEC fundamentals."""
+    if type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}",symbol) is None:
+        raise ResearchRefused('QD_REAL_SYMBOL_REQUIRED')
+    # Price-only Alpaca acquisition makes no SEC request; SEC contact is optional.
+    # Never accept arbitrary contact strings as a request header.
+    if contact is not None and (type(contact) is not str or
+            re.fullmatch(r"ProjectAtlas/1\.0 [A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}",contact) is None):
+        raise ResearchRefused('QD_SEC_CONTACT_FORMAT_REFUSED')
+    credentials=Credentials.load(credentials_path)
+    now=lambda: datetime.now(UTC)
+    client=client_factory(cache_root=REPO/'logs'/'diagnostics'/'qd-free-research-acquisition',
+                          now=now,sec_user_agent=contact or "ProjectAtlas/1.0 prices-only-no-sec",credentials=credentials,max_attempts=12,seconds=60)
+    if client.domain!='TLS_PUBLIC_PROVIDER':
+        raise ResearchRefused('QD_REAL_PROVIDER_TRANSPORT_REQUIRED')
+    data=bundle_factory(client=client,now=now).load(symbol,prices_only=True)
+    if (type(data) is not dict or data.get('paper_eligible') is not False
+            or type(data.get('bars')) is not list or not data['bars']
+            or type(data.get('receipts')) is not list or not data['receipts']):
+        raise ResearchRefused('QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED')
+    return {'schema':'ATLAS_QD_PRICE_ONLY_RESEARCH_V1','symbol':symbol,
+            'completed_daily_bar_count':len(data['bars']),
+            'provider_receipt_count':len(data['receipts']),
+            'fundamentals_available':False,'independent_analyst_targets_verified':False,
+            'operational_source_accepted':False,'paper_fill_authorized':False,'live_order_authorized':False}
+
+
+
+def inspect_bounded_prices_only(*, symbols, contact, credentials_path,
+                                inspect=inspect_prices_only):
+    """Bounded independent price-history checks; partial failure is never success."""
+    if (type(symbols) is not list or not 1 <= len(symbols) <= 8
+            or any(type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}",symbol) is None
+                   for symbol in symbols) or len(set(symbols))!=len(symbols)):
+        raise ResearchRefused('QD_BOUNDED_UNIQUE_SYMBOLS_REQUIRED')
+    results=[]
+    for symbol in symbols:
+        try:
+            result=inspect(symbol=symbol,contact=contact,credentials_path=credentials_path)
+            if (type(result) is not dict or result.get('schema')!='ATLAS_QD_PRICE_ONLY_RESEARCH_V1'
+                    or result.get('symbol')!=symbol
+                    or type(result.get('completed_daily_bar_count')) is not int
+                    or result['completed_daily_bar_count']<=0
+                    or type(result.get('provider_receipt_count')) is not int
+                    or result['provider_receipt_count']<=0
+                    or result.get('fundamentals_available') is not False
+                    or result.get('independent_analyst_targets_verified') is not False
+                    or result.get('operational_source_accepted') is not False
+                    or result.get('paper_fill_authorized') is not False
+                    or result.get('live_order_authorized') is not False):
+                raise ResearchRefused('QD_PRICE_ONLY_RESULT_AUTHORITY_REFUSED')
+            results.append(result)
+        except (ValueError,OSError,KeyError,TypeError) as exc:
+            # Stable categories only: never echo provider exception messages,
+            # which can include URLs, request headers, or credentials.
+            if isinstance(exc, OSError):
+                category='PROVIDER_IO_FAILURE'
+            elif isinstance(exc, (KeyError,TypeError)):
+                category='MALFORMED_PROVIDER_DATA'
+            elif str(exc)=='QD_PRICE_ONLY_RESULT_AUTHORITY_REFUSED':
+                category='INVALID_RESEARCH_AUTHORITY_OR_SCHEMA'
+            elif str(exc)=='QD_PRICE_ONLY_EVIDENCE_INCOMPLETE_OR_UNAUTHORIZED':
+                category='MISSING_RESEARCH_EVIDENCE'
+            else:
+                category='PROVIDER_REFUSED_OR_UNAVAILABLE'
+            results.append({'symbol':symbol,'status':'REFUSED','failure_category':category,
+                            'operational_source_accepted':False,'paper_fill_authorized':False,
+                            'live_order_authorized':False})
+    refused=sum(row.get('status')=='REFUSED' for row in results)
+    return {'schema':'ATLAS_QD_BOUNDED_PRICES_ONLY_V1','symbols':symbols,'results':results,
+            'acquired_count':len(results)-refused,'refused_count':refused,
+            'operational_source_accepted':False,'paper_fill_authorized':False,
+            'live_order_authorized':False}
+
+
+
+def inspect_repeated_prices_only(*, symbols, rounds, contact, credentials_path,
+                                 inspect_batch=inspect_bounded_prices_only):
+    """Finite diagnostic repetitions; never a daemon, trade loop, or authority grant."""
+    if type(rounds) is not int or not 1 <= rounds <= 3:
+        raise ResearchRefused('QD_DIAGNOSTIC_ROUNDS_BOUNDED_REQUIRED')
+    # Validate universe before initiating any provider calls.
+    if (type(symbols) is not list or not 1 <= len(symbols) <= 8
+            or any(type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}",symbol) is None
+                   for symbol in symbols) or len(set(symbols)) != len(symbols)):
+        raise ResearchRefused('QD_BOUNDED_UNIQUE_SYMBOLS_REQUIRED')
+    reports=[]
+    for index in range(rounds):
+        report=inspect_batch(symbols=symbols,contact=contact,credentials_path=credentials_path)
+        if (type(report) is not dict or report.get('schema')!='ATLAS_QD_BOUNDED_PRICES_ONLY_V1'
+                or report.get('symbols')!=symbols
+                or type(report.get('refused_count')) is not int
+                or type(report.get('acquired_count')) is not int
+                or report['refused_count']<0 or report['acquired_count']<0
+                or report['refused_count']+report['acquired_count']!=len(symbols)
+                or type(report.get('results')) is not list
+                or len(report['results'])!=len(symbols)
+                or report.get('operational_source_accepted') is not False
+                or report.get('paper_fill_authorized') is not False
+                or report.get('live_order_authorized') is not False):
+            raise ResearchRefused('QD_REPEATED_DIAGNOSTIC_RESULT_REFUSED')
+        reports.append({'round':index+1,'acquired_count':report['acquired_count'],
+                        'refused_count':report['refused_count'], 'results':report['results']})
+    return {'schema':'ATLAS_QD_REPEATED_PRICES_ONLY_V1','symbols':symbols,
+            'rounds_requested':rounds,'rounds_completed':len(reports),
+            'refused_count':sum(row['refused_count'] for row in reports),
+            'rounds':reports,'operational_source_accepted':False,
+            'paper_fill_authorized':False,'live_order_authorized':False}
+
+
+def inspect_bounded_universe(*, symbols, contact, credentials_path,
+                             inspect=inspect_free_research):
+    """Bounded multi-symbol genuine research; never converts research to fills."""
+    if (type(symbols) is not list or not 1 <= len(symbols) <= 8
+            or any(type(symbol) is not str or re.fullmatch(r"[A-Z]{1,8}", symbol) is None
+                   for symbol in symbols)
+            or len(set(symbols)) != len(symbols)):
+        raise ResearchRefused("QD_BOUNDED_UNIQUE_SYMBOLS_REQUIRED")
+    results = []
+    for symbol in symbols:
+        try:
+            result = inspect(symbol=symbol, contact=contact, credentials_path=credentials_path)
+            if (type(result) is not dict or result.get("symbol") != symbol
+                    or result.get("schema") != "ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1"
+                    or result.get("transport") != "TLS_PUBLIC_PROVIDER"
+                    or result.get("operational_source_accepted") is not False
+                    or result.get("paper_fill_authorized") is not False
+                    or result.get("live_order_authorized") is not False):
+                raise ResearchRefused("QD_DIAGNOSTIC_AUTHORITY_PROMOTION_REFUSED")
+            results.append(result)
+        except (ValueError, OSError, KeyError, TypeError) as exc:
+            results.append({"symbol": symbol, "status": "REFUSED", "reason": type(exc).__name__,
+                            "operational_source_accepted": False, "paper_fill_authorized": False})
+    return {"schema": "ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1", "symbols": symbols,
+            "results": results, "acquired_count": sum("status" not in row for row in results),
+            "refused_count": sum(row.get("status") == "REFUSED" for row in results),
+            "operational_source_accepted": False,
+            "paper_fill_authorized": False, "live_order_authorized": False}
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--symbol", default="MSFT")
+    parser.add_argument("--prices-only", action="store_true", help="Read-only price history without SEC fundamentals")
+    parser.add_argument("--symbols", nargs="+", help="Up to eight distinct real symbols; diagnostic only")
+    parser.add_argument("--verify-diagnostic-recovery", type=Path, help="Damaged source for offline recovery receipt verification")
+    parser.add_argument("--verify-recovery-output", type=Path, help="Existing recovered journal to verify")
+    parser.add_argument("--recovery-receipt", type=Path, help="JSON receipt from prior export")
+    parser.add_argument("--export-diagnostic-recovery", type=Path, help="Damaged journal source; requires --recovery-output")
+    parser.add_argument("--recovery-output", type=Path, help="New exclusive verified-prefix export destination")
+    parser.add_argument("--plan-diagnostic-recovery", type=Path, help="Read-only recovery plan for an interrupted journal")
+    parser.add_argument("--inspect-diagnostic-journal", type=Path, help="Inspect existing read-only journal without contacting provider")
+    parser.add_argument("--diagnostic-journal", type=Path, help="Append sanitized bounded price-only result to existing directory")
+    parser.add_argument("--diagnostic-rounds", type=int, default=1, help="Finite 1-3 read-only rounds; requires --prices-only --symbols")
+    parser.add_argument("--sec-contact", default=os.environ.get("ATLAS_SEC_CONTACT"))
+    args = parser.parse_args(argv)
+    try:
+        if (args.verify_diagnostic_recovery is not None or args.verify_recovery_output is not None
+                or args.recovery_receipt is not None):
+            if (args.verify_diagnostic_recovery is None or args.verify_recovery_output is None
+                    or args.recovery_receipt is None or args.export_diagnostic_recovery is not None
+                    or args.recovery_output is not None or args.plan_diagnostic_recovery is not None
+                    or args.inspect_diagnostic_journal is not None or args.diagnostic_journal is not None
+                    or args.prices_only or args.symbols is not None or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_RECOVERY_VERIFY_STANDALONE_REQUIRED')
+            receipt_path=args.recovery_receipt
+            if (receipt_path.is_symlink() or not receipt_path.is_file()
+                    or receipt_path.stat().st_size>8192):
+                raise ResearchRefused('QD_RECOVERY_RECEIPT_FILE_REFUSED')
+            receipt=json.loads(receipt_path.read_text(encoding='utf-8'))
+            result=verify_recovery_export(source=args.verify_diagnostic_recovery,
+                                          destination=args.verify_recovery_output,receipt=receipt)
+            print(json.dumps(result,sort_keys=True))
+            return 0
+        if args.export_diagnostic_recovery is not None or args.recovery_output is not None:
+            if (args.export_diagnostic_recovery is None or args.recovery_output is None
+                    or args.inspect_diagnostic_journal is not None
+                    or args.plan_diagnostic_recovery is not None or args.diagnostic_journal is not None
+                    or args.prices_only or args.symbols is not None or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_RECOVERY_EXPORT_STANDALONE_REQUIRED')
+            result=export_recoverable_journal(source=args.export_diagnostic_recovery,
+                                              destination=args.recovery_output)
+            print(json.dumps(result,sort_keys=True))
+            return 0
+        if args.plan_diagnostic_recovery is not None:
+            if (args.inspect_diagnostic_journal is not None or args.diagnostic_journal is not None
+                    or args.prices_only or args.symbols is not None or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_RECOVERY_PLANNING_STANDALONE_REQUIRED')
+            result = plan_interrupted_journal_recovery(path=args.plan_diagnostic_recovery)
+            print(json.dumps(result,sort_keys=True))
+            return 0
+        if args.inspect_diagnostic_journal is not None:
+            if (args.diagnostic_journal is not None or args.prices_only or args.symbols is not None
+                    or args.diagnostic_rounds != 1):
+                raise ResearchRefused('QD_JOURNAL_INSPECTION_STANDALONE_REQUIRED')
+            result = inspect_diagnostic_journal(path=args.inspect_diagnostic_journal)
+            print(json.dumps(result,sort_keys=True))
+            return 0
+        if args.diagnostic_journal is not None and not (args.prices_only and args.symbols is not None):
+            raise ResearchRefused('QD_JOURNAL_BOUNDED_PRICES_ONLY_REQUIRED')
+        # Refuse corrupted or interrupted journals before any provider acquisition.
+        if args.diagnostic_journal is not None and args.diagnostic_journal.exists():
+            inspect_diagnostic_journal(path=args.diagnostic_journal)
+        if args.diagnostic_rounds != 1 and not (args.prices_only and args.symbols is not None):
+            raise ResearchRefused('QD_REPEATED_DIAGNOSTIC_PRICES_ONLY_UNIVERSE_REQUIRED')
+        if args.prices_only and args.symbols is not None and args.diagnostic_rounds != 1:
+            result = inspect_repeated_prices_only(symbols=args.symbols,rounds=args.diagnostic_rounds,
+                                                  contact=args.sec_contact,credentials_path=REPO / "config/alpaca.env")
+        elif args.prices_only and args.symbols is not None:
+            result = inspect_bounded_prices_only(symbols=args.symbols, contact=args.sec_contact,
+                                                 credentials_path=REPO / "config/alpaca.env")
+        elif args.prices_only:
+            result = inspect_prices_only(symbol=args.symbol, contact=args.sec_contact,
+                                         credentials_path=REPO / "config/alpaca.env")
+        elif args.symbols is not None:
+            result = inspect_bounded_universe(symbols=args.symbols, contact=args.sec_contact,
+                                               credentials_path=REPO / "config/alpaca.env")
+        else:
+            result = inspect_free_research(symbol=args.symbol, contact=args.sec_contact,
+                                           credentials_path=REPO / "config/alpaca.env")
+    except (ValueError, OSError, KeyError, TypeError):
+        result = {"schema": "ATLAS_QD_FREE_RESEARCH_ACQUISITION_V1", "status": "REFUSED",
+                  "operational_source_accepted": False, "paper_fill_authorized": False,
+                  "live_order_authorized": False}
+        print(json.dumps(result, sort_keys=True))
+        return 1
+    if args.diagnostic_journal is not None:
+        try:
+            journal_diagnostic(result,path=args.diagnostic_journal)
+        except (ValueError,OSError,KeyError,TypeError):
+            print(json.dumps({'schema':'ATLAS_QD_JOURNAL_FAILURE_V1','status':'REFUSED',
+                              'operational_source_accepted':False,'paper_fill_authorized':False,
+                              'live_order_authorized':False},sort_keys=True))
+            return 3
+    print(json.dumps(result, sort_keys=True))
+    # Partial acquisition is observable but not a successful full-universe scan.
+    # Supervisors must never mistake refused symbols for a complete research cut.
+    if result.get("schema") == "ATLAS_QD_REPEATED_PRICES_ONLY_V1":
+        return 2 if result['refused_count'] else 0
+    if result.get("schema") in ("ATLAS_QD_BOUNDED_RESEARCH_UNIVERSE_V1", "ATLAS_QD_BOUNDED_PRICES_ONLY_V1"):
+        return 2 if result["refused_count"] else 0
+    return 0
+
+if __name__ == "__main__":
+    raise SystemExit(main())

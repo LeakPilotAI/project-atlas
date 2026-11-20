@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import json
+import threading
+from collections import OrderedDict
+from dataclasses import replace
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Set
@@ -23,16 +26,18 @@ def _parse_dt(raw: object) -> Optional[datetime]:
         return None
 
 
-def _path(symbol: str, root: Path | None = None) -> Path:
-    ensure_dirs()
+def _path(symbol: str, root: Path | None = None, *, create: bool = True) -> Path:
+    if create:
+        ensure_dirs()
     base = root or HISTORY_DIR
-    base.mkdir(parents=True, exist_ok=True)
+    if create:
+        base.mkdir(parents=True, exist_ok=True)
     safe = "".join(ch for ch in symbol.upper() if ch.isalnum() or ch in ".-^")
     return base / f"{safe}.jsonl"
 
 
 def load_dates(symbol: str, root: Path | None = None) -> Set[str]:
-    p = _path(symbol, root)
+    p = _path(symbol, root, create=False)
     dates: Set[str] = set()
     if not p.exists():
         return dates
@@ -96,8 +101,8 @@ def append_bars(
     }
 
 
-def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
-    p = _path(symbol, root)
+def _read_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
+    p = _path(symbol, root, create=False)
     out: List[OhlcvBar] = []
     if not p.exists():
         return out
@@ -127,3 +132,27 @@ def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
                 )
             )
     return out
+
+
+_bar_cache = OrderedDict()
+_bar_lock = threading.RLock()
+
+
+def load_bars(symbol: str, root: Path | None = None) -> List[OhlcvBar]:
+    """Reuse unchanged daily data; bounded by 64 symbols, never rewrites evidence."""
+    path = _path(symbol, root, create=False)
+    with _bar_lock:
+        try:
+            stat = path.stat()
+        except FileNotFoundError:
+            _bar_cache.pop(path, None)
+            return []
+        stamp = (stat.st_size, stat.st_mtime_ns, stat.st_ino)
+        cached = _bar_cache.get(path)
+        if cached is None or cached[0] != stamp:
+            cached = (stamp, _read_bars(symbol, root))
+            _bar_cache[path] = cached
+        _bar_cache.move_to_end(path)
+        while len(_bar_cache) > 64:
+            _bar_cache.popitem(last=False)
+        return [replace(bar, issues=list(bar.issues)) for bar in cached[1]]

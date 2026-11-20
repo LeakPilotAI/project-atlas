@@ -1,0 +1,6222 @@
+{
+  "schema": "AIP06_WINDOWS_ADAPTER_BOUNDARY_INVENTORY_V1",
+  "starting_commit": "95107e07d87b87e61abc8fd4fbcb70caa01a5d28",
+  "domain": "SOURCE_ONLY_INJECTED_WINDOWS_NO_NATIVE_PROOF",
+  "static_index_is_not_runtime_coverage": true,
+  "sources": [
+    {
+      "path": "backend/app/services/paper_epoch_fixture.py",
+      "sha256": "9a1dd565ad2da92c81b2a9fdbd7874e20d5b9894755f875615b35a372c1242d3",
+      "boundary_calls": [
+        {
+          "line": 33,
+          "scope": "create_epoch_fixture",
+          "call": "path.open"
+        },
+        {
+          "line": 36,
+          "scope": "create_epoch_fixture",
+          "call": "guarded.write_bytes"
+        },
+        {
+          "line": 37,
+          "scope": "create_epoch_fixture",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 65,
+          "scope": "EpochFixture.connect",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 71,
+          "scope": "EpochFixture.snapshot",
+          "call": "self.connect"
+        },
+        {
+          "line": 82,
+          "scope": "EpochFixture.daily_report",
+          "call": "datetime.fromtimestamp(self.manifest['opened_at'], UTC).astimezone(ZoneInfo(self.manifest['timezone'])).date().isoformat"
+        },
+        {
+          "line": 82,
+          "scope": "EpochFixture.daily_report",
+          "call": "datetime.fromtimestamp(self.manifest['opened_at'], UTC).astimezone(ZoneInfo(self.manifest['timezone'])).date"
+        },
+        {
+          "line": 82,
+          "scope": "EpochFixture.daily_report",
+          "call": "datetime.fromtimestamp(self.manifest['opened_at'], UTC).astimezone"
+        },
+        {
+          "line": 84,
+          "scope": "EpochFixture.daily_report",
+          "call": "self.connect"
+        }
+      ],
+      "git_index_blob_sha256": "165acd3d3dea19c1fdce69b25a045bfddb79d44879f202bf78964eb44a24ab10",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/paper_writer_fixture.py",
+      "sha256": "c99ac5fdcabbdc0318f6965c01e1b92409c8c274fb7789ec29afaa1c8dc54a97",
+      "boundary_calls": [
+        {
+          "line": 10,
+          "scope": "_validated_operations",
+          "call": "db.execute('SELECT id,writer,incarnation,acked,payload FROM writer_operations ORDER BY id').fetchall"
+        },
+        {
+          "line": 17,
+          "scope": "_validated_operations",
+          "call": "db.execute('SELECT incarnation,uncertain FROM writer_roster WHERE id=?', (writer,)).fetchone"
+        },
+        {
+          "line": 26,
+          "scope": "provision_fixture_writers",
+          "call": "sqlite_connect"
+        },
+        {
+          "line": 39,
+          "scope": "fixture_writer_operation",
+          "call": "sqlite_connect"
+        },
+        {
+          "line": 43,
+          "scope": "fixture_writer_operation",
+          "call": "db.execute('SELECT incarnation,uncertain FROM writer_roster WHERE id=?', (writer,)).fetchone"
+        },
+        {
+          "line": 46,
+          "scope": "fixture_writer_operation",
+          "call": "db.execute('SELECT writer,incarnation,acked,payload FROM writer_operations WHERE id=?', (operation,)).fetchone"
+        },
+        {
+          "line": 54,
+          "scope": "fixture_writer_operation",
+          "call": "db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 64,
+          "scope": "run_fixture_writer",
+          "call": "fixture_writer_operation"
+        },
+        {
+          "line": 72,
+          "scope": "run_fixture_writer",
+          "call": "fixture_writer_operation"
+        },
+        {
+          "line": 77,
+          "scope": "close_fixture_writers",
+          "call": "sqlite_connect"
+        },
+        {
+          "line": 80,
+          "scope": "close_fixture_writers",
+          "call": "db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 82,
+          "scope": "close_fixture_writers",
+          "call": "db.execute('SELECT id,incarnation,uncertain FROM writer_roster ORDER BY id').fetchall"
+        },
+        {
+          "line": 112,
+          "scope": "reconcile_external_fixture",
+          "call": "candidate.open"
+        },
+        {
+          "line": 113,
+          "scope": "reconcile_external_fixture",
+          "call": "handle.read"
+        },
+        {
+          "line": 116,
+          "scope": "reconcile_external_fixture",
+          "call": "handle.seek"
+        },
+        {
+          "line": 117,
+          "scope": "reconcile_external_fixture",
+          "call": "handle.read"
+        },
+        {
+          "line": 119,
+          "scope": "reconcile_external_fixture",
+          "call": "fixture_writer_operation"
+        },
+        {
+          "line": 129,
+          "scope": "drain_fixture_writers",
+          "call": "close_fixture_writers"
+        }
+      ],
+      "git_index_blob_sha256": "2c44df27867b6e5cc086cfa54d07f7b1f376bbef456b9f3a80d00d47d55f98a1",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/quality_dips_unified_writer.py",
+      "sha256": "b8824d095752727cf95bd202e0c34ca4ccd47abb1742e9d43368b51145f29b7c",
+      "boundary_calls": [
+        {
+          "line": 32,
+          "scope": "EnrolledQualityDipsWriter._cut",
+          "call": "r.runtime.engine.ledger.connect"
+        },
+        {
+          "line": 130,
+          "scope": "EnrolledQualityDipsWriter._shutdown_preview",
+          "call": "r.stopped.is_set"
+        },
+        {
+          "line": 176,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.runtime.entry_closed.is_set"
+        },
+        {
+          "line": 180,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "r.stopped.set"
+        },
+        {
+          "line": 186,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 199,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.writer.propose_shutdown"
+        },
+        {
+          "line": 201,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 206,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.writer.runtime.stop"
+        },
+        {
+          "line": 208,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 230,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 231,
+          "scope": "QualityDipsUnifiedShutdown.stop",
+          "call": "self.writer.runtime.stop"
+        }
+      ],
+      "git_index_blob_sha256": "b8824d095752727cf95bd202e0c34ca4ccd47abb1742e9d43368b51145f29b7c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_native_writer.py",
+      "sha256": "b7d8058360d8121682ad98b27ef358726d3c33c062dcdca62ed5cf5c6255f3a6",
+      "boundary_calls": [
+        {
+          "line": 176,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.runtime.entry_closed.is_set"
+        },
+        {
+          "line": 182,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.writer._control()['state']['orders'].items"
+        },
+        {
+          "line": 182,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.writer._control"
+        },
+        {
+          "line": 188,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 197,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 213,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 216,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.writer.verify_order_drain"
+        },
+        {
+          "line": 221,
+          "scope": "PerpShutdownCoordinator.stop",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 281,
+          "scope": "CanonicalWriterLane.next_proposal",
+          "call": "self.writer._cut"
+        },
+        {
+          "line": 288,
+          "scope": "CanonicalWriterLane.verify_proposal",
+          "call": "self.writer.verify_proposal"
+        },
+        {
+          "line": 292,
+          "scope": "CanonicalWriterLane.dispatch",
+          "call": "self.writer.dispatch"
+        },
+        {
+          "line": 296,
+          "scope": "CanonicalWriterLane.verify_resting",
+          "call": "self.writer.verify_resting"
+        },
+        {
+          "line": 300,
+          "scope": "CanonicalWriterLane.dispatch_resting",
+          "call": "self.writer.dispatch_resting"
+        },
+        {
+          "line": 304,
+          "scope": "CanonicalWriterLane.stop",
+          "call": "self.shutdown.stop"
+        },
+        {
+          "line": 305,
+          "scope": "CanonicalWriterLane.stop",
+          "call": "self.writer._cut"
+        }
+      ],
+      "git_index_blob_sha256": "b7d8058360d8121682ad98b27ef358726d3c33c062dcdca62ed5cf5c6255f3a6",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_paper_runtime.py",
+      "sha256": "7602589c37b65c0624f0dbfd23d02446f193443b7e34ce70fd8a8dda62d0d674",
+      "boundary_calls": [
+        {
+          "line": 37,
+          "scope": "UnifiedMarketReadCapability.read",
+          "call": "self._read"
+        },
+        {
+          "line": 40,
+          "scope": "UnifiedMarketReadCapability.read",
+          "call": "self._runtime.portfolio.read_accounts"
+        },
+        {
+          "line": 42,
+          "scope": "UnifiedMarketReadCapability.read",
+          "call": "self._runtime.portfolio.read_trade_history"
+        },
+        {
+          "line": 60,
+          "scope": "UnifiedControlStopBridge.verify_session",
+          "call": "self.runtime.read_snapshot"
+        },
+        {
+          "line": 68,
+          "scope": "UnifiedControlStopBridge.request_stop",
+          "call": "self.runtime.stop"
+        },
+        {
+          "line": 85,
+          "scope": "UnifiedControlStopBridge.request_stop",
+          "call": "roster_reader"
+        },
+        {
+          "line": 95,
+          "scope": "UnifiedControlStopBridge.request_stop",
+          "call": "portfolio.writers.items"
+        },
+        {
+          "line": 99,
+          "scope": "UnifiedControlStopBridge.request_stop",
+          "call": "portfolio.writers.items"
+        },
+        {
+          "line": 100,
+          "scope": "UnifiedControlStopBridge.request_stop",
+          "call": "portfolio.journal.snapshot"
+        },
+        {
+          "line": 103,
+          "scope": "UnifiedControlStopBridge.request_stop",
+          "call": "self.owned_close.close_verified"
+        },
+        {
+          "line": 104,
+          "scope": "UnifiedControlStopBridge.request_stop",
+          "call": "self.owned_close.verify_exit"
+        },
+        {
+          "line": 220,
+          "scope": "UnifiedPaperRuntime.run",
+          "call": "stop.is_set"
+        },
+        {
+          "line": 230,
+          "scope": "UnifiedPaperRuntime.run",
+          "call": "self.stop"
+        },
+        {
+          "line": 233,
+          "scope": "UnifiedPaperRuntime.run",
+          "call": "self.entry_closed.set"
+        },
+        {
+          "line": 248,
+          "scope": "UnifiedPaperRuntime.run",
+          "call": "self.stop"
+        },
+        {
+          "line": 256,
+          "scope": "UnifiedPaperRuntime.run",
+          "call": "self.read_snapshot"
+        },
+        {
+          "line": 277,
+          "scope": "UnifiedPaperRuntime._resting",
+          "call": "self.entry_closed.is_set"
+        },
+        {
+          "line": 278,
+          "scope": "UnifiedPaperRuntime._resting",
+          "call": "self.entry_closed.is_set"
+        },
+        {
+          "line": 309,
+          "scope": "UnifiedPaperRuntime._resting",
+          "call": "custody.reserve"
+        },
+        {
+          "line": 354,
+          "scope": "UnifiedPaperRuntime._dispatch",
+          "call": "self.entry_closed.is_set"
+        },
+        {
+          "line": 356,
+          "scope": "UnifiedPaperRuntime._dispatch",
+          "call": "self.entry_closed.is_set"
+        },
+        {
+          "line": 406,
+          "scope": "UnifiedPaperRuntime._dispatch",
+          "call": "custody.reserve"
+        },
+        {
+          "line": 434,
+          "scope": "UnifiedPaperRuntime.stop",
+          "call": "self.entry_closed.set"
+        },
+        {
+          "line": 439,
+          "scope": "UnifiedPaperRuntime.stop",
+          "call": "stop_command"
+        },
+        {
+          "line": 441,
+          "scope": "UnifiedPaperRuntime.stop",
+          "call": "self._stop"
+        },
+        {
+          "line": 455,
+          "scope": "UnifiedPaperRuntime._stop",
+          "call": "close"
+        },
+        {
+          "line": 456,
+          "scope": "UnifiedPaperRuntime._stop",
+          "call": "close"
+        },
+        {
+          "line": 466,
+          "scope": "UnifiedPaperRuntime._stop",
+          "call": "self.lanes[lane].stop"
+        }
+      ],
+      "git_index_blob_sha256": "7602589c37b65c0624f0dbfd23d02446f193443b7e34ce70fd8a8dda62d0d674",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_portfolio_custody.py",
+      "sha256": "1fd0225496573651e72e3c696beb842b505108b4518d34d55d0d8fef8b4d0e73",
+      "boundary_calls": [
+        {
+          "line": 81,
+          "scope": "UnifiedPortfolioCustody.__init__",
+          "call": "writers.values"
+        },
+        {
+          "line": 88,
+          "scope": "UnifiedPortfolioCustody.__init__",
+          "call": "writers.items"
+        },
+        {
+          "line": 95,
+          "scope": "UnifiedPortfolioCustody._verify",
+          "call": "self.writers.get"
+        },
+        {
+          "line": 95,
+          "scope": "UnifiedPortfolioCustody._verify",
+          "call": "self._writer_ids.items"
+        },
+        {
+          "line": 107,
+          "scope": "UnifiedPortfolioCustody._event",
+          "call": "self.journal.apply"
+        },
+        {
+          "line": 112,
+          "scope": "UnifiedPortfolioCustody.verify_restart",
+          "call": "self.journal.guard"
+        },
+        {
+          "line": 113,
+          "scope": "UnifiedPortfolioCustody.verify_restart",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 119,
+          "scope": "UnifiedPortfolioCustody.verify_restart",
+          "call": "self.journal.remaining_slots"
+        },
+        {
+          "line": 122,
+          "scope": "UnifiedPortfolioCustody.verify_restart",
+          "call": "self.writers.values"
+        },
+        {
+          "line": 123,
+          "scope": "UnifiedPortfolioCustody.verify_restart",
+          "call": "writer._cut"
+        },
+        {
+          "line": 124,
+          "scope": "UnifiedPortfolioCustody.verify_restart",
+          "call": "writer.store.remaining_operations"
+        },
+        {
+          "line": 127,
+          "scope": "UnifiedPortfolioCustody.verify_restart",
+          "call": "writer.verify_order_drain"
+        },
+        {
+          "line": 135,
+          "scope": "UnifiedPortfolioCustody.lease",
+          "call": "self.journal.guard"
+        },
+        {
+          "line": 144,
+          "scope": "UnifiedPortfolioCustody.close_entry_admission",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 150,
+          "scope": "UnifiedPortfolioCustody.close_entry_admission",
+          "call": "validate_stop"
+        },
+        {
+          "line": 158,
+          "scope": "UnifiedPortfolioCustody.verify_drain",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 166,
+          "scope": "UnifiedPortfolioCustody.read_accounts",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 172,
+          "scope": "UnifiedPortfolioCustody.read_accounts",
+          "call": "writer._cut"
+        },
+        {
+          "line": 172,
+          "scope": "UnifiedPortfolioCustody.read_accounts",
+          "call": "self.writers.items"
+        },
+        {
+          "line": 175,
+          "scope": "UnifiedPortfolioCustody.read_accounts",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 188,
+          "scope": "UnifiedPortfolioCustody.read_accounts",
+          "call": "self.writers[lane].orders.snapshot"
+        },
+        {
+          "line": 207,
+          "scope": "UnifiedPortfolioCustody.read_trade_history",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 213,
+          "scope": "UnifiedPortfolioCustody.read_trade_history",
+          "call": "self.writers.items"
+        },
+        {
+          "line": 218,
+          "scope": "UnifiedPortfolioCustody.read_trade_history",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 227,
+          "scope": "UnifiedPortfolioCustody.finalize_shutdown",
+          "call": "self.writers.items"
+        },
+        {
+          "line": 230,
+          "scope": "UnifiedPortfolioCustody.finalize_shutdown",
+          "call": "self.writers.items"
+        },
+        {
+          "line": 231,
+          "scope": "UnifiedPortfolioCustody.finalize_shutdown",
+          "call": "writer._cut"
+        },
+        {
+          "line": 236,
+          "scope": "UnifiedPortfolioCustody.finalize_shutdown",
+          "call": "lanes[key].stop"
+        },
+        {
+          "line": 239,
+          "scope": "UnifiedPortfolioCustody.finalize_shutdown",
+          "call": "self.journal.snapshot"
+        },
+        {
+          "line": 251,
+          "scope": "PortfolioLease._state",
+          "call": "self.custody.journal.snapshot"
+        },
+        {
+          "line": 271,
+          "scope": "PortfolioLease.verify",
+          "call": "writer.preview"
+        },
+        {
+          "line": 292,
+          "scope": "PortfolioLease.reserve",
+          "call": "self.custody.journal.remaining_slots"
+        },
+        {
+          "line": 294,
+          "scope": "PortfolioLease.reserve",
+          "call": "self.custody.writers.items"
+        },
+        {
+          "line": 297,
+          "scope": "PortfolioLease.reserve",
+          "call": "writer._cut"
+        },
+        {
+          "line": 301,
+          "scope": "PortfolioLease.reserve",
+          "call": "writer.orders.snapshot()['state']['orders'].values"
+        },
+        {
+          "line": 301,
+          "scope": "PortfolioLease.reserve",
+          "call": "writer.orders.snapshot"
+        },
+        {
+          "line": 305,
+          "scope": "PortfolioLease.reserve",
+          "call": "writer.store.remaining_operations"
+        },
+        {
+          "line": 321,
+          "scope": "PortfolioLease.verify_receipt",
+          "call": "writer.orders.verify_ack"
+        },
+        {
+          "line": 323,
+          "scope": "PortfolioLease.verify_receipt",
+          "call": "writer.store.operation_receipt"
+        },
+        {
+          "line": 328,
+          "scope": "PortfolioLease.verify_receipt",
+          "call": "writer._cut"
+        }
+      ],
+      "git_index_blob_sha256": "1fd0225496573651e72e3c696beb842b505108b4518d34d55d0d8fef8b4d0e73",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "backend/app/services/unified_writer_roster.py",
+      "sha256": "e70ba05f7d297702bc14629fa458efee313573af7dba1687ff7fc22ba4c0a1c5",
+      "boundary_calls": [
+        {
+          "line": 60,
+          "scope": "UnifiedWriterRoster._read",
+          "call": "writers.items"
+        },
+        {
+          "line": 64,
+          "scope": "UnifiedWriterRoster._read",
+          "call": "self.observer.read"
+        },
+        {
+          "line": 82,
+          "scope": "UnifiedWriterRoster.lease",
+          "call": "self._read"
+        },
+        {
+          "line": 86,
+          "scope": "UnifiedWriterRoster.lease.Lease.check",
+          "call": "owner._read"
+        },
+        {
+          "line": 91,
+          "scope": "UnifiedWriterRoster.drain",
+          "call": "self._read"
+        },
+        {
+          "line": 93,
+          "scope": "UnifiedWriterRoster.drain",
+          "call": "self._read"
+        },
+        {
+          "line": 97,
+          "scope": "UnifiedWriterRoster.owned_roster",
+          "call": "self._read"
+        }
+      ],
+      "git_index_blob_sha256": "e70ba05f7d297702bc14629fa458efee313573af7dba1687ff7fc22ba4c0a1c5",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_child_bootstrap.py",
+      "sha256": "13953001cf7a61bd08f04c8db8f81ddac1741696eea40a49926c13c9c4ec9503",
+      "boundary_calls": [
+        {
+          "line": 135,
+          "scope": "ChildBootstrap.prepare",
+          "call": "self.channel.send"
+        },
+        {
+          "line": 136,
+          "scope": "ChildBootstrap.prepare",
+          "call": "self.channel.receive"
+        },
+        {
+          "line": 179,
+          "scope": "ChildBootstrap.prepare",
+          "call": "self.channel.send"
+        },
+        {
+          "line": 189,
+          "scope": "ChildBootstrap.run",
+          "call": "self.channel.receive"
+        },
+        {
+          "line": 207,
+          "scope": "ChildBootstrap.run",
+          "call": "self.channel.send"
+        }
+      ],
+      "git_index_blob_sha256": "13953001cf7a61bd08f04c8db8f81ddac1741696eea40a49926c13c9c4ec9503",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_fixture_guard.py",
+      "sha256": "dd995dc2ee752adecf5dda7b949eb0813849841bdb879a24ad768b50a79ccab4",
+      "boundary_calls": [
+        {
+          "line": 36,
+          "scope": "<module>",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 65,
+          "scope": "CreateNewJournal.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 81,
+          "scope": "CreateNewJournal.read",
+          "call": "self.io.read_exact"
+        },
+        {
+          "line": 103,
+          "scope": "CreateNewJournal.append",
+          "call": "self.read"
+        },
+        {
+          "line": 118,
+          "scope": "CreateNewJournal.append",
+          "call": "self.io.create_new"
+        },
+        {
+          "line": 119,
+          "scope": "CreateNewJournal.append",
+          "call": "self.io.write_exact"
+        },
+        {
+          "line": 120,
+          "scope": "CreateNewJournal.append",
+          "call": "self.io.flush_close"
+        },
+        {
+          "line": 130,
+          "scope": "CreateNewJournal.append",
+          "call": "self.read"
+        },
+        {
+          "line": 140,
+          "scope": "CreateNewJournal.receipt",
+          "call": "self.read"
+        },
+        {
+          "line": 140,
+          "scope": "CreateNewJournal.receipt",
+          "call": "self.read"
+        },
+        {
+          "line": 176,
+          "scope": "audit",
+          "call": "guard.journal_path"
+        },
+        {
+          "line": 314,
+          "scope": "FixtureGuard.cleanup",
+          "call": "self.resources.state['stops'].values"
+        },
+        {
+          "line": 356,
+          "scope": "FixtureGuard.mkdir",
+          "call": "self.reserve"
+        },
+        {
+          "line": 359,
+          "scope": "FixtureGuard.mkdir",
+          "call": "self.io.mkdir"
+        },
+        {
+          "line": 361,
+          "scope": "FixtureGuard.mkdir",
+          "call": "self.paths.bind_created"
+        },
+        {
+          "line": 376,
+          "scope": "FixtureGuard.write",
+          "call": "self.reserve"
+        },
+        {
+          "line": 379,
+          "scope": "FixtureGuard.write",
+          "call": "self.io.write_new"
+        },
+        {
+          "line": 380,
+          "scope": "FixtureGuard.write",
+          "call": "self.io.readback"
+        },
+        {
+          "line": 395,
+          "scope": "FixtureGuard.rewrite",
+          "call": "self.key('rewrite').replace"
+        },
+        {
+          "line": 396,
+          "scope": "FixtureGuard.rewrite",
+          "call": "self.write"
+        },
+        {
+          "line": 410,
+          "scope": "FixtureGuard.replace",
+          "call": "self.io.readback"
+        },
+        {
+          "line": 412,
+          "scope": "FixtureGuard.replace",
+          "call": "self.reserve"
+        },
+        {
+          "line": 417,
+          "scope": "FixtureGuard.replace",
+          "call": "self.io.readback"
+        },
+        {
+          "line": 428,
+          "scope": "FixtureGuard.release",
+          "call": "self.io.closed"
+        },
+        {
+          "line": 432,
+          "scope": "FixtureGuard.release",
+          "call": "self.closed_keys.add"
+        },
+        {
+          "line": 441,
+          "scope": "FixtureGuard.native",
+          "call": "self.reserve"
+        },
+        {
+          "line": 442,
+          "scope": "FixtureGuard.native",
+          "call": "OwnedNativeHandle"
+        },
+        {
+          "line": 460,
+          "scope": "FixtureGuard.native",
+          "call": "self.reserve"
+        },
+        {
+          "line": 461,
+          "scope": "FixtureGuard.native",
+          "call": "OwnedNativeHandle"
+        },
+        {
+          "line": 479,
+          "scope": "FixtureGuard.native",
+          "call": "self.reserve"
+        },
+        {
+          "line": 480,
+          "scope": "FixtureGuard.native",
+          "call": "OwnedNativeHandle"
+        },
+        {
+          "line": 488,
+          "scope": "FixtureGuard.native",
+          "call": "self.io.verify_handle"
+        },
+        {
+          "line": 514,
+          "scope": "FixtureGuard.native",
+          "call": "self.reserve"
+        },
+        {
+          "line": 515,
+          "scope": "FixtureGuard.native",
+          "call": "OwnedNativeHandle"
+        },
+        {
+          "line": 517,
+          "scope": "FixtureGuard.native",
+          "call": "self.handles.values"
+        },
+        {
+          "line": 527,
+          "scope": "FixtureGuard.native",
+          "call": "self.io.verify_handle"
+        },
+        {
+          "line": 529,
+          "scope": "FixtureGuard.native",
+          "call": "self.paths.bind_created"
+        },
+        {
+          "line": 546,
+          "scope": "FixtureGuard.native",
+          "call": "self.io.verify_handle"
+        },
+        {
+          "line": 566,
+          "scope": "FixtureGuard.native",
+          "call": "self.io.note_closed"
+        },
+        {
+          "line": 579,
+          "scope": "FixtureGuard.native",
+          "call": "self.reserve"
+        },
+        {
+          "line": 580,
+          "scope": "FixtureGuard.native",
+          "call": "OwnedNativeHandle"
+        },
+        {
+          "line": 660,
+          "scope": "FixtureGuard.spawn",
+          "call": "self.launch_nonces.add"
+        },
+        {
+          "line": 664,
+          "scope": "FixtureGuard.spawn",
+          "call": "self.reserve"
+        },
+        {
+          "line": 667,
+          "scope": "FixtureGuard.spawn",
+          "call": "self.processes.preallocate"
+        },
+        {
+          "line": 669,
+          "scope": "FixtureGuard.spawn",
+          "call": "self.processes.create_suspended"
+        },
+        {
+          "line": 670,
+          "scope": "FixtureGuard.spawn",
+          "call": "self.processes.verify_suspended_job"
+        },
+        {
+          "line": 684,
+          "scope": "FixtureGuard.spawn",
+          "call": "self.processes.ready"
+        },
+        {
+          "line": 697,
+          "scope": "FixtureGuard.spawn",
+          "call": "self.processes.allocations"
+        },
+        {
+          "line": 707,
+          "scope": "FixtureGuard.spawn",
+          "call": "allocated.items"
+        },
+        {
+          "line": 709,
+          "scope": "FixtureGuard.spawn",
+          "call": "allocated.values"
+        },
+        {
+          "line": 713,
+          "scope": "FixtureGuard.spawn",
+          "call": "allocated.values"
+        },
+        {
+          "line": 738,
+          "scope": "FixtureGuard.query",
+          "call": "self.spawn"
+        },
+        {
+          "line": 740,
+          "scope": "FixtureGuard.query",
+          "call": "self.processes.query_result"
+        },
+        {
+          "line": 746,
+          "scope": "FixtureGuard.query",
+          "call": "child.close"
+        },
+        {
+          "line": 751,
+          "scope": "FixtureGuard.sample_root",
+          "call": "self.paths.stop_slot"
+        },
+        {
+          "line": 772,
+          "scope": "FixtureGuard.read_input",
+          "call": "self.processes.read_input"
+        },
+        {
+          "line": 789,
+          "scope": "FixtureGuard.watchdog",
+          "call": "self.reserve"
+        },
+        {
+          "line": 790,
+          "scope": "FixtureGuard.watchdog",
+          "call": "self.reserve"
+        },
+        {
+          "line": 822,
+          "scope": "FixtureGuard.verify_received_stop",
+          "call": "self.resources.state['stops'].get"
+        },
+        {
+          "line": 840,
+          "scope": "FixtureGuard.begin_stop",
+          "call": "StopVerification"
+        },
+        {
+          "line": 848,
+          "scope": "FixtureGuard.begin_stop",
+          "call": "self.stop.begin"
+        },
+        {
+          "line": 855,
+          "scope": "FixtureGuard.finish_stop",
+          "call": "self.stop.finish"
+        },
+        {
+          "line": 873,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.processes.owned_stop_spec"
+        },
+        {
+          "line": 880,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.spawn"
+        },
+        {
+          "line": 881,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.processes.financial_ready"
+        },
+        {
+          "line": 883,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.begin_stop"
+        },
+        {
+          "line": 890,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.processes.send_stop"
+        },
+        {
+          "line": 893,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.processes.collect_stop"
+        },
+        {
+          "line": 896,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.finish_stop"
+        },
+        {
+          "line": 902,
+          "scope": "FixtureGuard.run_owned_stop_sample",
+          "call": "self.write"
+        },
+        {
+          "line": 937,
+          "scope": "FixtureGuard.sqlite",
+          "call": "self.reserve"
+        },
+        {
+          "line": 943,
+          "scope": "FixtureGuard.sqlite",
+          "call": "self.io.note_closed"
+        },
+        {
+          "line": 946,
+          "scope": "FixtureGuard.sqlite",
+          "call": "self.reserve"
+        },
+        {
+          "line": 948,
+          "scope": "FixtureGuard.sqlite",
+          "call": "self.io.sqlite_open"
+        },
+        {
+          "line": 954,
+          "scope": "FixtureGuard.sqlite",
+          "call": "db.execute('PRAGMA journal_mode=DELETE').fetchone()[0].lower"
+        },
+        {
+          "line": 954,
+          "scope": "FixtureGuard.sqlite",
+          "call": "db.execute('PRAGMA journal_mode=DELETE').fetchone"
+        },
+        {
+          "line": 997,
+          "scope": "FixtureGuard.sqlite",
+          "call": "db.close"
+        },
+        {
+          "line": 998,
+          "scope": "FixtureGuard.sqlite",
+          "call": "self.io.note_closed"
+        },
+        {
+          "line": 1032,
+          "scope": "OwnedSqlite.execute",
+          "call": "self.guard.reserve"
+        },
+        {
+          "line": 1033,
+          "scope": "OwnedSqlite.execute",
+          "call": "self.journals.append"
+        },
+        {
+          "line": 1038,
+          "scope": "OwnedSqlite.execute",
+          "call": "self._journal_closed"
+        },
+        {
+          "line": 1051,
+          "scope": "OwnedSqlite.commit",
+          "call": "self._journal_closed"
+        },
+        {
+          "line": 1055,
+          "scope": "OwnedSqlite.rollback",
+          "call": "self._journal_closed"
+        },
+        {
+          "line": 1063,
+          "scope": "OwnedSqlite._journal_closed",
+          "call": "self.guard.io.note_closed"
+        },
+        {
+          "line": 1065,
+          "scope": "OwnedSqlite._journal_closed",
+          "call": "self.journals.clear"
+        },
+        {
+          "line": 1075,
+          "scope": "OwnedSqlite.__exit__",
+          "call": "self.close"
+        },
+        {
+          "line": 1079,
+          "scope": "OwnedSqlite.close",
+          "call": "self.db.close"
+        },
+        {
+          "line": 1080,
+          "scope": "OwnedSqlite.close",
+          "call": "self._journal_closed"
+        },
+        {
+          "line": 1083,
+          "scope": "OwnedSqlite.close",
+          "call": "self.guard.io.note_closed"
+        },
+        {
+          "line": 1092,
+          "scope": "OwnedCursor.execute",
+          "call": "self.connection.execute"
+        },
+        {
+          "line": 1097,
+          "scope": "OwnedCursor.executemany",
+          "call": "self.connection.executemany"
+        },
+        {
+          "line": 1148,
+          "scope": "GuardedProcess.communicate",
+          "call": "self.close"
+        },
+        {
+          "line": 1165,
+          "scope": "GuardedProcess.__exit__",
+          "call": "self.close"
+        },
+        {
+          "line": 1170,
+          "scope": "GuardedProcess.close",
+          "call": "self.guard.processes.resources_closed"
+        },
+        {
+          "line": 1224,
+          "scope": "GuardedProcess.close",
+          "call": "self.guard.processes.close_owned_handles"
+        },
+        {
+          "line": 1227,
+          "scope": "GuardedProcess.close",
+          "call": "self.guard.resources.close"
+        },
+        {
+          "line": 1256,
+          "scope": "mkdir",
+          "call": "require_fixture('mkdir').mkdir"
+        },
+        {
+          "line": 1260,
+          "scope": "write_bytes",
+          "call": "require_fixture('write').write"
+        },
+        {
+          "line": 1265,
+          "scope": "write_text",
+          "call": "write_bytes"
+        },
+        {
+          "line": 1270,
+          "scope": "rewrite_text",
+          "call": "require_fixture('owned-fault-replacement').rewrite"
+        },
+        {
+          "line": 1276,
+          "scope": "read_bytes",
+          "call": "guard.io.read_bytes"
+        },
+        {
+          "line": 1284,
+          "scope": "popen",
+          "call": "require_fixture('child-launch').spawn"
+        },
+        {
+          "line": 1288,
+          "scope": "query",
+          "call": "require_fixture('process-query').query"
+        },
+        {
+          "line": 1300,
+          "scope": "sqlite_connect",
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 1304,
+          "scope": "sqlite_connect",
+          "call": "sqlite3.connect"
+        }
+      ],
+      "git_index_blob_sha256": "3b1284d5e4cbb5f24588b3ffe8ed302a7da333afa44d1c644516e49139307d7b",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_harness.py",
+      "sha256": "9b61c2d4c93b269abc6a6788f7799f4245998106820e25bcabb839c9af115dc4",
+      "boundary_calls": [
+        {
+          "line": 267,
+          "scope": "SharedResources.__init__",
+          "call": "journal.read"
+        },
+        {
+          "line": 385,
+          "scope": "SharedResources._apply",
+          "call": "self._state['stops'].items"
+        },
+        {
+          "line": 412,
+          "scope": "SharedResources._apply",
+          "call": "state['stops'].items"
+        },
+        {
+          "line": 480,
+          "scope": "SharedResources._commit",
+          "call": "reserve_budget"
+        },
+        {
+          "line": 504,
+          "scope": "SharedResources._commit",
+          "call": "self.journal.append"
+        },
+        {
+          "line": 506,
+          "scope": "SharedResources._commit",
+          "call": "self.journal.read"
+        },
+        {
+          "line": 510,
+          "scope": "SharedResources._commit",
+          "call": "self.journal.receipt"
+        },
+        {
+          "line": 584,
+          "scope": "SharedResources.reserve",
+          "call": "self._state['stops'].values"
+        },
+        {
+          "line": 598,
+          "scope": "SharedResources.reserve",
+          "call": "reserve_budget"
+        },
+        {
+          "line": 628,
+          "scope": "SharedResources.charge_write",
+          "call": "self._state['stops'].values"
+        },
+        {
+          "line": 641,
+          "scope": "SharedResources.charge_write",
+          "call": "reserve_budget"
+        },
+        {
+          "line": 716,
+          "scope": "SharedResources.reserve_stop_request",
+          "call": "self._state['stops'].values"
+        },
+        {
+          "line": 746,
+          "scope": "SharedResources.close",
+          "call": "observer.closed"
+        },
+        {
+          "line": 748,
+          "scope": "SharedResources.close",
+          "call": "observer.closed"
+        },
+        {
+          "line": 771,
+          "scope": "SharedResources.read",
+          "call": "self.journal.read"
+        },
+        {
+          "line": 811,
+          "scope": "WorkerOwnership.prepare",
+          "call": "self.resources.state['stops'].values"
+        },
+        {
+          "line": 827,
+          "scope": "WorkerOwnership.prepare",
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 871,
+          "scope": "WorkerOwnership._bind",
+          "call": "self.resources.state['stops'].values"
+        },
+        {
+          "line": 877,
+          "scope": "WorkerOwnership._bind",
+          "call": "RetainedLaunchBinding"
+        },
+        {
+          "line": 901,
+          "scope": "WorkerOwnership._bind",
+          "call": "self.resources.bind_reserved_process"
+        },
+        {
+          "line": 923,
+          "scope": "WorkerOwnership._verify",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 957,
+          "scope": "ReservedFixtureEffects.create_root",
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 961,
+          "scope": "ReservedFixtureEffects.create_root",
+          "call": "self.paths.bind_created"
+        },
+        {
+          "line": 969,
+          "scope": "ReservedFixtureEffects.create_file",
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 972,
+          "scope": "ReservedFixtureEffects.create_file",
+          "call": "writer"
+        },
+        {
+          "line": 996,
+          "scope": "bounded_line",
+          "call": "port.read_line"
+        },
+        {
+          "line": 1051,
+          "scope": "StopVerification.begin",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 1064,
+          "scope": "StopVerification.begin",
+          "call": "self.resources.reserve_stop_request"
+        },
+        {
+          "line": 1106,
+          "scope": "StopVerification.finish",
+          "call": "self.reader.read_committed"
+        },
+        {
+          "line": 1234,
+          "scope": "StopVerification.finish",
+          "call": "socket_cut['readers'].values"
+        },
+        {
+          "line": 1252,
+          "scope": "StopVerification.finish",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 1260,
+          "scope": "StopVerification.finish",
+          "call": "release_observer.closed"
+        },
+        {
+          "line": 1263,
+          "scope": "StopVerification.finish",
+          "call": "self.resources.resolve_stop"
+        },
+        {
+          "line": 1264,
+          "scope": "StopVerification.finish",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 1272,
+          "scope": "StopVerification.finish",
+          "call": "socket_cut['readers'].values"
+        },
+        {
+          "line": 1292,
+          "scope": "StopVerification.finish",
+          "call": "self.resources.resolve_stop"
+        }
+      ],
+      "git_index_blob_sha256": "9b61c2d4c93b269abc6a6788f7799f4245998106820e25bcabb839c9af115dc4",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_ipc.py",
+      "sha256": "eecfb6ce159277da39d1b9e891672de2542adb9cd6165cf2d73349f59712bda5",
+      "boundary_calls": [
+        {
+          "line": 90,
+          "scope": "Channel.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 90,
+          "scope": "Channel.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 129,
+          "scope": "Channel.send",
+          "call": "self.endpoint.write_all"
+        },
+        {
+          "line": 137,
+          "scope": "Channel.receive",
+          "call": "self.endpoint.read_exact"
+        },
+        {
+          "line": 141,
+          "scope": "Channel.receive",
+          "call": "self.endpoint.read_exact"
+        },
+        {
+          "line": 233,
+          "scope": "Broker._operation",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 241,
+          "scope": "Broker._operation",
+          "call": "self.resources.close"
+        },
+        {
+          "line": 252,
+          "scope": "Broker._operation",
+          "call": "self.resources.bind_reserved_process"
+        },
+        {
+          "line": 268,
+          "scope": "Broker.serve_once",
+          "call": "self.channel.receive"
+        },
+        {
+          "line": 296,
+          "scope": "Broker.serve_message",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 308,
+          "scope": "Broker.serve_message",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 310,
+          "scope": "Broker.serve_message",
+          "call": "self.channel.send"
+        },
+        {
+          "line": 372,
+          "scope": "RemoteResources.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 400,
+          "scope": "RemoteResources.call",
+          "call": "self.channel.send"
+        },
+        {
+          "line": 401,
+          "scope": "RemoteResources.call",
+          "call": "self.channel.receive"
+        },
+        {
+          "line": 445,
+          "scope": "RemoteResources.close",
+          "call": "observer.closed"
+        }
+      ],
+      "git_index_blob_sha256": "097feebfb3d0707b0438eb7aa1097739738b7c81b18a09714781f322562630f3",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_native_controller.py",
+      "sha256": "bc5ce42ffe0272fef121c56650632a5175f17cbccb85c55be1ea95b6b48b937b",
+      "boundary_calls": [
+        {
+          "line": 71,
+          "scope": "BootstrapBudget.reserve",
+          "call": "self.read"
+        },
+        {
+          "line": 82,
+          "scope": "BootstrapBudget.reserve",
+          "call": "reserve_budget"
+        },
+        {
+          "line": 99,
+          "scope": "BootstrapBudget.close",
+          "call": "self.read"
+        },
+        {
+          "line": 102,
+          "scope": "BootstrapBudget.close",
+          "call": "observer.closed"
+        },
+        {
+          "line": 108,
+          "scope": "BootstrapBudget.bind_owner",
+          "call": "self.read"
+        },
+        {
+          "line": 117,
+          "scope": "BootstrapBudget.seal",
+          "call": "self.read"
+        },
+        {
+          "line": 138,
+          "scope": "NativeAllocations.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 145,
+          "scope": "NativeAllocations.reserve",
+          "call": "self.resources.state['stops'].values"
+        },
+        {
+          "line": 147,
+          "scope": "NativeAllocations.reserve",
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 156,
+          "scope": "NativeAllocations.release",
+          "call": "self.resources.close"
+        },
+        {
+          "line": 263,
+          "scope": "NativeController.initialize",
+          "call": "NativeAllocations"
+        },
+        {
+          "line": 264,
+          "scope": "NativeController.initialize",
+          "call": "BoundedCimQuery"
+        },
+        {
+          "line": 265,
+          "scope": "NativeController.initialize",
+          "call": "CimProcessQuery"
+        },
+        {
+          "line": 297,
+          "scope": "NativeController.initialize",
+          "call": "allocations.reserve"
+        },
+        {
+          "line": 298,
+          "scope": "NativeController.initialize",
+          "call": "self.files.open_image"
+        },
+        {
+          "line": 301,
+          "scope": "NativeController.initialize",
+          "call": "self.files.read"
+        },
+        {
+          "line": 308,
+          "scope": "NativeController.initialize",
+          "call": "self.files.close"
+        },
+        {
+          "line": 309,
+          "scope": "NativeController.initialize",
+          "call": "self.files.closed"
+        },
+        {
+          "line": 310,
+          "scope": "NativeController.initialize",
+          "call": "allocations.release"
+        },
+        {
+          "line": 311,
+          "scope": "NativeController.initialize",
+          "call": "allocations.reserve"
+        },
+        {
+          "line": 312,
+          "scope": "NativeController.initialize",
+          "call": "self.files.open_current_token"
+        },
+        {
+          "line": 317,
+          "scope": "NativeController.initialize",
+          "call": "self.files.close"
+        },
+        {
+          "line": 318,
+          "scope": "NativeController.initialize",
+          "call": "self.files.closed"
+        },
+        {
+          "line": 319,
+          "scope": "NativeController.initialize",
+          "call": "allocations.release"
+        },
+        {
+          "line": 321,
+          "scope": "NativeController.initialize",
+          "call": "AllocationBook"
+        },
+        {
+          "line": 329,
+          "scope": "NativeController.initialize",
+          "call": "escrow.reserve"
+        },
+        {
+          "line": 331,
+          "scope": "NativeController.initialize",
+          "call": "io.mkdir"
+        },
+        {
+          "line": 332,
+          "scope": "NativeController.initialize",
+          "call": "paths.bind_created"
+        },
+        {
+          "line": 333,
+          "scope": "NativeController.initialize",
+          "call": "escrow.close"
+        },
+        {
+          "line": 336,
+          "scope": "NativeController.initialize",
+          "call": "escrow.reserve"
+        },
+        {
+          "line": 338,
+          "scope": "NativeController.initialize",
+          "call": "io.mkdir"
+        },
+        {
+          "line": 339,
+          "scope": "NativeController.initialize",
+          "call": "escrow.close"
+        },
+        {
+          "line": 341,
+          "scope": "NativeController.initialize",
+          "call": "CreateNewJournal"
+        },
+        {
+          "line": 341,
+          "scope": "NativeController.initialize",
+          "call": "NativeJournalIO"
+        },
+        {
+          "line": 352,
+          "scope": "NativeController.initialize",
+          "call": "NativeAllocations"
+        },
+        {
+          "line": 353,
+          "scope": "NativeController.initialize",
+          "call": "BoundedCimQuery"
+        },
+        {
+          "line": 354,
+          "scope": "NativeController.initialize",
+          "call": "CimProcessQuery"
+        },
+        {
+          "line": 391,
+          "scope": "NativeController.verify_source",
+          "call": "self.book.open"
+        },
+        {
+          "line": 391,
+          "scope": "NativeController.verify_source",
+          "call": "self.files.open_image"
+        },
+        {
+          "line": 394,
+          "scope": "NativeController.verify_source",
+          "call": "self.files.read"
+        },
+        {
+          "line": 411,
+          "scope": "NativeController.verify_source",
+          "call": "self.book.close"
+        },
+        {
+          "line": 423,
+          "scope": "NativeController.close_native_io",
+          "call": "self.require_ready"
+        },
+        {
+          "line": 424,
+          "scope": "NativeController.close_native_io",
+          "call": "self.guard.io.close_cache"
+        },
+        {
+          "line": 428,
+          "scope": "NativeController.verify_probe_result",
+          "call": "self.require_ready"
+        }
+      ],
+      "git_index_blob_sha256": "bc5ce42ffe0272fef121c56650632a5175f17cbccb85c55be1ea95b6b48b937b",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_outputs.py",
+      "sha256": "b97dd9a75fbcec66029a3577d09a4d8235c6b3b84a10be3b5a9cf2716d09d669",
+      "boundary_calls": [
+        {
+          "line": 32,
+          "scope": "EvidenceOutput.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 51,
+          "scope": "EvidenceOutput.append",
+          "call": "self.guard.write"
+        },
+        {
+          "line": 53,
+          "scope": "EvidenceOutput.append",
+          "call": "self.guard.io.read_bytes"
+        },
+        {
+          "line": 75,
+          "scope": "EvidenceOutput.recover",
+          "call": "self.guard.io.read_bytes"
+        },
+        {
+          "line": 121,
+          "scope": "BoundedOutput.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 158,
+          "scope": "BoundedOutput.close",
+          "call": "self.flush"
+        },
+        {
+          "line": 185,
+          "scope": "FixtureDirectories.create",
+          "call": "self.guard.mkdir"
+        }
+      ],
+      "git_index_blob_sha256": "b97dd9a75fbcec66029a3577d09a4d8235c6b3b84a10be3b5a9cf2716d09d669",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_pipe_transport.py",
+      "sha256": "8f191dc124f77c7a859fea6e56037e8696f5222467c5c4c9cc2fc55eb5d9c059",
+      "boundary_calls": [
+        {
+          "line": 63,
+          "scope": "Win32PipeCalls.capacity",
+          "call": "self.k.GetNamedPipeInfo"
+        },
+        {
+          "line": 72,
+          "scope": "Win32PipeCalls.available",
+          "call": "self.k.PeekNamedPipe"
+        },
+        {
+          "line": 76,
+          "scope": "Win32PipeCalls.read",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 78,
+          "scope": "Win32PipeCalls.read",
+          "call": "self.k.ReadFile"
+        },
+        {
+          "line": 84,
+          "scope": "Win32PipeCalls.write",
+          "call": "self.k.WriteFile"
+        },
+        {
+          "line": 127,
+          "scope": "CreditedPipeEndpoint.__init__",
+          "call": "threading.Lock"
+        },
+        {
+          "line": 127,
+          "scope": "CreditedPipeEndpoint.__init__",
+          "call": "threading.Lock"
+        },
+        {
+          "line": 140,
+          "scope": "CreditedPipeEndpoint._credits",
+          "call": "self.api.read"
+        },
+        {
+          "line": 166,
+          "scope": "CreditedPipeEndpoint.write_all",
+          "call": "self.api.write"
+        },
+        {
+          "line": 185,
+          "scope": "CreditedPipeEndpoint.read_exact",
+          "call": "self.api.read"
+        },
+        {
+          "line": 204,
+          "scope": "CreditedPipeEndpoint._credit",
+          "call": "self.api.write"
+        }
+      ],
+      "git_index_blob_sha256": "8f191dc124f77c7a859fea6e56037e8696f5222467c5c4c9cc2fc55eb5d9c059",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_cim.py",
+      "sha256": "20523cb950e844e2190a4bbbd55885186d8ea5def1ff3a1f6486e71365003953",
+      "boundary_calls": [
+        {
+          "line": 127,
+          "scope": "ComAPI.bstr",
+          "call": "self.auto.SysAllocString"
+        },
+        {
+          "line": 139,
+          "scope": "ComAPI.locator",
+          "call": "self.ole.CoCreateInstance"
+        },
+        {
+          "line": 257,
+          "scope": "CimProcessQuery.process.owned",
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 258,
+          "scope": "CimProcessQuery.process.owned",
+          "call": "create"
+        },
+        {
+          "line": 273,
+          "scope": "CimProcessQuery.process",
+          "call": "self.api.connect"
+        },
+        {
+          "line": 286,
+          "scope": "CimProcessQuery.process",
+          "call": "self.api.query"
+        },
+        {
+          "line": 321,
+          "scope": "CimProcessQuery.process",
+          "call": "self.allocations.release"
+        },
+        {
+          "line": 337,
+          "scope": "BoundedCimQuery.process",
+          "call": "self.query.process"
+        }
+      ],
+      "git_index_blob_sha256": "20523cb950e844e2190a4bbbd55885186d8ea5def1ff3a1f6486e71365003953",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_io.py",
+      "sha256": "71ca5258d5c1ae2e5c3a0834e2c9eb8f79d358cae82461c2515d5983976d2d59",
+      "boundary_calls": [
+        {
+          "line": 51,
+          "scope": "WindowsFileCalls.open_drive",
+          "call": "w._raw_create_file"
+        },
+        {
+          "line": 55,
+          "scope": "WindowsFileCalls.open_drive",
+          "call": "NativeOpenFailed"
+        },
+        {
+          "line": 66,
+          "scope": "WindowsFileCalls.open_image",
+          "call": "w._raw_create_file"
+        },
+        {
+          "line": 70,
+          "scope": "WindowsFileCalls.open_image",
+          "call": "NativeOpenFailed"
+        },
+        {
+          "line": 103,
+          "scope": "WindowsFileCalls.relative",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 116,
+          "scope": "WindowsFileCalls.relative",
+          "call": "W.HANDLE"
+        },
+        {
+          "line": 123,
+          "scope": "WindowsFileCalls.relative",
+          "call": "w.nt_create"
+        },
+        {
+          "line": 137,
+          "scope": "WindowsFileCalls.relative",
+          "call": "NativeOpenFailed"
+        },
+        {
+          "line": 160,
+          "scope": "WindowsFileCalls.final_path",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 178,
+          "scope": "WindowsFileCalls.token_identity",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 199,
+          "scope": "WindowsFileCalls.close",
+          "call": "self.w._raw_close_handle"
+        },
+        {
+          "line": 221,
+          "scope": "WindowsFileCalls.read",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 222,
+          "scope": "WindowsFileCalls.read",
+          "call": "w.read_file"
+        },
+        {
+          "line": 236,
+          "scope": "WindowsFileCalls.write",
+          "call": "self.w._raw_write_file"
+        },
+        {
+          "line": 242,
+          "scope": "WindowsFileCalls.flush",
+          "call": "self.w.flush"
+        },
+        {
+          "line": 256,
+          "scope": "WindowsFileCalls.rename",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 277,
+          "scope": "WindowsFileCalls.names",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 327,
+          "scope": "AllocationBook.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 332,
+          "scope": "AllocationBook.fresh",
+          "call": "self.resources.read"
+        },
+        {
+          "line": 345,
+          "scope": "AllocationBook.open",
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 352,
+          "scope": "AllocationBook.open",
+          "call": "self.resources.state['stops'].values"
+        },
+        {
+          "line": 360,
+          "scope": "AllocationBook.open",
+          "call": "self.resources.close"
+        },
+        {
+          "line": 369,
+          "scope": "AllocationBook.open",
+          "call": "self.journal_live.values"
+        },
+        {
+          "line": 375,
+          "scope": "AllocationBook.open",
+          "call": "self.resources.bind_native_handle"
+        },
+        {
+          "line": 381,
+          "scope": "AllocationBook.close",
+          "call": "self.calls.close"
+        },
+        {
+          "line": 382,
+          "scope": "AllocationBook.close",
+          "call": "self.calls.closed"
+        },
+        {
+          "line": 386,
+          "scope": "AllocationBook.close",
+          "call": "self.resources.close"
+        },
+        {
+          "line": 412,
+          "scope": "NativeIO.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 488,
+          "scope": "NativeIO.opened",
+          "call": "self.book.open"
+        },
+        {
+          "line": 520,
+          "scope": "NativeIO.opened",
+          "call": "self.book.close"
+        },
+        {
+          "line": 523,
+          "scope": "NativeIO.opened",
+          "call": "self.book.open"
+        },
+        {
+          "line": 524,
+          "scope": "NativeIO.opened",
+          "call": "handles.append"
+        },
+        {
+          "line": 528,
+          "scope": "NativeIO.opened",
+          "call": "self.book.open"
+        },
+        {
+          "line": 540,
+          "scope": "NativeIO.opened",
+          "call": "handles.append"
+        },
+        {
+          "line": 552,
+          "scope": "NativeIO.opened",
+          "call": "self.book.close"
+        },
+        {
+          "line": 558,
+          "scope": "NativeIO._directory",
+          "call": "self.book.open"
+        },
+        {
+          "line": 561,
+          "scope": "NativeIO._directory",
+          "call": "self.book.open"
+        },
+        {
+          "line": 578,
+          "scope": "NativeIO._directory",
+          "call": "self.book.close"
+        },
+        {
+          "line": 591,
+          "scope": "NativeIO.close_cache",
+          "call": "self.book.close"
+        },
+        {
+          "line": 595,
+          "scope": "NativeIO.names",
+          "call": "self.opened"
+        },
+        {
+          "line": 603,
+          "scope": "NativeIO.chain",
+          "call": "self.opened"
+        },
+        {
+          "line": 617,
+          "scope": "NativeIO.inspect",
+          "call": "self.callback_handles.items"
+        },
+        {
+          "line": 630,
+          "scope": "NativeIO.inspect",
+          "call": "self.opened"
+        },
+        {
+          "line": 636,
+          "scope": "NativeIO.inspect",
+          "call": "self.opened"
+        },
+        {
+          "line": 640,
+          "scope": "NativeIO.inspect",
+          "call": "self.opened"
+        },
+        {
+          "line": 662,
+          "scope": "NativeIO.mkdir",
+          "call": "self.opened"
+        },
+        {
+          "line": 668,
+          "scope": "NativeIO.write_new",
+          "call": "self.opened"
+        },
+        {
+          "line": 669,
+          "scope": "NativeIO.write_new",
+          "call": "self.calls.write"
+        },
+        {
+          "line": 670,
+          "scope": "NativeIO.write_new",
+          "call": "self.calls.flush"
+        },
+        {
+          "line": 671,
+          "scope": "NativeIO.write_new",
+          "call": "self.calls.read"
+        },
+        {
+          "line": 675,
+          "scope": "NativeIO.read_bytes",
+          "call": "self.opened"
+        },
+        {
+          "line": 676,
+          "scope": "NativeIO.read_bytes",
+          "call": "self.calls.read"
+        },
+        {
+          "line": 679,
+          "scope": "NativeIO.readback",
+          "call": "self.read_bytes"
+        },
+        {
+          "line": 692,
+          "scope": "NativeIO.replace_owned",
+          "call": "self.opened"
+        },
+        {
+          "line": 693,
+          "scope": "NativeIO.replace_owned",
+          "call": "self.opened"
+        },
+        {
+          "line": 695,
+          "scope": "NativeIO.replace_owned",
+          "call": "self.calls.rename"
+        },
+        {
+          "line": 696,
+          "scope": "NativeIO.replace_owned",
+          "call": "self.calls.flush"
+        },
+        {
+          "line": 717,
+          "scope": "NativeIO.verify_handle",
+          "call": "self.book.resources.bind_native_handle"
+        },
+        {
+          "line": 723,
+          "scope": "NativeIO.verify_mutex",
+          "call": "self.calls.closed"
+        },
+        {
+          "line": 741,
+          "scope": "NativeIO.verify_image",
+          "call": "self.calls.read"
+        },
+        {
+          "line": 753,
+          "scope": "NativeIO.note_closed",
+          "call": "self.calls.closed"
+        },
+        {
+          "line": 761,
+          "scope": "NativeIO.note_closed",
+          "call": "handle.execute"
+        },
+        {
+          "line": 780,
+          "scope": "NativeIO.sqlite_open",
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 796,
+          "scope": "NativeJournalIO.verify_directory",
+          "call": "self.io.book.journal"
+        },
+        {
+          "line": 797,
+          "scope": "NativeJournalIO.verify_directory",
+          "call": "self.io.opened"
+        },
+        {
+          "line": 806,
+          "scope": "NativeJournalIO.names",
+          "call": "self.io.book.journal"
+        },
+        {
+          "line": 807,
+          "scope": "NativeJournalIO.names",
+          "call": "self.io.opened"
+        },
+        {
+          "line": 814,
+          "scope": "NativeJournalIO.read_exact",
+          "call": "self.io.book.journal"
+        },
+        {
+          "line": 815,
+          "scope": "NativeJournalIO.read_exact",
+          "call": "self.io.opened"
+        },
+        {
+          "line": 817,
+          "scope": "NativeJournalIO.read_exact",
+          "call": "self.io.calls.read"
+        },
+        {
+          "line": 834,
+          "scope": "NativeJournalIO.create_new",
+          "call": "self.io.book.journal"
+        },
+        {
+          "line": 836,
+          "scope": "NativeJournalIO.create_new",
+          "call": "self.io.opened"
+        },
+        {
+          "line": 840,
+          "scope": "NativeJournalIO.create_new",
+          "call": "opened.__enter__"
+        },
+        {
+          "line": 858,
+          "scope": "NativeJournalIO.write_exact",
+          "call": "self.io.calls.write"
+        },
+        {
+          "line": 862,
+          "scope": "NativeJournalIO.write_exact",
+          "call": "self._close"
+        },
+        {
+          "line": 869,
+          "scope": "NativeJournalIO._close",
+          "call": "item['opened'].__exit__"
+        },
+        {
+          "line": 877,
+          "scope": "NativeJournalIO.flush_close",
+          "call": "self.io.calls.flush"
+        },
+        {
+          "line": 880,
+          "scope": "NativeJournalIO.flush_close",
+          "call": "self.io.calls.read"
+        },
+        {
+          "line": 884,
+          "scope": "NativeJournalIO.flush_close",
+          "call": "self._close"
+        }
+      ],
+      "git_index_blob_sha256": "71ca5258d5c1ae2e5c3a0834e2c9eb8f79d358cae82461c2515d5983976d2d59",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_process.py",
+      "sha256": "a9dfc50685ee51e4e08dd856049c0fb0bad4f45df1683a76cc536f21cccb78b2",
+      "boundary_calls": [
+        {
+          "line": 132,
+          "scope": "Win32ProcessCalls.duplicate",
+          "call": "W.HANDLE"
+        },
+        {
+          "line": 134,
+          "scope": "Win32ProcessCalls.duplicate",
+          "call": "self.k.DuplicateHandle"
+        },
+        {
+          "line": 147,
+          "scope": "Win32ProcessCalls.close",
+          "call": "self.k.CloseHandle"
+        },
+        {
+          "line": 151,
+          "scope": "Win32ProcessCalls.closed",
+          "call": "self.k.GetHandleInformation"
+        },
+        {
+          "line": 160,
+          "scope": "Win32ProcessCalls.native",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 162,
+          "scope": "Win32ProcessCalls.native",
+          "call": "self.k.QueryFullProcessImageNameW"
+        },
+        {
+          "line": 185,
+          "scope": "Win32ProcessCalls.create_job",
+          "call": "self.k.CreateJobObjectW"
+        },
+        {
+          "line": 187,
+          "scope": "Win32ProcessCalls.create_job",
+          "call": "self.close"
+        },
+        {
+          "line": 197,
+          "scope": "Win32ProcessCalls.create_job",
+          "call": "self.k.SetInformationJobObject"
+        },
+        {
+          "line": 199,
+          "scope": "Win32ProcessCalls.create_job",
+          "call": "self.job_limits"
+        },
+        {
+          "line": 202,
+          "scope": "Win32ProcessCalls.create_job",
+          "call": "self.close"
+        },
+        {
+          "line": 208,
+          "scope": "Win32ProcessCalls.job_limits",
+          "call": "self.k.QueryInformationJobObject"
+        },
+        {
+          "line": 234,
+          "scope": "Win32ProcessCalls.members",
+          "call": "self.k.QueryInformationJobObject"
+        },
+        {
+          "line": 245,
+          "scope": "Win32ProcessCalls.assign",
+          "call": "self.k.AssignProcessToJobObject"
+        },
+        {
+          "line": 249,
+          "scope": "Win32ProcessCalls.in_job",
+          "call": "self.k.IsProcessInJob"
+        },
+        {
+          "line": 253,
+          "scope": "Win32ProcessCalls.resume",
+          "call": "self.k.ResumeThread"
+        },
+        {
+          "line": 269,
+          "scope": "Win32ProcessCalls.pipe",
+          "call": "_winapi.CreatePipe"
+        },
+        {
+          "line": 295,
+          "scope": "Win32ProcessCalls.create_suspended",
+          "call": "os.set_handle_inheritable"
+        },
+        {
+          "line": 297,
+          "scope": "Win32ProcessCalls.create_suspended",
+          "call": "_winapi.CreateProcess"
+        },
+        {
+          "line": 310,
+          "scope": "Win32ProcessCalls.create_suspended",
+          "call": "os.set_handle_inheritable"
+        },
+        {
+          "line": 313,
+          "scope": "Win32ProcessCalls.terminate_owned_job",
+          "call": "self.k.TerminateJobObject"
+        },
+        {
+          "line": 345,
+          "scope": "NativeProcessObserver.observe",
+          "call": "self.calls.in_job"
+        },
+        {
+          "line": 407,
+          "scope": "CancellableCalls.run",
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 443,
+          "scope": "CancellableCalls.run",
+          "call": "self._close"
+        },
+        {
+          "line": 445,
+          "scope": "CancellableCalls.run",
+          "call": "self._close"
+        },
+        {
+          "line": 455,
+          "scope": "CancellableCalls._close",
+          "call": "self.calls.close"
+        },
+        {
+          "line": 456,
+          "scope": "CancellableCalls._close",
+          "call": "self.calls.closed"
+        },
+        {
+          "line": 457,
+          "scope": "CancellableCalls._close",
+          "call": "self.allocations.release"
+        },
+        {
+          "line": 476,
+          "scope": "WindowsPipeEndpoint.read_exact.read",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 479,
+          "scope": "WindowsPipeEndpoint.read_exact.read",
+          "call": "self.calls.k.ReadFile"
+        },
+        {
+          "line": 498,
+          "scope": "WindowsPipeEndpoint.write_all.write",
+          "call": "self.calls.k.WriteFile"
+        }
+      ],
+      "git_index_blob_sha256": "a9dfc50685ee51e4e08dd856049c0fb0bad4f45df1683a76cc536f21cccb78b2",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_pump.py",
+      "sha256": "fdf68488d88d00d6b5baedb7632fcb68b9210df084901ef9ca4640a1814163de",
+      "boundary_calls": [
+        {
+          "line": 27,
+          "scope": "WindowsPump.__init__",
+          "call": "threading.Lock"
+        },
+        {
+          "line": 40,
+          "scope": "WindowsPump.__init__",
+          "call": "k.CreateEventW"
+        },
+        {
+          "line": 41,
+          "scope": "WindowsPump.__init__",
+          "call": "self.handles.append"
+        },
+        {
+          "line": 42,
+          "scope": "WindowsPump.__init__",
+          "call": "k.CreateEventW"
+        },
+        {
+          "line": 43,
+          "scope": "WindowsPump.__init__",
+          "call": "self.handles.append"
+        },
+        {
+          "line": 74,
+          "scope": "WindowsPump.__init__",
+          "call": "k.CreateThread"
+        },
+        {
+          "line": 76,
+          "scope": "WindowsPump.__init__",
+          "call": "self.handles.append"
+        },
+        {
+          "line": 78,
+          "scope": "WindowsPump.__init__",
+          "call": "self.observe.created"
+        },
+        {
+          "line": 126,
+          "scope": "WindowsPump.close",
+          "call": "self.calls.close"
+        },
+        {
+          "line": 127,
+          "scope": "WindowsPump.close",
+          "call": "self.calls.closed"
+        },
+        {
+          "line": 138,
+          "scope": "Mailbox.__init__",
+          "call": "threading.RLock"
+        },
+        {
+          "line": 147,
+          "scope": "Mailbox.receive",
+          "call": "self.channel.receive"
+        }
+      ],
+      "git_index_blob_sha256": "fdf68488d88d00d6b5baedb7632fcb68b9210df084901ef9ca4640a1814163de",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/disposable_host_owner.py",
+      "sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5",
+      "boundary_calls": [
+        {
+          "line": 34,
+          "scope": "observe_pid",
+          "call": "kernel.OpenProcess"
+        },
+        {
+          "line": 38,
+          "scope": "observe_pid",
+          "call": "ctypes.create_unicode_buffer"
+        },
+        {
+          "line": 41,
+          "scope": "observe_pid",
+          "call": "observe_handle"
+        },
+        {
+          "line": 43,
+          "scope": "observe_pid",
+          "call": "kernel.CloseHandle"
+        },
+        {
+          "line": 68,
+          "scope": "OwnedHost.__init__",
+          "call": "(Path(root) / 'host-errors.log').open"
+        },
+        {
+          "line": 69,
+          "scope": "OwnedHost.__init__",
+          "call": "subprocess.Popen"
+        },
+        {
+          "line": 79,
+          "scope": "OwnedHost.__init__",
+          "call": "self.process.stdin.close"
+        },
+        {
+          "line": 94,
+          "scope": "OwnedHost._accept",
+          "call": "observe_handle"
+        },
+        {
+          "line": 101,
+          "scope": "OwnedHost._accept",
+          "call": "threading.Thread(target=collect, daemon=True).start"
+        },
+        {
+          "line": 101,
+          "scope": "OwnedHost._accept",
+          "call": "threading.Thread"
+        },
+        {
+          "line": 103,
+          "scope": "OwnedHost._accept",
+          "call": "self.ready.get"
+        },
+        {
+          "line": 103,
+          "scope": "OwnedHost._accept",
+          "call": "self.ready.get"
+        },
+        {
+          "line": 104,
+          "scope": "OwnedHost._accept",
+          "call": "self.ready.get"
+        },
+        {
+          "line": 112,
+          "scope": "OwnedHost.verify",
+          "call": "observe_handle"
+        },
+        {
+          "line": 117,
+          "scope": "OwnedHost.control",
+          "call": "self.process.stdin.write"
+        },
+        {
+          "line": 118,
+          "scope": "OwnedHost.control",
+          "call": "self.process.stdin.flush"
+        },
+        {
+          "line": 126,
+          "scope": "OwnedHost.runtime_control",
+          "call": "self.ready.get"
+        },
+        {
+          "line": 128,
+          "scope": "OwnedHost.runtime_control",
+          "call": "self.process.stdin.write"
+        },
+        {
+          "line": 129,
+          "scope": "OwnedHost.runtime_control",
+          "call": "self.process.stdin.flush"
+        },
+        {
+          "line": 144,
+          "scope": "OwnedHost.close",
+          "call": "self.process.stdin.close"
+        },
+        {
+          "line": 168,
+          "scope": "main",
+          "call": "owner.close"
+        }
+      ],
+      "git_index_blob_sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/launch_ownership.py",
+      "sha256": "83dca6bfe3a71b7cea5ed98d65cb69be63c117efaad68e8fe3127a5735bb572c",
+      "boundary_calls": [],
+      "git_index_blob_sha256": "83dca6bfe3a71b7cea5ed98d65cb69be63c117efaad68e8fe3127a5735bb572c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/launch_ownership_windows.py",
+      "sha256": "e44c16d384924d9043a3fde6972ed4f04bbd4e48966c9cac7bbda3a8f9bdb4a4",
+      "boundary_calls": [
+        {
+          "line": 79,
+          "scope": "NativeQueries.native",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 80,
+          "scope": "NativeQueries.native",
+          "call": "self.k.QueryFullProcessImageNameW"
+        },
+        {
+          "line": 102,
+          "scope": "ImageLease.__init__",
+          "call": "guarded.image_open"
+        },
+        {
+          "line": 107,
+          "scope": "ImageLease.__init__",
+          "call": "api.k.GetFileInformationByHandle"
+        },
+        {
+          "line": 119,
+          "scope": "ImageLease.__init__",
+          "call": "hashlib.sha256(p.read_bytes()).hexdigest"
+        },
+        {
+          "line": 119,
+          "scope": "ImageLease.__init__",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 122,
+          "scope": "ImageLease.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 127,
+          "scope": "ImageLease.close",
+          "call": "guarded.image_close"
+        },
+        {
+          "line": 205,
+          "scope": "WindowsLaunchObserver.observe",
+          "call": "query_runner"
+        },
+        {
+          "line": 287,
+          "scope": "WindowsLaunchObserver.members",
+          "call": "self.native.k.QueryInformationJobObject"
+        }
+      ],
+      "git_index_blob_sha256": "8d4dee9477c8b02850b76c95e35941b27621b9ebe371e912c0284607995d932a",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/native_fixture_budget.py",
+      "sha256": "5ada66b71081e12d90e0f46fb368a418c1821afc2a5ff219d726e3fb358cbd4d",
+      "boundary_calls": [
+        {
+          "line": 58,
+          "scope": "NativeFixtureBudget.__init__",
+          "call": "self.meta.read_text"
+        },
+        {
+          "line": 96,
+          "scope": "NativeFixtureBudget.lease",
+          "call": "self.lock.open"
+        },
+        {
+          "line": 139,
+          "scope": "NativeFixtureBudget.mutation",
+          "call": "ledger.read_text"
+        },
+        {
+          "line": 142,
+          "scope": "NativeFixtureBudget.mutation",
+          "call": "reserve_budget"
+        },
+        {
+          "line": 143,
+          "scope": "NativeFixtureBudget.mutation",
+          "call": "ledger.open"
+        },
+        {
+          "line": 144,
+          "scope": "NativeFixtureBudget.mutation",
+          "call": "stream.flush"
+        },
+        {
+          "line": 150,
+          "scope": "NativeFixtureBudget.directory",
+          "call": "Path(path).mkdir"
+        },
+        {
+          "line": 159,
+          "scope": "NativeFixtureBudget.write",
+          "call": "path.open"
+        },
+        {
+          "line": 160,
+          "scope": "NativeFixtureBudget.write",
+          "call": "stream.write"
+        },
+        {
+          "line": 160,
+          "scope": "NativeFixtureBudget.write",
+          "call": "stream.flush"
+        },
+        {
+          "line": 164,
+          "scope": "NativeFixtureBudget.native_write",
+          "call": "output.write_bound"
+        },
+        {
+          "line": 181,
+          "scope": "create_session",
+          "call": "root.mkdir"
+        },
+        {
+          "line": 186,
+          "scope": "create_session",
+          "call": "(root / 'session-budget.json').open"
+        },
+        {
+          "line": 187,
+          "scope": "create_session",
+          "call": "(root / 'session-budget.lock').open"
+        },
+        {
+          "line": 187,
+          "scope": "create_session",
+          "call": "stream.write"
+        },
+        {
+          "line": 188,
+          "scope": "create_session",
+          "call": "(root / 'session-reservations.json').open"
+        },
+        {
+          "line": 189,
+          "scope": "create_session",
+          "call": "stream.flush"
+        }
+      ],
+      "git_index_blob_sha256": "5ada66b71081e12d90e0f46fb368a418c1821afc2a5ff219d726e3fb358cbd4d",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/observation_runtime/personal_native_job.py",
+      "sha256": "72f5ab065527c7d291ad1fa060c0ad2470c1c5d69b77a32675cc82d65b2ab829",
+      "boundary_calls": [
+        {
+          "line": 28,
+          "scope": "ContainedChild.close",
+          "call": "self.api.terminate_job"
+        },
+        {
+          "line": 41,
+          "scope": "ContainedChild.close",
+          "call": "self.api.close_handle"
+        },
+        {
+          "line": 96,
+          "scope": "FailedAdmissionCleanup.close",
+          "call": "self.api.terminate_job"
+        },
+        {
+          "line": 107,
+          "scope": "FailedAdmissionCleanup.close",
+          "call": "self.api.close_handle"
+        },
+        {
+          "line": 130,
+          "scope": "launch_contained_child",
+          "call": "api.create_job"
+        },
+        {
+          "line": 131,
+          "scope": "launch_contained_child",
+          "call": "api.configure_kill_on_close"
+        },
+        {
+          "line": 132,
+          "scope": "launch_contained_child",
+          "call": "api.create_suspended_child"
+        },
+        {
+          "line": 138,
+          "scope": "launch_contained_child",
+          "call": "api.close_handle"
+        },
+        {
+          "line": 145,
+          "scope": "launch_contained_child",
+          "call": "cleanup.close"
+        }
+      ],
+      "git_index_blob_sha256": "0106001033d98b73e32691444a612708b11b13c6128a40de9419da5ee0ceaea4",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/financial_record_store.py",
+      "sha256": "2dd5f672aab4e030ad185947836808b4932f3ee4ad65a21481f5887061e11c79",
+      "boundary_calls": [
+        {
+          "line": 60,
+          "scope": "FinancialRecordStore.provision_disposable",
+          "call": "w.WindowsOutput.create_root"
+        },
+        {
+          "line": 61,
+          "scope": "FinancialRecordStore.provision_disposable",
+          "call": "output.write_bound"
+        },
+        {
+          "line": 62,
+          "scope": "FinancialRecordStore.provision_disposable",
+          "call": "s.read_bound"
+        },
+        {
+          "line": 79,
+          "scope": "FinancialRecordStore.__init__",
+          "call": "self.coordinator._create_mutex"
+        },
+        {
+          "line": 83,
+          "scope": "FinancialRecordStore.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 88,
+          "scope": "FinancialRecordStore.close",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 90,
+          "scope": "FinancialRecordStore.close",
+          "call": "self.output.close"
+        },
+        {
+          "line": 115,
+          "scope": "FinancialRecordStore._read",
+          "call": "s.read_bound"
+        },
+        {
+          "line": 129,
+          "scope": "FinancialRecordStore._load",
+          "call": "self._read"
+        },
+        {
+          "line": 145,
+          "scope": "FinancialRecordStore._load",
+          "call": "self._read"
+        },
+        {
+          "line": 264,
+          "scope": "FinancialRecordStore._latch",
+          "call": "self.output.write_bound"
+        },
+        {
+          "line": 296,
+          "scope": "FinancialRecordStore.execute.publish",
+          "call": "self.output.write_bound"
+        },
+        {
+          "line": 297,
+          "scope": "FinancialRecordStore.execute.publish",
+          "call": "self._read"
+        }
+      ],
+      "git_index_blob_sha256": "2dd5f672aab4e030ad185947836808b4932f3ee4ad65a21481f5887061e11c79",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/financial_reporting.py",
+      "sha256": "47cb9603f02ba1a4f5222c1f499fd01e36e74dcf410e3db1190bc64cdb22b63c",
+      "boundary_calls": [
+        {
+          "line": 30,
+          "scope": "ProjectionTarget.__init__",
+          "call": "self.output.close"
+        },
+        {
+          "line": 35,
+          "scope": "ProjectionTarget.provision_disposable",
+          "call": "f.w.WindowsOutput.create_root"
+        },
+        {
+          "line": 39,
+          "scope": "ProjectionTarget.close",
+          "call": "self.output.close"
+        },
+        {
+          "line": 58,
+          "scope": "ProjectionTarget.publish",
+          "call": "self.output.write_bound"
+        },
+        {
+          "line": 59,
+          "scope": "ProjectionTarget.publish",
+          "call": "self.output.write_bound"
+        },
+        {
+          "line": 61,
+          "scope": "ProjectionTarget.publish",
+          "call": "self.output.write_bound"
+        },
+        {
+          "line": 76,
+          "scope": "ProjectionTarget.verify",
+          "call": "f.FinancialRecordStore._read"
+        },
+        {
+          "line": 97,
+          "scope": "ReportArchive.provision_disposable",
+          "call": "f.w.WindowsOutput.create_root"
+        },
+        {
+          "line": 98,
+          "scope": "ReportArchive.provision_disposable",
+          "call": "output.write_bound"
+        },
+        {
+          "line": 112,
+          "scope": "ReportArchive.__init__",
+          "call": "self.coordinator._create_mutex"
+        },
+        {
+          "line": 116,
+          "scope": "ReportArchive.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 127,
+          "scope": "ReportArchive._load",
+          "call": "self._read"
+        },
+        {
+          "line": 133,
+          "scope": "ReportArchive._load",
+          "call": "self._read"
+        },
+        {
+          "line": 158,
+          "scope": "ReportArchive._publish",
+          "call": "self.output.write_bound"
+        },
+        {
+          "line": 159,
+          "scope": "ReportArchive._publish",
+          "call": "self._read"
+        }
+      ],
+      "git_index_blob_sha256": "47cb9603f02ba1a4f5222c1f499fd01e36e74dcf410e3db1190bc64cdb22b63c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/operational_autonomous_store.py",
+      "sha256": "81b2b3d754f88be404990ff4e70611d01901bb46babadb8901f775f4554f7726",
+      "boundary_calls": [
+        {
+          "line": 93,
+          "scope": "OperationalAutonomousStore.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 97,
+          "scope": "OperationalAutonomousStore.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 140,
+          "scope": "OperationalAutonomousStore._read",
+          "call": "super()._read"
+        },
+        {
+          "line": 279,
+          "scope": "OperationalAutonomousReader.read_committed",
+          "call": "reader._admitted"
+        },
+        {
+          "line": 283,
+          "scope": "OperationalAutonomousReader.read_committed",
+          "call": "reader._load"
+        },
+        {
+          "line": 310,
+          "scope": "OperationalAutonomousReader.read_verified",
+          "call": "self.read_committed"
+        },
+        {
+          "line": 311,
+          "scope": "OperationalAutonomousReader.read_verified",
+          "call": "_report_read_module"
+        },
+        {
+          "line": 318,
+          "scope": "OperationalAutonomousReader.read_verified",
+          "call": "m.BoundReader"
+        }
+      ],
+      "git_index_blob_sha256": "81b2b3d754f88be404990ff4e70611d01901bb46babadb8901f775f4554f7726",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/resting_order_store.py",
+      "sha256": "5c0ca6c9a5da57b9f12caaeabb1b72652e27eeeb9cab1dd928c3737c23f778ba",
+      "boundary_calls": [
+        {
+          "line": 47,
+          "scope": "RestingOrderStore.provision_disposable",
+          "call": "f.w.WindowsOutput.create_root"
+        },
+        {
+          "line": 48,
+          "scope": "RestingOrderStore.provision_disposable",
+          "call": "output.write_bound"
+        },
+        {
+          "line": 73,
+          "scope": "RestingOrderStore.__init__",
+          "call": "self.coordinator._create_mutex"
+        },
+        {
+          "line": 77,
+          "scope": "RestingOrderStore.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 87,
+          "scope": "RestingOrderStore._load",
+          "call": "self._read"
+        },
+        {
+          "line": 98,
+          "scope": "RestingOrderStore._load",
+          "call": "self._read"
+        },
+        {
+          "line": 145,
+          "scope": "RestingOrderStore.apply",
+          "call": "self.output.write_bound"
+        },
+        {
+          "line": 146,
+          "scope": "RestingOrderStore.apply",
+          "call": "self._read"
+        }
+      ],
+      "git_index_blob_sha256": "5c0ca6c9a5da57b9f12caaeabb1b72652e27eeeb9cab1dd928c3737c23f778ba",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/shared_fence.py",
+      "sha256": "ca4b2eeef33cce9e65375d2e13dbf46139d80d0ef9e953f83bf773f8e3e6c241",
+      "boundary_calls": [
+        {
+          "line": 69,
+          "scope": "current_process_identity",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 74,
+          "scope": "current_process_identity",
+          "call": "hashlib.sha256(Path(image_path.value).read_bytes()).hexdigest"
+        },
+        {
+          "line": 74,
+          "scope": "current_process_identity",
+          "call": "Path(image_path.value).read_bytes"
+        },
+        {
+          "line": 164,
+          "scope": "Registry.__init__",
+          "call": "threading.local"
+        },
+        {
+          "line": 166,
+          "scope": "Registry.__init__",
+          "call": "self._read_json"
+        },
+        {
+          "line": 173,
+          "scope": "Registry.__init__",
+          "call": "self._create_mutex"
+        },
+        {
+          "line": 176,
+          "scope": "Registry.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 183,
+          "scope": "Registry.provision",
+          "call": "w.WindowsOutput.create_root"
+        },
+        {
+          "line": 187,
+          "scope": "Registry.provision",
+          "call": "out._write"
+        },
+        {
+          "line": 188,
+          "scope": "Registry.provision",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 190,
+          "scope": "Registry.provision",
+          "call": "w.flush"
+        },
+        {
+          "line": 193,
+          "scope": "Registry.provision",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 195,
+          "scope": "Registry.provision",
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 199,
+          "scope": "Registry.provision",
+          "call": "db.execute('PRAGMA journal_mode=' + mode).fetchone()[0].upper"
+        },
+        {
+          "line": 199,
+          "scope": "Registry.provision",
+          "call": "db.execute('PRAGMA journal_mode=' + mode).fetchone"
+        },
+        {
+          "line": 210,
+          "scope": "Registry.provision",
+          "call": "db.close"
+        },
+        {
+          "line": 211,
+          "scope": "Registry.provision",
+          "call": "out._write"
+        },
+        {
+          "line": 212,
+          "scope": "Registry.provision",
+          "call": "out._write"
+        },
+        {
+          "line": 214,
+          "scope": "Registry.provision",
+          "call": "out.close"
+        },
+        {
+          "line": 234,
+          "scope": "Registry.close",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 236,
+          "scope": "Registry.close",
+          "call": "self.output.close"
+        },
+        {
+          "line": 239,
+          "scope": "Registry._read_json",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 244,
+          "scope": "Registry._read_json",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 245,
+          "scope": "Registry._read_json",
+          "call": "w.read_file"
+        },
+        {
+          "line": 250,
+          "scope": "Registry._read_json",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 264,
+          "scope": "Registry._poison",
+          "call": "self.output._write"
+        },
+        {
+          "line": 280,
+          "scope": "Registry._surface",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 292,
+          "scope": "Registry._surface",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 308,
+          "scope": "Registry.guard",
+          "call": "self._read_json"
+        },
+        {
+          "line": 329,
+          "scope": "Registry.database",
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 336,
+          "scope": "Registry.database",
+          "call": "db.execute('PRAGMA journal_mode=' + self.mode).fetchone()[0].upper"
+        },
+        {
+          "line": 336,
+          "scope": "Registry.database",
+          "call": "db.execute('PRAGMA journal_mode=' + self.mode).fetchone"
+        },
+        {
+          "line": 352,
+          "scope": "Registry.database",
+          "call": "db.close"
+        },
+        {
+          "line": 397,
+          "scope": "Registry._state_checked",
+          "call": "self._read_json"
+        },
+        {
+          "line": 400,
+          "scope": "Registry._state_checked",
+          "call": "self._read_json"
+        },
+        {
+          "line": 431,
+          "scope": "Registry._change",
+          "call": "self.output._write"
+        }
+      ],
+      "git_index_blob_sha256": "ca4b2eeef33cce9e65375d2e13dbf46139d80d0ef9e953f83bf773f8e3e6c241",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/unified_portfolio_store.py",
+      "sha256": "186bcc9acc69780ed2f8be59ffe05955d3bf259509f7c7e2b9accb6db696d97e",
+      "boundary_calls": [],
+      "git_index_blob_sha256": "186bcc9acc69780ed2f8be59ffe05955d3bf259509f7c7e2b9accb6db696d97e",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "scripts/volume_inspector/windows_output.py",
+      "sha256": "a5bf5a5205176abf603b03dcfd0de66e602f1bd855cdcbc4debf8d4c7e64a107",
+      "boundary_calls": [
+        {
+          "line": 113,
+          "scope": "_current_token",
+          "call": "W.HANDLE"
+        },
+        {
+          "line": 114,
+          "scope": "_current_token",
+          "call": "open_token"
+        },
+        {
+          "line": 123,
+          "scope": "current_sid",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 127,
+          "scope": "current_sid",
+          "call": "close_handle"
+        },
+        {
+          "line": 232,
+          "scope": "_relative_open",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 237,
+          "scope": "_relative_open",
+          "call": "W.HANDLE"
+        },
+        {
+          "line": 239,
+          "scope": "_relative_open",
+          "call": "nt_create"
+        },
+        {
+          "line": 247,
+          "scope": "_relative_open",
+          "call": "_raw_close_handle"
+        },
+        {
+          "line": 262,
+          "scope": "WindowsOutput.__init__",
+          "call": "create_file"
+        },
+        {
+          "line": 265,
+          "scope": "WindowsOutput.__init__",
+          "call": "self.handles.append"
+        },
+        {
+          "line": 270,
+          "scope": "WindowsOutput.__init__",
+          "call": "self.handles.append"
+        },
+        {
+          "line": 270,
+          "scope": "WindowsOutput.__init__",
+          "call": "relative_open"
+        },
+        {
+          "line": 273,
+          "scope": "WindowsOutput.__init__",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 278,
+          "scope": "WindowsOutput.__init__",
+          "call": "self.close"
+        },
+        {
+          "line": 287,
+          "scope": "WindowsOutput.create_root",
+          "call": "create_file"
+        },
+        {
+          "line": 290,
+          "scope": "WindowsOutput.create_root",
+          "call": "handles.append"
+        },
+        {
+          "line": 294,
+          "scope": "WindowsOutput.create_root",
+          "call": "handles.append"
+        },
+        {
+          "line": 294,
+          "scope": "WindowsOutput.create_root",
+          "call": "relative_open"
+        },
+        {
+          "line": 295,
+          "scope": "WindowsOutput.create_root",
+          "call": "handles.append"
+        },
+        {
+          "line": 295,
+          "scope": "WindowsOutput.create_root",
+          "call": "relative_open"
+        },
+        {
+          "line": 302,
+          "scope": "WindowsOutput.create_root",
+          "call": "C.create_unicode_buffer"
+        },
+        {
+          "line": 310,
+          "scope": "WindowsOutput.create_root",
+          "call": "close_handle"
+        },
+        {
+          "line": 314,
+          "scope": "WindowsOutput.close",
+          "call": "close_handle"
+        },
+        {
+          "line": 321,
+          "scope": "WindowsOutput.__exit__",
+          "call": "self.close"
+        },
+        {
+          "line": 331,
+          "scope": "WindowsOutput._write",
+          "call": "self._write_bound"
+        },
+        {
+          "line": 336,
+          "scope": "WindowsOutput.write_bound",
+          "call": "self._write_bound"
+        },
+        {
+          "line": 341,
+          "scope": "WindowsOutput._write_bound",
+          "call": "relative_open"
+        },
+        {
+          "line": 349,
+          "scope": "WindowsOutput._write_bound",
+          "call": "write_file"
+        },
+        {
+          "line": 352,
+          "scope": "WindowsOutput._write_bound",
+          "call": "flush"
+        },
+        {
+          "line": 359,
+          "scope": "WindowsOutput._write_bound",
+          "call": "close_handle"
+        },
+        {
+          "line": 369,
+          "scope": "WindowsOutput.publish",
+          "call": "relative_open"
+        },
+        {
+          "line": 373,
+          "scope": "WindowsOutput.publish",
+          "call": "self._write"
+        },
+        {
+          "line": 374,
+          "scope": "WindowsOutput.publish",
+          "call": "self._write"
+        },
+        {
+          "line": 375,
+          "scope": "WindowsOutput.publish",
+          "call": "self._write"
+        },
+        {
+          "line": 377,
+          "scope": "WindowsOutput.publish",
+          "call": "relative_open"
+        },
+        {
+          "line": 383,
+          "scope": "WindowsOutput.publish",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 389,
+          "scope": "WindowsOutput.publish",
+          "call": "close_handle"
+        },
+        {
+          "line": 392,
+          "scope": "WindowsOutput.publish",
+          "call": "close_handle"
+        },
+        {
+          "line": 398,
+          "scope": "WindowsOutput.read",
+          "call": "relative_open"
+        },
+        {
+          "line": 405,
+          "scope": "WindowsOutput.read",
+          "call": "relative_open"
+        },
+        {
+          "line": 409,
+          "scope": "WindowsOutput.read",
+          "call": "relative_open"
+        },
+        {
+          "line": 417,
+          "scope": "WindowsOutput.read",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 418,
+          "scope": "WindowsOutput.read",
+          "call": "read_file"
+        },
+        {
+          "line": 423,
+          "scope": "WindowsOutput.read",
+          "call": "close_handle"
+        },
+        {
+          "line": 435,
+          "scope": "WindowsOutput.read",
+          "call": "close_handle"
+        },
+        {
+          "line": 436,
+          "scope": "WindowsOutput.read",
+          "call": "close_handle"
+        }
+      ],
+      "git_index_blob_sha256": "a5bf5a5205176abf603b03dcfd0de66e602f1bd855cdcbc4debf8d4c7e64a107",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/launch_ownership_child.py",
+      "sha256": "954034279f5c01a1d794990f74cd1f58863651dedc079550819943f98492c5de",
+      "boundary_calls": [
+        {
+          "line": 17,
+          "scope": "main",
+          "call": "threading.Timer"
+        },
+        {
+          "line": 23,
+          "scope": "main",
+          "call": "subprocess.Popen"
+        },
+        {
+          "line": 43,
+          "scope": "main",
+          "call": "sys.stdin.buffer.read"
+        },
+        {
+          "line": 47,
+          "scope": "main",
+          "call": "child.stdin.close"
+        }
+      ],
+      "git_index_blob_sha256": "954034279f5c01a1d794990f74cd1f58863651dedc079550819943f98492c5de",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/perp_order_crash_child.py",
+      "sha256": "a0e30ffaaebc25d2d665e38e7e20e9f528ff2421a62830f41b9bc69d637fd729",
+      "boundary_calls": [
+        {
+          "line": 24,
+          "scope": "main",
+          "call": "guarded.read_bytes"
+        },
+        {
+          "line": 42,
+          "scope": "main",
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 74,
+          "scope": "main",
+          "call": "financial.close"
+        },
+        {
+          "line": 74,
+          "scope": "main",
+          "call": "target.close"
+        },
+        {
+          "line": 75,
+          "scope": "main",
+          "call": "store.close"
+        }
+      ],
+      "git_index_blob_sha256": "7aa22aa029142c23b647a713a0df2ad7abfffaa8cc0b047a68c6fe57710b2af4",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/perp_order_native_fixture.py",
+      "sha256": "4ce231e39b30a3c9dd9e717b1c022bc23e130765539bbd7153b6bec1f0ad2d40",
+      "boundary_calls": [
+        {
+          "line": 31,
+          "scope": "DurableTestPins.__init__",
+          "call": "guarded.write_bytes"
+        },
+        {
+          "line": 32,
+          "scope": "DurableTestPins.current",
+          "call": "guarded.read_bytes"
+        },
+        {
+          "line": 38,
+          "scope": "DurableTestPins.advance",
+          "call": "guarded.write_bytes"
+        },
+        {
+          "line": 91,
+          "scope": "build",
+          "call": "NativeFinancialWriter"
+        },
+        {
+          "line": 100,
+          "scope": "build",
+          "call": "RestingPerpWriter"
+        },
+        {
+          "line": 122,
+          "scope": "build.arm",
+          "call": "writer.dispatch_resting"
+        },
+        {
+          "line": 133,
+          "scope": "build.dispatch",
+          "call": "writer.dispatch"
+        },
+        {
+          "line": 134,
+          "scope": "build.close",
+          "call": "orders.close"
+        },
+        {
+          "line": 134,
+          "scope": "build.close",
+          "call": "store.close"
+        },
+        {
+          "line": 134,
+          "scope": "build.close",
+          "call": "projection.close"
+        },
+        {
+          "line": 134,
+          "scope": "build.close",
+          "call": "archive.close"
+        }
+      ],
+      "git_index_blob_sha256": "4ce231e39b30a3c9dd9e717b1c022bc23e130765539bbd7153b6bec1f0ad2d40",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_complete_native_stop_fixture.py",
+      "sha256": "d691347afe3749b3c4ede566c71155190a29dfc73115eab01fc508e99c9a0d82",
+      "boundary_calls": [
+        {
+          "line": 29,
+          "scope": "complete_financial_stop",
+          "call": "module.OperationalAutonomousReader"
+        },
+        {
+          "line": 31,
+          "scope": "complete_financial_stop",
+          "call": "PersonalNativeReadAuthority"
+        },
+        {
+          "line": 32,
+          "scope": "complete_financial_stop",
+          "call": "OperationalAutonomousSelectedRead"
+        },
+        {
+          "line": 33,
+          "scope": "complete_financial_stop",
+          "call": "AutonomousCoordinationRead"
+        },
+        {
+          "line": 89,
+          "scope": "complete_financial_stop",
+          "call": "flatten_and_stop"
+        },
+        {
+          "line": 94,
+          "scope": "complete_financial_stop",
+          "call": "flatten_and_stop"
+        }
+      ],
+      "git_index_blob_sha256": "d691347afe3749b3c4ede566c71155190a29dfc73115eab01fc508e99c9a0d82",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_fixture_budget.py",
+      "sha256": "22421b4ad882cebcf04f6cb501bdc209491d674e67a1b90d2cee8aa56cc6c355",
+      "boundary_calls": [],
+      "git_index_blob_sha256": "22421b4ad882cebcf04f6cb501bdc209491d674e67a1b90d2cee8aa56cc6c355",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_fixture_sources.py",
+      "sha256": "f91f7a968680f521daaa3aca6ad37cf1610b54f5599b70597448efa23d086a35",
+      "boundary_calls": [
+        {
+          "line": 58,
+          "scope": "fixture_source_root",
+          "call": "scope_path.open"
+        },
+        {
+          "line": 58,
+          "scope": "fixture_source_root",
+          "call": "stream.read"
+        },
+        {
+          "line": 81,
+          "scope": "fixture_source_root",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 88,
+          "scope": "fixture_source_root",
+          "call": "C.create_string_buffer"
+        },
+        {
+          "line": 89,
+          "scope": "fixture_source_root",
+          "call": "w.read_file"
+        },
+        {
+          "line": 96,
+          "scope": "fixture_source_root",
+          "call": "w.close_handle"
+        }
+      ],
+      "git_index_blob_sha256": "f91f7a968680f521daaa3aca6ad37cf1610b54f5599b70597448efa23d086a35",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_owned_stop_child.py",
+      "sha256": "434b69140bfbbf401e315898396db1a590f1363ead30973605312e4e1a9092a9",
+      "boundary_calls": [
+        {
+          "line": 19,
+          "scope": "main",
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 20,
+          "scope": "main",
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 26,
+          "scope": "main.observe",
+          "call": "guard.read_input"
+        },
+        {
+          "line": 28,
+          "scope": "main.observe",
+          "call": "guard.verify_received_stop"
+        },
+        {
+          "line": 29,
+          "scope": "main",
+          "call": "run_native_pipeline"
+        }
+      ],
+      "git_index_blob_sha256": "434b69140bfbbf401e315898396db1a590f1363ead30973605312e4e1a9092a9",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/personal_readonly_restart_child.py",
+      "sha256": "39403e2e4f60bb1342c7d1436bc4f6693489c430c44e847a42e200624fa6a705",
+      "boundary_calls": [
+        {
+          "line": 73,
+          "scope": "reopen_readonly_fixture",
+          "call": "NativePersonalWriterOwnership"
+        },
+        {
+          "line": 81,
+          "scope": "reopen_readonly_fixture",
+          "call": "NativePersonalWriterOwnership"
+        },
+        {
+          "line": 82,
+          "scope": "reopen_readonly_fixture",
+          "call": "handles.append"
+        },
+        {
+          "line": 85,
+          "scope": "reopen_readonly_fixture",
+          "call": "NativePersonalFinancialReadAuthority"
+        },
+        {
+          "line": 91,
+          "scope": "reopen_readonly_fixture",
+          "call": "handles.append"
+        },
+        {
+          "line": 92,
+          "scope": "reopen_readonly_fixture",
+          "call": "codec.OperationalAutonomousReader"
+        },
+        {
+          "line": 95,
+          "scope": "reopen_readonly_fixture",
+          "call": "NativePersonalInitialReadback"
+        },
+        {
+          "line": 100,
+          "scope": "reopen_readonly_fixture",
+          "call": "PersonalNativeReadAuthority"
+        },
+        {
+          "line": 105,
+          "scope": "reopen_readonly_fixture",
+          "call": "OperationalAutonomousSelectedRead"
+        },
+        {
+          "line": 106,
+          "scope": "reopen_readonly_fixture",
+          "call": "AutonomousCoordinationRead"
+        },
+        {
+          "line": 107,
+          "scope": "reopen_readonly_fixture",
+          "call": "reader.read_committed"
+        },
+        {
+          "line": 108,
+          "scope": "reopen_readonly_fixture",
+          "call": "reader.verify"
+        },
+        {
+          "line": 119,
+          "scope": "reopen_readonly_fixture",
+          "call": "item.close"
+        },
+        {
+          "line": 124,
+          "scope": "main",
+          "call": "guard.read_input"
+        },
+        {
+          "line": 127,
+          "scope": "main",
+          "call": "reopen_readonly_fixture"
+        }
+      ],
+      "git_index_blob_sha256": "60e394bcdcf32973ebf4764fe0cd113fead7ef9e6648ddc81c8943682d643750",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/qd_autonomous_binding_fixture.py",
+      "sha256": "d4fc17168bb44719551eeb300481c234f1a8c143be6e185bb0277e2e685fe379",
+      "boundary_calls": [
+        {
+          "line": 32,
+          "scope": "build",
+          "call": "native.w.WindowsOutput.create_root"
+        }
+      ],
+      "git_index_blob_sha256": "d4fc17168bb44719551eeb300481c234f1a8c143be6e185bb0277e2e685fe379",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/qd_autonomous_native_fixture.py",
+      "sha256": "6be18c4ce8480c1e6d5c3f87e5a7424dbef7835bc5422db95119e044a0ef9a84",
+      "boundary_calls": [
+        {
+          "line": 85,
+          "scope": "build",
+          "call": "port_module.NativeFinancialReadPort"
+        },
+        {
+          "line": 87,
+          "scope": "build",
+          "call": "AutonomousSelectedRead"
+        },
+        {
+          "line": 88,
+          "scope": "build",
+          "call": "AutonomousCoordinationRead"
+        },
+        {
+          "line": 90,
+          "scope": "build.close",
+          "call": "store.close"
+        },
+        {
+          "line": 91,
+          "scope": "build.close",
+          "call": "target.close"
+        },
+        {
+          "line": 92,
+          "scope": "build.close",
+          "call": "archive.close"
+        },
+        {
+          "line": 103,
+          "scope": "build_http_fixture",
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 113,
+          "scope": "build_http_fixture",
+          "call": "n.engine.stop"
+        },
+        {
+          "line": 117,
+          "scope": "build_http_fixture",
+          "call": "AutonomousCoordinationRead(n.engine).read_status"
+        },
+        {
+          "line": 117,
+          "scope": "build_http_fixture",
+          "call": "AutonomousCoordinationRead"
+        },
+        {
+          "line": 119,
+          "scope": "build_http_fixture",
+          "call": "x.close"
+        },
+        {
+          "line": 121,
+          "scope": "build_http_fixture",
+          "call": "guarded.write_bytes"
+        }
+      ],
+      "git_index_blob_sha256": "f2ba83fde79b313595c9dcaa97e0c2d8865d8dcc2b2a1d7900a42bf5f1260b84",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/qd_autonomous_runtime_fixture.py",
+      "sha256": "d09cbcd69c55c12fda81f24aae67cb076e7dd3d7df1a69cddbdfd555ec85a68e",
+      "boundary_calls": [
+        {
+          "line": 23,
+          "scope": "compose",
+          "call": "n.engine.stop"
+        }
+      ],
+      "git_index_blob_sha256": "d09cbcd69c55c12fda81f24aae67cb076e7dd3d7df1a69cddbdfd555ec85a68e",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/run_launch_ownership_native.py",
+      "sha256": "64728147dc2cb0b13f0007311a3ddca9294f6f589354a436028064884b29f8a2",
+      "boundary_calls": [
+        {
+          "line": 79,
+          "scope": "native_refusals",
+          "call": "RetainedLaunchBinding"
+        },
+        {
+          "line": 83,
+          "scope": "native_refusals",
+          "call": "RetainedLaunchBinding"
+        },
+        {
+          "line": 87,
+          "scope": "native_refusals",
+          "call": "RetainedLaunchBinding"
+        },
+        {
+          "line": 91,
+          "scope": "native_refusals",
+          "call": "RetainedLaunchBinding"
+        },
+        {
+          "line": 96,
+          "scope": "native_refusals.closed_parent",
+          "call": "native.k.OpenProcess"
+        },
+        {
+          "line": 97,
+          "scope": "native_refusals.closed_parent",
+          "call": "native.k.CloseHandle"
+        },
+        {
+          "line": 98,
+          "scope": "native_refusals.closed_parent",
+          "call": "RetainedLaunchBinding"
+        },
+        {
+          "line": 117,
+          "scope": "run_case",
+          "call": "case.mkdir"
+        },
+        {
+          "line": 126,
+          "scope": "run_case",
+          "call": "k.OpenProcess"
+        },
+        {
+          "line": 127,
+          "scope": "run_case",
+          "call": "k.CreateJobObjectW"
+        },
+        {
+          "line": 131,
+          "scope": "run_case",
+          "call": "k.SetInformationJobObject"
+        },
+        {
+          "line": 157,
+          "scope": "run_case",
+          "call": "os.pipe"
+        },
+        {
+          "line": 158,
+          "scope": "run_case",
+          "call": "os.pipe"
+        },
+        {
+          "line": 159,
+          "scope": "run_case",
+          "call": "os.fdopen"
+        },
+        {
+          "line": 160,
+          "scope": "run_case",
+          "call": "os.fdopen"
+        },
+        {
+          "line": 161,
+          "scope": "run_case",
+          "call": "os.fdopen"
+        },
+        {
+          "line": 162,
+          "scope": "run_case",
+          "call": "(case / 'child-stderr.log').open"
+        },
+        {
+          "line": 164,
+          "scope": "run_case",
+          "call": "msvcrt.get_osfhandle"
+        },
+        {
+          "line": 167,
+          "scope": "run_case",
+          "call": "os.set_handle_inheritable"
+        },
+        {
+          "line": 177,
+          "scope": "run_case",
+          "call": "_winapi.CreateProcess"
+        },
+        {
+          "line": 188,
+          "scope": "run_case",
+          "call": "k.AssignProcessToJobObject"
+        },
+        {
+          "line": 190,
+          "scope": "run_case",
+          "call": "os.set_handle_inheritable"
+        },
+        {
+          "line": 191,
+          "scope": "run_case",
+          "call": "os.close"
+        },
+        {
+          "line": 192,
+          "scope": "run_case",
+          "call": "incoming.close"
+        },
+        {
+          "line": 193,
+          "scope": "run_case",
+          "call": "WindowsLaunchObserver"
+        },
+        {
+          "line": 198,
+          "scope": "run_case",
+          "call": "LaunchRequest"
+        },
+        {
+          "line": 230,
+          "scope": "run_case",
+          "call": "k.ResumeThread"
+        },
+        {
+          "line": 231,
+          "scope": "run_case",
+          "call": "k.CloseHandle"
+        },
+        {
+          "line": 236,
+          "scope": "run_case.read_ready",
+          "call": "output.readline"
+        },
+        {
+          "line": 238,
+          "scope": "run_case",
+          "call": "threading.Thread"
+        },
+        {
+          "line": 239,
+          "scope": "run_case",
+          "call": "read_thread.start"
+        },
+        {
+          "line": 245,
+          "scope": "run_case",
+          "call": "RetainedLaunchBinding"
+        },
+        {
+          "line": 272,
+          "scope": "run_case",
+          "call": "k.OpenProcess"
+        },
+        {
+          "line": 300,
+          "scope": "run_case",
+          "call": "query_result.stdout.decode"
+        },
+        {
+          "line": 309,
+          "scope": "run_case",
+          "call": "k.CloseHandle"
+        },
+        {
+          "line": 318,
+          "scope": "run_case",
+          "call": "k.OpenProcess"
+        },
+        {
+          "line": 324,
+          "scope": "run_case",
+          "call": "extra_handles.values"
+        },
+        {
+          "line": 346,
+          "scope": "run_case",
+          "call": "outgoing.close"
+        },
+        {
+          "line": 356,
+          "scope": "run_case",
+          "call": "extra_handles.values"
+        },
+        {
+          "line": 390,
+          "scope": "run_case",
+          "call": "outgoing.close"
+        },
+        {
+          "line": 394,
+          "scope": "run_case",
+          "call": "k.TerminateJobObject"
+        },
+        {
+          "line": 398,
+          "scope": "run_case",
+          "call": "k.TerminateJobObject"
+        },
+        {
+          "line": 404,
+          "scope": "run_case",
+          "call": "read_thread.join"
+        },
+        {
+          "line": 405,
+          "scope": "run_case",
+          "call": "read_thread.is_alive"
+        },
+        {
+          "line": 408,
+          "scope": "run_case",
+          "call": "stream.close"
+        },
+        {
+          "line": 412,
+          "scope": "run_case",
+          "call": "extra_handles.values"
+        },
+        {
+          "line": 420,
+          "scope": "run_case",
+          "call": "k.CloseHandle"
+        },
+        {
+          "line": 423,
+          "scope": "run_case",
+          "call": "(case / 'result.json').write_text"
+        },
+        {
+          "line": 482,
+          "scope": "main",
+          "call": "(root / 'native-claim.json').write_text"
+        },
+        {
+          "line": 510,
+          "scope": "main",
+          "call": "hashlib.sha256(p.read_bytes()).hexdigest"
+        },
+        {
+          "line": 510,
+          "scope": "main",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 547,
+          "scope": "main",
+          "call": "lease.close"
+        },
+        {
+          "line": 556,
+          "scope": "main",
+          "call": "(root / 'native-result.json').write_text"
+        }
+      ],
+      "git_index_blob_sha256": "64728147dc2cb0b13f0007311a3ddca9294f6f589354a436028064884b29f8a2",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_aip06_fixture_guard_integration.py",
+      "sha256": "fe9275df12b8b9e34a859e1ac6e72975b7f88e8750f30d5fc59997271161056c",
+      "boundary_calls": [
+        {
+          "line": 84,
+          "scope": "IO.note_closed",
+          "call": "self.closed_handles.add"
+        },
+        {
+          "line": 117,
+          "scope": "IO.sqlite_open",
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 140,
+          "scope": "Processes.plan",
+          "call": "launch_fixture"
+        },
+        {
+          "line": 143,
+          "scope": "Processes.plan",
+          "call": "api.rows['launch'].update"
+        },
+        {
+          "line": 153,
+          "scope": "Processes.plan",
+          "call": "ready.update"
+        },
+        {
+          "line": 284,
+          "scope": "actual",
+          "call": "Path(file).read_text"
+        },
+        {
+          "line": 345,
+          "scope": "test_actual_durable_pins_use_reserved_write_cas_and_identity_readback",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 372,
+          "scope": "test_actual_write_boundary_rejects_escape_before_io",
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 379,
+          "scope": "test_reservation_exhaustion_prevents_actual_callback",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 387,
+          "scope": "test_actual_write_path_retains_root_and_namespace_checks",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 399,
+          "scope": "test_actual_write_path_retains_root_and_namespace_checks",
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 425,
+          "scope": "test_raw_python_open_is_intercepted_before_creating_any_file",
+          "call": "open"
+        },
+        {
+          "line": 452,
+          "scope": "native_module.relative",
+          "call": "create"
+        },
+        {
+          "line": 477,
+          "scope": "test_actual_native_open_write_close_wrappers_reserve_before_effect_and_release_exact_lifetime",
+          "call": "w.create_file"
+        },
+        {
+          "line": 478,
+          "scope": "test_actual_native_open_write_close_wrappers_reserve_before_effect_and_release_exact_lifetime",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 479,
+          "scope": "test_actual_native_open_write_close_wrappers_reserve_before_effect_and_release_exact_lifetime",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 481,
+          "scope": "test_actual_native_open_write_close_wrappers_reserve_before_effect_and_release_exact_lifetime",
+          "call": "w.write_file"
+        },
+        {
+          "line": 484,
+          "scope": "test_actual_native_open_write_close_wrappers_reserve_before_effect_and_release_exact_lifetime",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 487,
+          "scope": "test_actual_native_open_write_close_wrappers_reserve_before_effect_and_release_exact_lifetime",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 501,
+          "scope": "test_actual_native_wrappers_fail_closed",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 507,
+          "scope": "test_actual_native_wrappers_fail_closed",
+          "call": "w.create_file"
+        },
+        {
+          "line": 508,
+          "scope": "test_actual_native_wrappers_fail_closed",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 509,
+          "scope": "test_actual_native_wrappers_fail_closed",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 512,
+          "scope": "test_actual_native_wrappers_fail_closed",
+          "call": "w.relative_open"
+        },
+        {
+          "line": 515,
+          "scope": "test_actual_native_wrappers_fail_closed",
+          "call": "w.write_file"
+        },
+        {
+          "line": 521,
+          "scope": "test_actual_native_wrappers_fail_closed",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 552,
+          "scope": "test_actual_crash_launch_uses_guard_and_child_binding_before_target_release",
+          "call": "child.close"
+        },
+        {
+          "line": 574,
+          "scope": "test_actual_launch_rejects_missing_binding_and_cleanup_evidence",
+          "call": "g.popen"
+        },
+        {
+          "line": 596,
+          "scope": "test_query_helpers_are_guarded_and_repeated_queries_cannot_reset_accounting",
+          "call": "g.query"
+        },
+        {
+          "line": 608,
+          "scope": "test_query_helpers_are_guarded_and_repeated_queries_cannot_reset_accounting",
+          "call": "g.query"
+        },
+        {
+          "line": 624,
+          "scope": "test_real_sqlite_engine_refuses_side_channel_and_capacity_reconfiguration",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 626,
+          "scope": "test_real_sqlite_engine_refuses_side_channel_and_capacity_reconfiguration",
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 636,
+          "scope": "test_real_sqlite_engine_guarded_schema_transaction_cursor_and_release",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 637,
+          "scope": "test_real_sqlite_engine_guarded_schema_transaction_cursor_and_release",
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 651,
+          "scope": "test_wired_stop_verifier_preserves_missing_evidence_and_recovery_refusals",
+          "call": "stop_fixture"
+        },
+        {
+          "line": 670,
+          "scope": "test_wired_stop_verifier_preserves_missing_evidence_and_recovery_refusals",
+          "call": "f.guard.resources.reserve_stop_request"
+        },
+        {
+          "line": 673,
+          "scope": "test_wired_stop_verifier_preserves_missing_evidence_and_recovery_refusals",
+          "call": "f.guard.finish_stop"
+        },
+        {
+          "line": 683,
+          "scope": "test_wired_stop_replays_exact_declared_accounts_without_fabricating_counterpart",
+          "call": "stop_fixture"
+        },
+        {
+          "line": 691,
+          "scope": "test_wired_stop_replays_exact_declared_accounts_without_fabricating_counterpart",
+          "call": "f.guard.finish_stop"
+        },
+        {
+          "line": 697,
+          "scope": "test_full_scope_stop_cannot_silently_drop_an_account",
+          "call": "stop_fixture"
+        },
+        {
+          "line": 700,
+          "scope": "test_full_scope_stop_cannot_silently_drop_an_account",
+          "call": "x.stop.finish"
+        },
+        {
+          "line": 731,
+          "scope": "JournalIO.flush_close",
+          "call": "hashlib.sha256(self.files[handle]).hexdigest"
+        },
+        {
+          "line": 736,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "JournalIO"
+        },
+        {
+          "line": 737,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "g.CreateNewJournal"
+        },
+        {
+          "line": 743,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "ledger.reserve"
+        },
+        {
+          "line": 744,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "journal.receipt"
+        },
+        {
+          "line": 746,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "recovered.read"
+        },
+        {
+          "line": 746,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "ledger.read"
+        },
+        {
+          "line": 748,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "recovered.reserve"
+        },
+        {
+          "line": 751,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "ledger.reserve"
+        },
+        {
+          "line": 754,
+          "scope": "test_concrete_journal_algorithm_publishes_cas_flush_closed_ack_and_recovery",
+          "call": "journal.receipt"
+        },
+        {
+          "line": 758,
+          "scope": "test_concrete_journal_missing_sequence_and_foreign_append_refuse",
+          "call": "JournalIO"
+        },
+        {
+          "line": 759,
+          "scope": "test_concrete_journal_missing_sequence_and_foreign_append_refuse",
+          "call": "g.CreateNewJournal"
+        },
+        {
+          "line": 762,
+          "scope": "test_concrete_journal_missing_sequence_and_foreign_append_refuse",
+          "call": "journal.read"
+        },
+        {
+          "line": 765,
+          "scope": "test_concrete_journal_missing_sequence_and_foreign_append_refuse",
+          "call": "journal.append"
+        },
+        {
+          "line": 771,
+          "scope": "test_actual_stop_timing_entrypoint_has_no_raw_launch_or_random_sample_root",
+          "call": "Path('tests/test_personal_owned_stop_timing.py').read_text"
+        },
+        {
+          "line": 854,
+          "scope": "test_actual_owned_stop_entrypoint_drives_real_guards_replay_reopen_and_release.collect",
+          "call": "guard.spawn"
+        },
+        {
+          "line": 903,
+          "scope": "test_actual_owned_stop_entrypoint_drives_real_guards_replay_reopen_and_release",
+          "call": "Path('tests/test_personal_owned_stop_timing.py').absolute"
+        },
+        {
+          "line": 910,
+          "scope": "test_actual_owned_stop_entrypoint_drives_real_guards_replay_reopen_and_release",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 918,
+          "scope": "test_actual_owned_stop_entrypoint_drives_real_guards_replay_reopen_and_release",
+          "call": "x.guard.run_owned_stop_sample"
+        },
+        {
+          "line": 923,
+          "scope": "test_actual_query_observer_selects_guarded_query_and_sqlite_fixture_routes_guarded_connection",
+          "call": "Path('scripts/observation_runtime/launch_ownership_windows.py').read_text"
+        },
+        {
+          "line": 933,
+          "scope": "test_actual_query_observer_selects_guarded_query_and_sqlite_fixture_routes_guarded_connection",
+          "call": "Path(file).read_text"
+        },
+        {
+          "line": 943,
+          "scope": "test_actual_native_token_allocation_is_reserved_and_closed_without_foreign_handle_adoption",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 945,
+          "scope": "test_actual_native_token_allocation_is_reserved_and_closed_without_foreign_handle_adoption",
+          "call": "w.close_handle"
+        },
+        {
+          "line": 954,
+          "scope": "test_worker_stop_command_is_bound_to_durable_parent_request_not_port_boolean",
+          "call": "stop_fixture"
+        },
+        {
+          "line": 964,
+          "scope": "test_worker_stop_command_is_bound_to_durable_parent_request_not_port_boolean",
+          "call": "f.guard.verify_received_stop"
+        },
+        {
+          "line": 976,
+          "scope": "test_worker_stop_command_is_bound_to_durable_parent_request_not_port_boolean",
+          "call": "x.s.ledger.resolve_stop"
+        },
+        {
+          "line": 978,
+          "scope": "test_worker_stop_command_is_bound_to_durable_parent_request_not_port_boolean",
+          "call": "f.guard.verify_received_stop"
+        },
+        {
+          "line": 995,
+          "scope": "test_child_input_uses_real_bounded_read_guard",
+          "call": "x.guard.read_input"
+        },
+        {
+          "line": 1001,
+          "scope": "test_closed_sqlite_capacity_is_not_an_open_handle_or_a_budget_refund",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 1003,
+          "scope": "test_closed_sqlite_capacity_is_not_an_open_handle_or_a_budget_refund",
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 1006,
+          "scope": "test_closed_sqlite_capacity_is_not_an_open_handle_or_a_budget_refund",
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 1061,
+          "scope": "test_failed_sqlite_configuration_closes_owned_driver_without_accepting_it",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 1063,
+          "scope": "test_failed_sqlite_configuration_closes_owned_driver_without_accepting_it",
+          "call": "g.sqlite_connect"
+        },
+        {
+          "line": 1073,
+          "scope": "test_replace_cannot_cross_accounts_or_adopt_existing_private_artifacts",
+          "call": "g.mkdir"
+        },
+        {
+          "line": 1074,
+          "scope": "test_replace_cannot_cross_accounts_or_adopt_existing_private_artifacts",
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 1075,
+          "scope": "test_replace_cannot_cross_accounts_or_adopt_existing_private_artifacts",
+          "call": "g.write_bytes"
+        },
+        {
+          "line": 1104,
+          "scope": "test_actual_image_lease_close_and_open_use_reserved_pinned_lifetime",
+          "call": "g.image_open"
+        },
+        {
+          "line": 1108,
+          "scope": "test_actual_image_lease_close_and_open_use_reserved_pinned_lifetime",
+          "call": "lease.close"
+        },
+        {
+          "line": 1111,
+          "scope": "test_actual_image_lease_close_and_open_use_reserved_pinned_lifetime",
+          "call": "g.image_open"
+        },
+        {
+          "line": 1147,
+          "scope": "test_active_guard_cannot_reuse_legacy_grants_or_installed_source_scope",
+          "call": "g.mkdir"
+        }
+      ],
+      "git_index_blob_sha256": "fe9275df12b8b9e34a859e1ac6e72975b7f88e8750f30d5fc59997271161056c",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_aip06_windows_adapters.py",
+      "sha256": "6be93ed58652918bd9a5428b6a27efa2eb0260efda26068235ee6ea42bc9072a",
+      "boundary_calls": [
+        {
+          "line": 86,
+          "scope": "FileResponses.open_drive",
+          "call": "self.allocate"
+        },
+        {
+          "line": 101,
+          "scope": "FileResponses.relative",
+          "call": "NativeOpenFailed"
+        },
+        {
+          "line": 104,
+          "scope": "FileResponses.relative",
+          "call": "NativeOpenFailed"
+        },
+        {
+          "line": 117,
+          "scope": "FileResponses.relative",
+          "call": "NativeOpenFailed"
+        },
+        {
+          "line": 118,
+          "scope": "FileResponses.relative",
+          "call": "self.allocate"
+        },
+        {
+          "line": 137,
+          "scope": "FileResponses.close",
+          "call": "self.handles.pop"
+        },
+        {
+          "line": 182,
+          "scope": "io_fixture",
+          "call": "AllocationBook"
+        },
+        {
+          "line": 202,
+          "scope": "test_concrete_io_actual_guard_path_create_write_flush_readback_and_close",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 203,
+          "scope": "test_concrete_io_actual_guard_path_create_write_flush_readback_and_close",
+          "call": "guards.write_bytes"
+        },
+        {
+          "line": 204,
+          "scope": "test_concrete_io_actual_guard_path_create_write_flush_readback_and_close",
+          "call": "guards.read_bytes"
+        },
+        {
+          "line": 205,
+          "scope": "test_concrete_io_actual_guard_path_create_write_flush_readback_and_close",
+          "call": "guards.rewrite_text"
+        },
+        {
+          "line": 206,
+          "scope": "test_concrete_io_actual_guard_path_create_write_flush_readback_and_close",
+          "call": "guards.read_bytes(path_for('P', 'pin.json')).decode"
+        },
+        {
+          "line": 206,
+          "scope": "test_concrete_io_actual_guard_path_create_write_flush_readback_and_close",
+          "call": "guards.read_bytes"
+        },
+        {
+          "line": 209,
+          "scope": "test_concrete_io_actual_guard_path_create_write_flush_readback_and_close",
+          "call": "x.io.close_cache"
+        },
+        {
+          "line": 222,
+          "scope": "test_concrete_io_scope_refuses_before_any_native_creation",
+          "call": "guards.write_bytes"
+        },
+        {
+          "line": 238,
+          "scope": "test_concrete_io_injected_native_refusals_preserve_unknown",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 250,
+          "scope": "test_concrete_io_injected_native_refusals_preserve_unknown",
+          "call": "guards.write_bytes"
+        },
+        {
+          "line": 257,
+          "scope": "test_concrete_io_injected_native_refusals_preserve_unknown",
+          "call": "x.io.close_cache"
+        },
+        {
+          "line": 263,
+          "scope": "test_missing_leaf_closes_the_prospective_native_handle_reservation",
+          "call": "x.io.close_cache"
+        },
+        {
+          "line": 272,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 273,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 274,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "NativeJournalIO"
+        },
+        {
+          "line": 275,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "guards.CreateNewJournal"
+        },
+        {
+          "line": 278,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "ledger.reserve"
+        },
+        {
+          "line": 279,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "journal.receipt"
+        },
+        {
+          "line": 280,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "journal.read"
+        },
+        {
+          "line": 281,
+          "scope": "test_concrete_native_journal_creates_flushes_reads_and_verifies_closed_batches",
+          "call": "x.io.close_cache"
+        },
+        {
+          "line": 301,
+          "scope": "MemoryEndpoint.write_all",
+          "call": "self.after_write"
+        },
+        {
+          "line": 344,
+          "scope": "test_ipc_actual_encoding_peer_binding_version_and_round_trip",
+          "call": "x.parent.send"
+        },
+        {
+          "line": 345,
+          "scope": "test_ipc_actual_encoding_peer_binding_version_and_round_trip",
+          "call": "x.child_channel.receive"
+        },
+        {
+          "line": 349,
+          "scope": "test_ipc_actual_encoding_peer_binding_version_and_round_trip",
+          "call": "x.child_channel.send"
+        },
+        {
+          "line": 352,
+          "scope": "test_ipc_actual_encoding_peer_binding_version_and_round_trip",
+          "call": "x.parent.receive"
+        },
+        {
+          "line": 372,
+          "scope": "test_ipc_framing_identity_revision_and_freshness_fail_closed",
+          "call": "x.parent.send"
+        },
+        {
+          "line": 395,
+          "scope": "test_ipc_framing_identity_revision_and_freshness_fail_closed",
+          "call": "x.child_channel.receive"
+        },
+        {
+          "line": 398,
+          "scope": "test_ipc_framing_identity_revision_and_freshness_fail_closed",
+          "call": "x.child_channel.send"
+        },
+        {
+          "line": 403,
+          "scope": "test_duplicate_pipe_frame_is_not_a_second_acknowledgement",
+          "call": "x.parent.send"
+        },
+        {
+          "line": 405,
+          "scope": "test_duplicate_pipe_frame_is_not_a_second_acknowledgement",
+          "call": "x.child_channel.receive"
+        },
+        {
+          "line": 408,
+          "scope": "test_duplicate_pipe_frame_is_not_a_second_acknowledgement",
+          "call": "x.child_channel.receive"
+        },
+        {
+          "line": 441,
+          "scope": "rpc_fixture",
+          "call": "x.s.ledger.read"
+        },
+        {
+          "line": 452,
+          "scope": "test_shared_child_resources_mutate_parent_ledger_without_a_second_journal",
+          "call": "f.remote.reserve"
+        },
+        {
+          "line": 455,
+          "scope": "test_shared_child_resources_mutate_parent_ledger_without_a_second_journal",
+          "call": "f.remote.close"
+        },
+        {
+          "line": 488,
+          "scope": "test_rpc_rejects_unauthorized_or_uncertain_mutations",
+          "call": "f.remote.reserve"
+        },
+        {
+          "line": 489,
+          "scope": "test_rpc_rejects_unauthorized_or_uncertain_mutations",
+          "call": "f.remote.close"
+        },
+        {
+          "line": 493,
+          "scope": "test_rpc_rejects_unauthorized_or_uncertain_mutations",
+          "call": "f.remote.reserve"
+        },
+        {
+          "line": 508,
+          "scope": "test_broker_recovery_reports_uncertain_tail_without_replaying_it",
+          "call": "f.remote.reserve"
+        },
+        {
+          "line": 544,
+          "scope": "test_stop_messages_require_real_correlated_ack_and_complete_typed_drain",
+          "call": "StopMessages"
+        },
+        {
+          "line": 628,
+          "scope": "test_concrete_cim_adapter_uses_direct_query_and_closes_native_references",
+          "call": "NativeAllocations"
+        },
+        {
+          "line": 629,
+          "scope": "test_concrete_cim_adapter_uses_direct_query_and_closes_native_references",
+          "call": "CimProcessQuery"
+        },
+        {
+          "line": 630,
+          "scope": "test_concrete_cim_adapter_uses_direct_query_and_closes_native_references",
+          "call": "query.process"
+        },
+        {
+          "line": 651,
+          "scope": "test_cim_errors_or_incomplete_fields_never_become_a_native_identity",
+          "call": "NativeAllocations"
+        },
+        {
+          "line": 652,
+          "scope": "test_cim_errors_or_incomplete_fields_never_become_a_native_identity",
+          "call": "CimProcessQuery"
+        },
+        {
+          "line": 696,
+          "scope": "test_bootstrap_escrow_is_not_a_durable_ack_and_is_charged_in_first_real_event",
+          "call": "boot.reserve"
+        },
+        {
+          "line": 697,
+          "scope": "test_bootstrap_escrow_is_not_a_durable_ack_and_is_charged_in_first_real_event",
+          "call": "boot.reserve"
+        },
+        {
+          "line": 701,
+          "scope": "test_bootstrap_escrow_is_not_a_durable_ack_and_is_charged_in_first_real_event",
+          "call": "boot.read"
+        },
+        {
+          "line": 705,
+          "scope": "test_bootstrap_escrow_is_not_a_durable_ack_and_is_charged_in_first_real_event",
+          "call": "Journal"
+        },
+        {
+          "line": 729,
+          "scope": "test_native_output_chunks_and_source_provenance_use_actual_guarded_io",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 731,
+          "scope": "test_native_output_chunks_and_source_provenance_use_actual_guarded_io",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 742,
+          "scope": "test_native_output_chunks_and_source_provenance_use_actual_guarded_io",
+          "call": "stream.write"
+        },
+        {
+          "line": 743,
+          "scope": "test_native_output_chunks_and_source_provenance_use_actual_guarded_io",
+          "call": "stream.close"
+        },
+        {
+          "line": 751,
+          "scope": "test_native_output_chunks_and_source_provenance_use_actual_guarded_io",
+          "call": "x.io.close_cache"
+        },
+        {
+          "line": 816,
+          "scope": "bootstrap_fixture.parent_dispatch",
+          "call": "x.parent.receive"
+        },
+        {
+          "line": 820,
+          "scope": "bootstrap_fixture.parent_dispatch",
+          "call": "x.s.ledger.read"
+        },
+        {
+          "line": 830,
+          "scope": "bootstrap_fixture.parent_dispatch",
+          "call": "x.parent.send"
+        },
+        {
+          "line": 841,
+          "scope": "bootstrap_fixture.parent_dispatch",
+          "call": "x.parent.send"
+        },
+        {
+          "line": 858,
+          "scope": "bootstrap_fixture.factory",
+          "call": "AllocationBook"
+        },
+        {
+          "line": 936,
+          "scope": "test_ipc_rejects_unrecognized_kind_even_without_expected_kind_filter",
+          "call": "x.parent.send"
+        },
+        {
+          "line": 941,
+          "scope": "test_ipc_rejects_unrecognized_kind_even_without_expected_kind_filter",
+          "call": "x.child_channel.receive"
+        },
+        {
+          "line": 983,
+          "scope": "pipe_pair",
+          "call": "PipeResponses"
+        },
+        {
+          "line": 991,
+          "scope": "pipe_pair",
+          "call": "CreditedPipeEndpoint"
+        },
+        {
+          "line": 994,
+          "scope": "pipe_pair",
+          "call": "CreditedPipeEndpoint"
+        },
+        {
+          "line": 1001,
+          "scope": "test_credited_transport_streams_larger_than_pipe_capacity_without_new_thread",
+          "call": "pipe_pair"
+        },
+        {
+          "line": 1007,
+          "scope": "test_credited_transport_streams_larger_than_pipe_capacity_without_new_thread.drain",
+          "call": "received.append"
+        },
+        {
+          "line": 1007,
+          "scope": "test_credited_transport_streams_larger_than_pipe_capacity_without_new_thread.drain",
+          "call": "b.read_exact"
+        },
+        {
+          "line": 1010,
+          "scope": "test_credited_transport_streams_larger_than_pipe_capacity_without_new_thread",
+          "call": "a.write_all"
+        },
+        {
+          "line": 1020,
+          "scope": "test_credited_transport_rejects_replay_and_impossible_byte_credits",
+          "call": "pipe_pair"
+        },
+        {
+          "line": 1021,
+          "scope": "test_credited_transport_rejects_replay_and_impossible_byte_credits",
+          "call": "a.write_all"
+        },
+        {
+          "line": 1028,
+          "scope": "test_credited_transport_rejects_replay_and_impossible_byte_credits",
+          "call": "api.write"
+        },
+        {
+          "line": 1030,
+          "scope": "test_credited_transport_rejects_replay_and_impossible_byte_credits",
+          "call": "a.write_all"
+        },
+        {
+          "line": 1035,
+          "scope": "test_credited_transport_missing_bytes_timeout_remains_unknown",
+          "call": "pipe_pair"
+        },
+        {
+          "line": 1037,
+          "scope": "test_credited_transport_missing_bytes_timeout_remains_unknown",
+          "call": "b.read_exact"
+        },
+        {
+          "line": 1044,
+          "scope": "test_journal_write_error_closes_retained_native_handles_without_receipt",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 1045,
+          "scope": "test_journal_write_error_closes_retained_native_handles_without_receipt",
+          "call": "guards.mkdir"
+        },
+        {
+          "line": 1047,
+          "scope": "test_journal_write_error_closes_retained_native_handles_without_receipt",
+          "call": "NativeJournalIO"
+        },
+        {
+          "line": 1048,
+          "scope": "test_journal_write_error_closes_retained_native_handles_without_receipt",
+          "call": "native.create_new"
+        },
+        {
+          "line": 1055,
+          "scope": "test_journal_write_error_closes_retained_native_handles_without_receipt",
+          "call": "native.write_exact"
+        },
+        {
+          "line": 1061,
+          "scope": "test_journal_write_error_closes_retained_native_handles_without_receipt",
+          "call": "x.io.close_cache"
+        },
+        {
+          "line": 1070,
+          "scope": "test_output_write_failure_retains_unacknowledged_chunk_bytes",
+          "call": "stream.write"
+        },
+        {
+          "line": 1160,
+          "scope": "test_bootstrap_reservation_cannot_be_modified_after_ledger_construction",
+          "call": "boot.reserve"
+        },
+        {
+          "line": 1162,
+          "scope": "test_bootstrap_reservation_cannot_be_modified_after_ledger_construction",
+          "call": "Journal"
+        },
+        {
+          "line": 1177,
+          "scope": "test_sqlite_release_requires_closed_database_not_an_arbitrary_programming_error",
+          "call": "x.s.ledger.reserve"
+        },
+        {
+          "line": 1180,
+          "scope": "test_sqlite_release_requires_closed_database_not_an_arbitrary_programming_error",
+          "call": "sqlite3.connect"
+        },
+        {
+          "line": 1181,
+          "scope": "test_sqlite_release_requires_closed_database_not_an_arbitrary_programming_error",
+          "call": "db.close"
+        },
+        {
+          "line": 1182,
+          "scope": "test_sqlite_release_requires_closed_database_not_an_arbitrary_programming_error",
+          "call": "x.io.note_closed"
+        },
+        {
+          "line": 1183,
+          "scope": "test_sqlite_release_requires_closed_database_not_an_arbitrary_programming_error",
+          "call": "x.io.closed"
+        },
+        {
+          "line": 1193,
+          "scope": "test_sqlite_release_requires_closed_database_not_an_arbitrary_programming_error",
+          "call": "x.io.note_closed"
+        },
+        {
+          "line": 1194,
+          "scope": "test_sqlite_release_requires_closed_database_not_an_arbitrary_programming_error",
+          "call": "x.io.closed"
+        }
+      ],
+      "git_index_blob_sha256": "6be93ed58652918bd9a5428b6a27efa2eb0260efda26068235ee6ea42bc9072a",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_perp_native_shutdown.py",
+      "sha256": "701054fe996fc48c51c8cbbd38eb4e68c0d962b4d2ac784a6a33dd3fe7fe76a1",
+      "boundary_calls": [
+        {
+          "line": 42,
+          "scope": "installed",
+          "call": "CanonicalWriterLane"
+        },
+        {
+          "line": 46,
+          "scope": "installed",
+          "call": "r.entry_closed.is_set"
+        },
+        {
+          "line": 50,
+          "scope": "installed",
+          "call": "archive.close"
+        },
+        {
+          "line": 73,
+          "scope": "test_actual_native_stop_flattens_remaining_and_reconciles_session",
+          "call": "open_position"
+        },
+        {
+          "line": 77,
+          "scope": "test_actual_native_stop_flattens_remaining_and_reconciles_session",
+          "call": "ThreadPoolExecutor"
+        },
+        {
+          "line": 78,
+          "scope": "test_actual_native_stop_flattens_remaining_and_reconciles_session",
+          "call": "r.stop"
+        },
+        {
+          "line": 91,
+          "scope": "test_actual_stop_failure_never_falsely_clean",
+          "call": "open_position"
+        },
+        {
+          "line": 101,
+          "scope": "test_actual_stop_failure_never_falsely_clean",
+          "call": "r.stop"
+        },
+        {
+          "line": 109,
+          "scope": "test_actual_stop_failure_never_falsely_clean",
+          "call": "r.stop"
+        },
+        {
+          "line": 115,
+          "scope": "test_flat_stop_does_not_invent_prices_or_financial_events",
+          "call": "r.stop"
+        }
+      ],
+      "git_index_blob_sha256": "701054fe996fc48c51c8cbbd38eb4e68c0d962b4d2ac784a6a33dd3fe7fe76a1",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_perp_order_crash_race_native.py",
+      "sha256": "348f19686fcdad0ce3878b68fa0c1b6d3fa79931c313e4d2567bb55c02ade272",
+      "boundary_calls": [
+        {
+          "line": 22,
+          "scope": "start",
+          "call": "guarded.popen"
+        },
+        {
+          "line": 36,
+          "scope": "test_actual_subprocess_crash_at_native_control_boundaries",
+          "call": "s.writer._cut"
+        },
+        {
+          "line": 37,
+          "scope": "test_actual_subprocess_crash_at_native_control_boundaries",
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 56,
+          "scope": "test_two_native_processes_same_order_have_one_durable_effect",
+          "call": "s.writer._cut"
+        },
+        {
+          "line": 61,
+          "scope": "test_two_native_processes_same_order_have_one_durable_effect",
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 64,
+          "scope": "test_two_native_processes_same_order_have_one_durable_effect",
+          "call": "ready.exists"
+        },
+        {
+          "line": 67,
+          "scope": "test_two_native_processes_same_order_have_one_durable_effect",
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 81,
+          "scope": "test_missing_pin_or_rollback_refuses_and_never_adopts_tail",
+          "call": "s.writer._cut"
+        },
+        {
+          "line": 84,
+          "scope": "test_missing_pin_or_rollback_refuses_and_never_adopts_tail",
+          "call": "guarded.rewrite_text"
+        },
+        {
+          "line": 86,
+          "scope": "test_missing_pin_or_rollback_refuses_and_never_adopts_tail",
+          "call": "guarded.rewrite_text"
+        }
+      ],
+      "git_index_blob_sha256": "50c1cb5774ee045a397927e960c2305f6b5f19ab481e968bf3d2781a79a54171",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_personal_native_pipeline_capacity.py",
+      "sha256": "bfdbc4e3d6a0f5536f4c3fabf92a5280601176bac4cea7aa329c9dcc9e4a18d3",
+      "boundary_calls": [
+        {
+          "line": 88,
+          "scope": "run_native_pipeline",
+          "call": "s.ledger.db.close"
+        },
+        {
+          "line": 90,
+          "scope": "run_native_pipeline",
+          "call": "native.w.WindowsOutput.create_root"
+        },
+        {
+          "line": 102,
+          "scope": "run_native_pipeline",
+          "call": "handles.append"
+        },
+        {
+          "line": 107,
+          "scope": "run_native_pipeline.bounded_write",
+          "call": "write"
+        },
+        {
+          "line": 124,
+          "scope": "run_native_pipeline",
+          "call": "NativePersonalInitialReadback"
+        },
+        {
+          "line": 125,
+          "scope": "run_native_pipeline",
+          "call": "NativePersonalWriterOwnership"
+        },
+        {
+          "line": 127,
+          "scope": "run_native_pipeline",
+          "call": "handles.append"
+        },
+        {
+          "line": 132,
+          "scope": "run_native_pipeline",
+          "call": "ledger.connect"
+        },
+        {
+          "line": 136,
+          "scope": "run_native_pipeline",
+          "call": "images.reserve_stop_capacity"
+        },
+        {
+          "line": 139,
+          "scope": "run_native_pipeline",
+          "call": "reservation.reserve"
+        },
+        {
+          "line": 145,
+          "scope": "run_native_pipeline",
+          "call": "handles.append"
+        },
+        {
+          "line": 168,
+          "scope": "run_native_pipeline",
+          "call": "handles.append"
+        },
+        {
+          "line": 170,
+          "scope": "run_native_pipeline",
+          "call": "handles.append"
+        },
+        {
+          "line": 179,
+          "scope": "run_native_pipeline",
+          "call": "images.begin_reserved_stop"
+        },
+        {
+          "line": 184,
+          "scope": "run_native_pipeline",
+          "call": "stop_observer"
+        },
+        {
+          "line": 185,
+          "scope": "run_native_pipeline",
+          "call": "complete_financial_stop"
+        },
+        {
+          "line": 189,
+          "scope": "run_native_pipeline",
+          "call": "ledger.connect"
+        },
+        {
+          "line": 194,
+          "scope": "run_native_pipeline",
+          "call": "stop_observer"
+        },
+        {
+          "line": 213,
+          "scope": "run_native_pipeline",
+          "call": "ledger.connect"
+        },
+        {
+          "line": 215,
+          "scope": "run_native_pipeline",
+          "call": "reservation.reserve"
+        },
+        {
+          "line": 218,
+          "scope": "run_native_pipeline",
+          "call": "page.open"
+        },
+        {
+          "line": 227,
+          "scope": "run_native_pipeline",
+          "call": "handle.close"
+        },
+        {
+          "line": 233,
+          "scope": "run_native_pipeline",
+          "call": "again.connect"
+        },
+        {
+          "line": 238,
+          "scope": "run_native_pipeline",
+          "call": "reopened.close"
+        },
+        {
+          "line": 241,
+          "scope": "run_native_pipeline",
+          "call": "hashlib.sha256(p.read_bytes()).hexdigest"
+        },
+        {
+          "line": 241,
+          "scope": "run_native_pipeline",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 243,
+          "scope": "run_native_pipeline",
+          "call": "guarded.popen"
+        },
+        {
+          "line": 254,
+          "scope": "run_native_pipeline",
+          "call": "hashlib.sha256(p.read_bytes()).hexdigest"
+        },
+        {
+          "line": 254,
+          "scope": "run_native_pipeline",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 262,
+          "scope": "test_actual_native_inception_financial_events_reports_and_restart",
+          "call": "run_native_pipeline"
+        }
+      ],
+      "git_index_blob_sha256": "60bca3340f8c25243200067e52ea3df40652ec8b1257f03800befbde2b9b4f65",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_personal_owned_stop_timing.py",
+      "sha256": "527a2cf1bf0058754f1bc36aba6856200f07bba8854d9451934a9e3c5252081b",
+      "boundary_calls": [
+        {
+          "line": 13,
+          "scope": "hashes",
+          "call": "hashlib.sha256(p.read_bytes()).hexdigest"
+        },
+        {
+          "line": 13,
+          "scope": "hashes",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 30,
+          "scope": "test_three_owned_native_shutdowns_include_exit_and_post_exit_readback",
+          "call": "guard.run_owned_stop_sample"
+        }
+      ],
+      "git_index_blob_sha256": "a5504d1165902273851b0c2d4d514d43f463ab142a582d71dcfb88f4ab70ab21",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_qd_unified_shutdown.py",
+      "sha256": "45d1b064119d95d7521c56cac1eea9bc907074034baefcae61d705b2c177c51c",
+      "boundary_calls": [
+        {
+          "line": 33,
+          "scope": "system",
+          "call": "s.runtime.stop"
+        },
+        {
+          "line": 34,
+          "scope": "system",
+          "call": "s.x.x.close"
+        },
+        {
+          "line": 38,
+          "scope": "composed",
+          "call": "writer"
+        },
+        {
+          "line": 53,
+          "scope": "composed",
+          "call": "CanonicalWriterLane"
+        },
+        {
+          "line": 55,
+          "scope": "composed",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 58,
+          "scope": "composed",
+          "call": "provision_fixture_writers"
+        },
+        {
+          "line": 62,
+          "scope": "composed.Custody.verify",
+          "call": "self.db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 63,
+          "scope": "composed.Custody.verify",
+          "call": "self.db.execute('SELECT 1 FROM writer_operations WHERE acked=0').fetchone"
+        },
+        {
+          "line": 77,
+          "scope": "composed.Custody.verify_shutdown_exit",
+          "call": "r.entry_closed.is_set"
+        },
+        {
+          "line": 84,
+          "scope": "composed",
+          "call": "r.entry_closed.is_set"
+        },
+        {
+          "line": 86,
+          "scope": "composed",
+          "call": "stop.bind"
+        },
+        {
+          "line": 95,
+          "scope": "test_actual_qd_global_stop_reserves_then_closes_and_drains",
+          "call": "c.r.stop"
+        },
+        {
+          "line": 100,
+          "scope": "test_actual_qd_global_stop_reserves_then_closes_and_drains",
+          "call": "c.r.stop"
+        },
+        {
+          "line": 101,
+          "scope": "test_actual_qd_global_stop_reserves_then_closes_and_drains",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 102,
+          "scope": "test_actual_qd_global_stop_reserves_then_closes_and_drains",
+          "call": "db.execute('SELECT COUNT(*) FROM writer_operations WHERE acked=1').fetchone"
+        },
+        {
+          "line": 116,
+          "scope": "test_global_qd_stop_cannot_falsely_complete",
+          "call": "c.r.stop"
+        },
+        {
+          "line": 124,
+          "scope": "test_empty_shutdown_has_no_financial_publication",
+          "call": "c.r.stop"
+        },
+        {
+          "line": 130,
+          "scope": "test_emergency_preserves_position_and_never_dispatches_flatten",
+          "call": "c.r.stop"
+        },
+        {
+          "line": 137,
+          "scope": "test_global_qd_stop_refuses_missing_shutdown_authority",
+          "call": "c.r.stop"
+        },
+        {
+          "line": 144,
+          "scope": "test_inclusive_session_audit_refuses_tampering_and_legacy_scope",
+          "call": "c.r.stop"
+        },
+        {
+          "line": 145,
+          "scope": "test_inclusive_session_audit_refuses_tampering_and_legacy_scope",
+          "call": "c.stop.reports.history"
+        }
+      ],
+      "git_index_blob_sha256": "538ca0d9639986efb538e506a949f491316790820cc0d9ec9bb65aa2178ddcec",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_unified_actual_native_lanes.py",
+      "sha256": "bef27fefb812a89831c9d2b9a29a3f541d3a42fca98f206c64af7eaa4aa7be03",
+      "boundary_calls": [
+        {
+          "line": 28,
+          "scope": "system",
+          "call": "s.close"
+        },
+        {
+          "line": 44,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 64,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 69,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 74,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.r.stop"
+        },
+        {
+          "line": 76,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 77,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.journal.snapshot()['state']['operations'].values"
+        },
+        {
+          "line": 77,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 78,
+          "scope": "test_actual_two_strategy_orders_fills_funding_partial_exits_and_shutdown",
+          "call": "s.r.stop"
+        },
+        {
+          "line": 86,
+          "scope": "test_continuous_two_real_planners_no_duplicate_entry_and_pause",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 89,
+          "scope": "test_continuous_two_real_planners_no_duplicate_entry_and_pause",
+          "call": "s.r.stop"
+        },
+        {
+          "line": 100,
+          "scope": "test_global_native_ack_loss_refuses_replay_and_restart",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 122,
+          "scope": "test_real_child_crash_after_native_fill_before_order_and_global_ack",
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 128,
+          "scope": "test_real_child_crash_after_native_fill_before_order_and_global_ack",
+          "call": "s.journal.snapshot()['state']['operations'].values"
+        },
+        {
+          "line": 128,
+          "scope": "test_real_child_crash_after_native_fill_before_order_and_global_ack",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 133,
+          "scope": "test_real_child_crash_after_native_fill_before_order_and_global_ack",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 141,
+          "scope": "test_actual_qd_scanner_publication_refuses_incomplete_source",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 149,
+          "scope": "test_actual_qd_scanner_publication_refuses_incomplete_source",
+          "call": "s.reader.read_request"
+        },
+        {
+          "line": 150,
+          "scope": "test_actual_qd_scanner_publication_refuses_incomplete_source",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 162,
+          "scope": "test_actual_native_global_reservation_race_is_one_pending_effect",
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 168,
+          "scope": "test_actual_native_global_reservation_race_is_one_pending_effect",
+          "call": "ready.exists"
+        },
+        {
+          "line": 171,
+          "scope": "test_actual_native_global_reservation_race_is_one_pending_effect",
+          "call": "guarded.write_text"
+        },
+        {
+          "line": 178,
+          "scope": "test_actual_native_global_reservation_race_is_one_pending_effect",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 179,
+          "scope": "test_actual_native_global_reservation_race_is_one_pending_effect",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 191,
+          "scope": "test_new_session_grant_cannot_adopt_open_or_resting_exposure",
+          "call": "s.custody.close_entry_admission"
+        },
+        {
+          "line": 193,
+          "scope": "test_new_session_grant_cannot_adopt_open_or_resting_exposure",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 195,
+          "scope": "test_new_session_grant_cannot_adopt_open_or_resting_exposure",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 207,
+          "scope": "test_missing_global_final_publication_refuses_clean_shutdown_and_new_session",
+          "call": "s.r.stop"
+        },
+        {
+          "line": 209,
+          "scope": "test_missing_global_final_publication_refuses_clean_shutdown_and_new_session",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 210,
+          "scope": "test_missing_global_final_publication_refuses_clean_shutdown_and_new_session",
+          "call": "s.q.writer._cut()['state']['positions'].values"
+        },
+        {
+          "line": 210,
+          "scope": "test_missing_global_final_publication_refuses_clean_shutdown_and_new_session",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 213,
+          "scope": "test_missing_global_final_publication_refuses_clean_shutdown_and_new_session",
+          "call": "s.r.stop"
+        }
+      ],
+      "git_index_blob_sha256": "bb8938ac92a860c95f19073ed113924455985470b59505c8067389521ebb3e82",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_unified_native_writer.py",
+      "sha256": "405d6487ed4cc9b9b30447929db91435371037e482c146710a6a2afce91177f3",
+      "boundary_calls": [
+        {
+          "line": 71,
+          "scope": "FixtureCustody.verify_restart",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 72,
+          "scope": "FixtureCustody.verify_restart",
+          "call": "db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 75,
+          "scope": "FixtureCustody.close_entry_admission",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 78,
+          "scope": "FixtureCustody.close_entry_admission",
+          "call": "db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 83,
+          "scope": "FixtureCustody.verify_drain",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 84,
+          "scope": "FixtureCustody.verify_drain",
+          "call": "db.execute('SELECT id,incarnation,uncertain FROM writer_roster ORDER BY id').fetchall"
+        },
+        {
+          "line": 86,
+          "scope": "FixtureCustody.verify_drain",
+          "call": "db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 91,
+          "scope": "FixtureCustody.lease",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 100,
+          "scope": "FixtureCustody.verify",
+          "call": "self.db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 102,
+          "scope": "FixtureCustody.verify",
+          "call": "self.db.execute('SELECT acked,payload FROM writer_operations WHERE id=?', (request['proposal']['operation_id'],)).fetchone"
+        },
+        {
+          "line": 106,
+          "scope": "FixtureCustody.verify",
+          "call": "self.writer.preview"
+        },
+        {
+          "line": 112,
+          "scope": "FixtureCustody.acknowledged",
+          "call": "self.db.execute('SELECT acked,payload FROM writer_operations WHERE id=?', (request['proposal']['operation_id'],)).fetchone"
+        },
+        {
+          "line": 120,
+          "scope": "FixtureCustody.reserve",
+          "call": "self.db.execute('SELECT acked,payload FROM writer_operations WHERE id=?', (key,)).fetchone"
+        },
+        {
+          "line": 132,
+          "scope": "FixtureCustody.verify_receipt",
+          "call": "self.writer.store.operation_receipt"
+        },
+        {
+          "line": 141,
+          "scope": "FixtureCustody.replay",
+          "call": "self.writer.store.operation_receipt"
+        },
+        {
+          "line": 155,
+          "scope": "bundle",
+          "call": "NativeFinancialWriter"
+        },
+        {
+          "line": 157,
+          "scope": "bundle",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 158,
+          "scope": "bundle",
+          "call": "provision_fixture_writers"
+        },
+        {
+          "line": 167,
+          "scope": "bundle",
+          "call": "CanonicalWriterLane"
+        },
+        {
+          "line": 172,
+          "scope": "bundle",
+          "call": "store.close"
+        },
+        {
+          "line": 172,
+          "scope": "bundle",
+          "call": "target.close"
+        },
+        {
+          "line": 172,
+          "scope": "bundle",
+          "call": "archive.close"
+        },
+        {
+          "line": 197,
+          "scope": "test_native_writer_default_refuses",
+          "call": "NativeFinancialWriter"
+        },
+        {
+          "line": 212,
+          "scope": "test_source_inspection_never_consumes_abandonment_or_publishes_latch",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 220,
+          "scope": "test_source_inspection_never_consumes_abandonment_or_publishes_latch",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 239,
+          "scope": "test_shutdown_exit_uses_native_custody_without_reopening_entries.verify",
+          "call": "guarded.sqlite_connect"
+        },
+        {
+          "line": 241,
+          "scope": "test_shutdown_exit_uses_native_custody_without_reopening_entries.verify",
+          "call": "db.execute('SELECT stopped FROM control').fetchall"
+        },
+        {
+          "line": 250,
+          "scope": "test_shutdown_exit_uses_native_custody_without_reopening_entries",
+          "call": "r.stop"
+        },
+        {
+          "line": 253,
+          "scope": "test_shutdown_exit_uses_native_custody_without_reopening_entries",
+          "call": "r.stop"
+        },
+        {
+          "line": 274,
+          "scope": "test_shutdown_exit_failure_never_certifies_clean",
+          "call": "r.stop"
+        },
+        {
+          "line": 312,
+          "scope": "test_native_preview_and_receipt_reads_do_not_publish",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 316,
+          "scope": "test_native_preview_and_receipt_reads_do_not_publish",
+          "call": "writer.preview"
+        },
+        {
+          "line": 317,
+          "scope": "test_native_preview_and_receipt_reads_do_not_publish",
+          "call": "p.read_bytes"
+        },
+        {
+          "line": 319,
+          "scope": "test_native_preview_and_receipt_reads_do_not_publish",
+          "call": "NativeFinancialWriter"
+        },
+        {
+          "line": 334,
+          "scope": "test_false_flat_shutdown_and_component_substitution_refuse",
+          "call": "r.stop"
+        },
+        {
+          "line": 381,
+          "scope": "test_competing_native_writer_leaves_reservation_unknown",
+          "call": "r.stop"
+        },
+        {
+          "line": 397,
+          "scope": "test_two_supervisors_cannot_duplicate_a_native_effect",
+          "call": "ThreadPoolExecutor"
+        },
+        {
+          "line": 411,
+          "scope": "test_native_partial_ioc_requires_explicit_execution_model",
+          "call": "r.stop"
+        },
+        {
+          "line": 433,
+          "scope": "test_combined_ioc_tiers_funding_exit_and_drain",
+          "call": "r.stop"
+        },
+        {
+          "line": 444,
+          "scope": "test_flat_without_report_is_incomplete_and_restart_requires_new_admission",
+          "call": "r.stop"
+        },
+        {
+          "line": 453,
+          "scope": "test_failed_global_closure_never_calls_lane_shutdown",
+          "call": "r.stop"
+        },
+        {
+          "line": 477,
+          "scope": "test_historical_report_with_current_head_cannot_certify_current_cash",
+          "call": "r.stop"
+        }
+      ],
+      "git_index_blob_sha256": "83c330bbfc6cdb7e67ce4faffa8930a0f98d0dfd2bfa0b0d3ebca7e804d7b42f",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/test_unified_source_capacity_native.py",
+      "sha256": "ed76230d759575a322c4581fb264f9fdf5d3197167cd183f56d7ef46ed000ac2",
+      "boundary_calls": [
+        {
+          "line": 14,
+          "scope": "test_global_capacity_retains_native_shutdown_slots",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 14,
+          "scope": "test_global_capacity_retains_native_shutdown_slots",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 14,
+          "scope": "test_global_capacity_retains_native_shutdown_slots",
+          "call": "s.p.writer._cut"
+        },
+        {
+          "line": 19,
+          "scope": "test_global_capacity_retains_native_shutdown_slots",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 19,
+          "scope": "test_global_capacity_retains_native_shutdown_slots",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 19,
+          "scope": "test_global_capacity_retains_native_shutdown_slots",
+          "call": "s.p.writer._cut"
+        },
+        {
+          "line": 31,
+          "scope": "test_order_journal_keeps_resolution_capacity",
+          "call": "s.p.writer._cut"
+        },
+        {
+          "line": 40,
+          "scope": "test_continuous_run_uses_reserved_capacity_for_verified_final_and_never_resets",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 41,
+          "scope": "test_continuous_run_uses_reserved_capacity_for_verified_final_and_never_resets",
+          "call": "s.q.writer._cut"
+        },
+        {
+          "line": 41,
+          "scope": "test_continuous_run_uses_reserved_capacity_for_verified_final_and_never_resets",
+          "call": "s.p.writer._cut"
+        },
+        {
+          "line": 44,
+          "scope": "test_continuous_run_uses_reserved_capacity_for_verified_final_and_never_resets",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 46,
+          "scope": "test_continuous_run_uses_reserved_capacity_for_verified_final_and_never_resets",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 55,
+          "scope": "test_native_financial_headroom_refuses_before_global_reservation",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 59,
+          "scope": "test_native_financial_headroom_refuses_before_global_reservation",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 60,
+          "scope": "test_native_financial_headroom_refuses_before_global_reservation",
+          "call": "s.writers[lane]._cut"
+        },
+        {
+          "line": 68,
+          "scope": "test_report_headroom_is_read_only_and_triggers_existing_safe_stop",
+          "call": "s.journal.snapshot"
+        },
+        {
+          "line": 69,
+          "scope": "test_report_headroom_is_read_only_and_triggers_existing_safe_stop",
+          "call": "s.q.writer._cut"
+        }
+      ],
+      "git_index_blob_sha256": "ed76230d759575a322c4581fb264f9fdf5d3197167cd183f56d7ef46ed000ac2",
+      "git_text_matches_working_source": true
+    },
+    {
+      "path": "tests/unified_actual_lanes_fixture.py",
+      "sha256": "d67800b9fea5c7619555a7da52a4c40bd89e20f0fae95aeaa70d14a8d0c9e62d",
+      "boundary_calls": [
+        {
+          "line": 80,
+          "scope": "ActualSourceRisk.project",
+          "call": "writer._cut"
+        },
+        {
+          "line": 80,
+          "scope": "ActualSourceRisk.project",
+          "call": "writers.items"
+        },
+        {
+          "line": 108,
+          "scope": "build",
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 111,
+          "scope": "build",
+          "call": "guarded.mkdir"
+        },
+        {
+          "line": 124,
+          "scope": "build",
+          "call": "q_source.read_publication"
+        },
+        {
+          "line": 125,
+          "scope": "build",
+          "call": "QualityDipsPublicationReader"
+        },
+        {
+          "line": 142,
+          "scope": "build.Ownership.drain",
+          "call": "p.writer.verify_order_drain"
+        },
+        {
+          "line": 150,
+          "scope": "build.Authority.verify_shutdown_request",
+          "call": "r.entry_closed.is_set"
+        },
+        {
+          "line": 154,
+          "scope": "build.Authority.verify_read_cuts",
+          "call": "writers[k]._cut"
+        },
+        {
+          "line": 164,
+          "scope": "build",
+          "call": "writers.items"
+        },
+        {
+          "line": 192,
+          "scope": "build",
+          "call": "CanonicalWriterLane"
+        },
+        {
+          "line": 193,
+          "scope": "build",
+          "call": "CanonicalWriterLane"
+        },
+        {
+          "line": 197,
+          "scope": "build",
+          "call": "r.entry_closed.is_set"
+        },
+        {
+          "line": 200,
+          "scope": "build",
+          "call": "p.writer.verify_order_drain"
+        },
+        {
+          "line": 203,
+          "scope": "build",
+          "call": "r.entry_closed.is_set"
+        },
+        {
+          "line": 204,
+          "scope": "build",
+          "call": "qstop.bind"
+        },
+        {
+          "line": 204,
+          "scope": "build",
+          "call": "pstop.bind"
+        },
+        {
+          "line": 208,
+          "scope": "build.pending_token",
+          "call": "journal.snapshot()['state']['operations'].values"
+        },
+        {
+          "line": 208,
+          "scope": "build.pending_token",
+          "call": "journal.snapshot"
+        },
+        {
+          "line": 222,
+          "scope": "build.tick",
+          "call": "q.f.receive"
+        },
+        {
+          "line": 224,
+          "scope": "build.tick",
+          "call": "q.writer._cut()['state']['positions'].values"
+        },
+        {
+          "line": 224,
+          "scope": "build.tick",
+          "call": "q.writer._cut"
+        },
+        {
+          "line": 230,
+          "scope": "build.close",
+          "call": "journal.close"
+        },
+        {
+          "line": 230,
+          "scope": "build.close",
+          "call": "p.close"
+        },
+        {
+          "line": 231,
+          "scope": "build.close",
+          "call": "s.runtime.stop"
+        },
+        {
+          "line": 232,
+          "scope": "build.close",
+          "call": "s.x.x.close"
+        }
+      ],
+      "git_index_blob_sha256": "d67800b9fea5c7619555a7da52a4c40bd89e20f0fae95aeaa70d14a8d0c9e62d",
+      "git_text_matches_working_source": true
+    }
+  ],
+  "uncovered_or_unqualified_connections": [
+    {
+      "id": "NATIVE_PROCESS_SESSION",
+      "entry": "aip06_native_controller.NativeController.initialize(process_port_factory)",
+      "missing": "Concrete pre-reserved process session/factory linking suspended launch, original handles, exact Job roster, inherited descriptors, parent broker, source guard and failure cleanup. Raw Win32 calls and observers exist; no runnable factory is supplied."
+    },
+    {
+      "id": "CHILD_NATIVE_ENTRY",
+      "entry": "aip06_child_bootstrap.main",
+      "missing": "Real inherited-handle acquisition, exact runtime/import closure, concrete guard/process port factory, remote native resource registration/release proofs, bounded IPC server and watchdog/EOF/input/output binding. main explicitly refuses."
+    },
+    {
+      "id": "NATIVE_STOP_COLLECTION",
+      "entry": "aip06_fixture_guard.FixtureGuard.run_owned_stop_sample / processes.collect_stop",
+      "missing": "Genuine financial ACK/drain transport hook, independent raw financial/restart custody evidence, native socket-then-process cut, aggregate usage and complete resource release. StopMessages does not infer these from process exit or EOF."
+    },
+    {
+      "id": "LEGACY_PROBE",
+      "entry": "tests/run_launch_ownership_native.main -> processes.legacy_probe -> LegacyProbeAdapter",
+      "missing": "Actual probe_case session and independent retained-exit/handle-release verifier. Existing raw body stays unreachable. Controller explicitly refuses unverifiable cleanup declarations."
+    },
+    {
+      "id": "NATIVE_OUTPUT_RUNNER",
+      "entry": "BoundedOutput / FixtureDirectories / EvidenceOutput",
+      "missing": "Attribution of real pytest temporary/XML/cache/capture writers and worker stdout/stderr/query caches. These sinks are implemented and injected-tested, not a native pytest plugin/runner. No blanket audit exception."
+    },
+    {
+      "id": "BOOTSTRAP_AND_CANCELLATION_QUALIFICATION",
+      "entry": "NativeController.initialize / AllocationBook.journal / WindowsPump / CancellableCalls",
+      "missing": "End-to-end bootstrap failure cleanup, shared accounting qualification of bounded journal self-IO batches, pending native API/cancellation failure ownership, native deadline proof and current D: runtime/ACL/dependency identity closure."
+    }
+  ],
+  "all_connections_complete": false
+}

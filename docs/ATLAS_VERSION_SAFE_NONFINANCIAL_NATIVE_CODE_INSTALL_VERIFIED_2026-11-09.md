@@ -1,0 +1,31 @@
+# Atlas version-safe nonfinancial native code release installation — verified November 9, 2026
+
+**Result: ONE-TIME NONFINANCIAL CREATE-ONLY INSTALLATION SUCCEEDED; INDEPENDENT INSTALLED-PYTHON READBACK PASSED; NOT SELECTED OR PAPER FINANCIAL READY. Full financial PAPER: NO-GO, 0/9 formally accepted operating prerequisites.**
+
+## Exact native installation
+
+- The local operator-directed **one-shot code-only** decision is separately bound by its private Windows SID and pinned SHA in ignored `logs/diagnostics/atlas-version-safe-code-install-approval-20261109.json`. Actual SID contents were not logged to Git or published. Decision scope forbids new release selection, PAPER account inception, provider access, live or simulated orders and service startup. The local file SHA is `6e134be6fc9d1a1bc96bcfeb95440e9ffc89dac3286ab7b77713ec36f490bfec`; a local hash is integrity evidence, not an independently cryptographically signed authority.
+- The new candidate frozen from Git commit `2d4879878bf58bea5a3ed0a986b809791f638fec`, source ZIP SHA `5b295cc8e60be9d078321b39197afa4d12ad31897bc258575889099b3f5f7dac`, explicit source inventory SHA `22960eadfe5c6ca3e95b799788ba02cc702bd2db66ba14f61707380472ad7331`, and historical Python dependency inventory SHA `93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91` were checked again.
+- Executed `python -B -m scripts.install_version_safe_candidate --execute-reviewed-code-only --confirm-scope NO_PAPER_START_NO_FINANCIAL_ACCESS_NO_SELECTION` once. It required a **fresh genuine 180-second Google+Cloudflare independent NTP lease**, completed read-only scope/native preflight, then create-only native code copy and installed child Python readback. It exited **0**, process runtime **411.53 seconds**. Fresh installer NTP qualification is proven by its gated execution, but no extra peer uncertainty measurement beyond the separate standalone 141ms/139ms preflight was claimed.
+- Newly created, unselected native application root: `D:\\AtlasRuntime\\releases\\2d4879878bf58bea5a3ed0a986b809791f638fec` — **10,574** real files, **914** directories, native verified Python **3.12 64-bit**. Source includes version-safe operator clock and all six guarded financial authority interfaces. There are no operational orders/services in this installation.
+- Final create-only installation receipt: `logs/diagnostics/qd-unselected-release-2d4879878bf58bea5a3ed0a986b809791f638fec.json`, SHA-256 **`acdae2f01fb5defdf0e302240dc589eca0f1c99e3fcc15ec319d98260125cbb6`**, artifact digest **`20d96aa9b8349506eb4c3e725523a59c18eb8386684ddfefd2bffc472302b732`**. Explicit receipt flags: `selected=false`, `financial_effects=false`, `provider_connections=false`, `operational_acceptance=false`; nonfinancial journal preserved.
+
+## Independent after-the-fact native proof
+
+- Ran **a second read-only installed-python native verification** using independent child-process identity/readback, without replaying the installer. It independently reopened all **10,574** installed file hashes/IDs and **914** directories, checked native 3.12/64-bit interpreter, and returned **zero native handles retained**. Check process exited **0**.
+- Independent report: `logs/diagnostics/atlas-version-safe-independent-code-install-readback-20261109.json`, SHA-256 **`103a3bc8302a2466224bec3112b192acd87b7037367cfe0c042d10eaf1253d0d`**, `stage=INDEPENDENT_INSTALLED_PYTHON_NATIVE_READBACK_VERIFIED`, `financial_authority=false`, `provider_connected=false`, `paper_accounts_initialized=false`, `live_orders=false`.
+- The actual native selector remains **V7 revision 11**, head `933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997`, no `r0012.json` or `r0012.pending`. The historical installed V8 application receipt SHA `ecb94e00e262e371caea494b1cc552352c892fa437a3b5f4946b54f7f863ae34` and V8 nonfinancial support receipt SHA `85bd24430576a8cfde7735c8412263da4ca6aea8459c55ec3d70c1f6a0c62d60` were reopened and confirmed unchanged.
+
+## Post-install source/test continuity
+
+- The preinstallation source-only tests originally expected a nonexistent release root; once the real install succeeded, eight tests refused for **expected obsolete "directory absent" assumptions**, not a failed native copy. These tests were corrected to require the retained installed unselected receipt or exact no-retry refusal. No existing installation was repaired, overwritten, deleted or repeated.
+- `--inspect` remains available after installation: it now returns **`INSTALLED_CODE_ONLY_UNSELECTED_RECEIPT_PINNED`** after verifying historical source/selector plus the exact new receipt and independent proof hashes, rather than trying to prepare another create-only install. The status reflects recorded independent proof, not an ongoing continuous live checksum.
+- The repeated CLI installation invocation now refuses **before initiating NTP traffic** because the immutable destination/receipt already exist. Added `tests/test_version_safe_native_code_install_readback.py` for pinned independent receipt proof, tamper refusals, one-shot/no-retry and zero finance. Post-install installer/V8/native/clock/selection regression: **135 passed, 8 skipped, 0 failed**. Skipped cases are not financial acceptance evidence.
+
+## Next exact production dependency
+
+1. Prepare and independently verify the **new release's own unselected nonfinancial support installation** (not reuse or mutate V8 support). Test clock/admission dependency inventory against the installed new application.
+2. Separately review a proposed **append-only selector revision 12** binding the exact new application/support installation receipts. Do not select the release until all selection-specific prerequisites and authorization pass. Maintain V7 as the selected fallback.
+3. After coherent selected installed runtime, independently commission/accept Alpaca IEX eligible equity source rights, Hyperliquid perp books/funding/fees, distinct one-time simulated accounts, manual desktop Start/Stop automatic paper flatten and recovery, read-only dashboard/Discord, and supervised months-long PAPER soak. No trading or claims of profitability before evidence.
+
+**No Project Genesis changes, live or simulated orders, provider account access, Windows Time modification, automatic OS startup, paid VPS, shortcut changes or GitHub push.**

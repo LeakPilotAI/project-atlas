@@ -1,0 +1,28 @@
+# Atlas V8 native PAPER operator-clock source contract — 2026-11-08
+
+**Result: V8-specific native PAPER clock source and all six existing Quality Dips authority/commissioning/assembly interfaces tested. SOURCE-ONLY. The installed immutable V8 application and support have NOT been modified. Selected native V7 revision 11 unchanged, no r12. Financial PAPER remains NO-GO, 0/9 accepted operating prerequisites.**
+
+## Implementation and identity
+
+- Added scripts/observation_runtime/personal_v8_operator_clock.py, normalized SHA-256 4350479efbddf3a1ad8d73ec8f9cb9da7f2d9e1074912b3ed8929d7ba73a552a, exact NativeV8PaperOperatorClock / V8_INDEPENDENT_NTP_OPERATOR_CLOCK_V1. This is intentionally a distinct non-subclass type from historical V7 and Windows clocks; no automatic fallback, approval, account inception, writer or trader.
+- The source class requires actual installed V8 application receipt SHA ecb94e00e262e371caea494b1cc552352c892fa437a3b5f4946b54f7f863ae34 and V8 installed support receipt SHA 85bd24430576a8cfde7735c8412263da4ca6aea8459c55ec3d70c1f6a0c62d60. Its exact V8 selected reference must include the actual app source c8cc4846508b29483d10a0b4c4353f8a26f1fc9c, artifact digest 65c4b4661ec6aef7359e9dae716a416327379f5082a5b309ccdb5a148a569c95, native receipt/hash, schema/domain, root and receipt path. The native append-only selection chain must have 12 records, original r11 head 933482b46a31af43270a193a94a83353e945fbecc4eb4661e8b7f8e9c8262997, and exactly an r12 SELECT whose previous is r11 and whose selected reference is V8.
+- Initial native admission calls NativeInstalledReleaseVerifier().open() to verify actual installed V8 application files and support_deployment.verify_deployment() for actual V8 native support, receipt and ACK. Each subsequent UTC sample independently checks the same exact immutable native selector head and support/receipt SHA, same process, runtime_id and original independently created Google/Cloudflare clock object; clock changes/UTC uncertainty changes/source/financial-flag spoofing permanently revoke the original bound NTP capability. This is not a continuous financially certified NTP source, and the public NTP peers remain unauthenticated.
+- The actual MADDOG native read-only test **refused** NativeV8PaperOperatorClock construction while selected V7r11 remains current, and confirmed no r12 selection record, before any NTP network request. Synthetic owner/source/selection-change tests passed without issuing native financial actions.
+
+## Existing financial authority boundaries updated in source
+
+Six existing source modules now admit the exact NativeV8PaperOperatorClock type only under explicit V8_INDEPENDENT_NTP_OPERATOR_CLOCK_V1, while retaining exact LocalWindowsClock default and exact NativeV7PaperOperatorClock opt-in:
+1. personal_local_authority.py — same native activation reader, enrollment, operator owner SID and finite native session.
+2. personal_source_install_authority.py — same existing one-shot source install, policy, image digest and native writer restrictions.
+3. personal_installation_technical.py — same native account/ledger/ownership/release and readiness checks.
+4. personal_paper_activation.py — same clock instance across engine, custody, operator, technical checks and financial ownership; identical profile/runtime.
+5. personal_activation_publisher.py — V8 exact artifact digest, source evidence and UTC verify before native create-only publication.
+6. personal_activation_commission.py — both distinct native QD/HL enrollment requirements and exact release/source before acquiring a V8 clock; explicit CLI profile option.
+
+New tests test_personal_v8_operator_independent_clock.py and test_personal_v8_clock_full_graph_admission.py plus one historical CLI expectation updated to demand all three exact clock choices. The focused integration run had **39 passed, 0 failed**; final broad QD, source, financial authority, install/selection, current market source, independent clock, legacy V7, activation and commissioning suite **414 passed, 9 skipped, 0 failed**. No actual publisher, financial account or writer was invoked.
+
+## What's still blocked
+
+- The immutable V8 installed application does NOT contain the new V8 operator clock/profile changes, and the installed V8 support/selector still explicitly refuses V8 selection. The new source capability is not a deployment or authorization to select V8. Do not patch installed V8 in place or attempt r12. Next step: create a reviewed version-safe installation/selection architecture for a future immutable release that contains its OWN selected native clock contract (avoid a release forever depending on a different release's hardcoded identity). Require separate source/manifest pins, verified installation, support, fresh NTP and native readback before any new selection.
+- Only after a genuinely consistent selected runtime can PAPER financial commissioning independently accept provider rights and executable quotes (Alpaca IEX), Hyperliquid books/fees/funding, QD USD and HL USDC simulated account inception and writer, manual Windows Start/Stop safe flatten/recovery, dashboard/Discord and long supervised paper soak. Kalshi simple YES/NO new-market lane remains separate. Financial PAPER 0/9 accepted.
+- No Project Genesis files, paid VPS, private accounts, simulated balances, live orders, Windows time/OS startup, or desktop shortcuts modified. No GitHub push authorized/performed.

@@ -1,0 +1,1630 @@
+{
+  "schema": "AIP06_PHYSICAL_PATH_BOUNDARIES_V1",
+  "base_commit": "59843c6db84462758c4570a6e6b96018b62e4061",
+  "source_integration_complete": false,
+  "static_inventory_is_not_native_or_dynamic_coverage": true,
+  "entry_points": [
+    {
+      "entry": "FixtureGuard._spawn -> WindowsSessionPort.create_suspended",
+      "status": "EXISTING_GUARDED_PATH_PRESERVED",
+      "guard": "prior shared-ledger slots; exact current birth/image/command/parent; native Jobs before bootstrap",
+      "release": "original exit/retained handle cleanup",
+      "remaining": "physical descendant gateway and global roster not connected"
+    },
+    {
+      "entry": "DeclaredDescendants.declare/stage_suspended/resume_staged/import_binding/release -> SuspendedDescendantGraph",
+      "status": "DIRECT_STAGING_IMPLEMENTED_OFFLINE",
+      "guard": "prior launch slot; original parent/process/thread/image/Job duplication; complete raw parent/leaf Jobs; fresh source/request/counts",
+      "release": "normal exit/thread drain before retained duplicate close; no financial or target RELEASE from stage",
+      "remaining": "forwarded recursive graph/private IPC gateway; true backend qualification"
+    },
+    {
+      "entry": "ChildServices.plan / descendant_gateway",
+      "status": "BLOCKED_SOURCE",
+      "guard": "STAGED_DESCENDANT_GATEWAY_REQUIRED_BEFORE_CREATION",
+      "release": "no unsupported descendant launch",
+      "remaining": "concrete gateway is still None; precreation/staged transfer/bootstrap release RPC not connected"
+    },
+    {
+      "entry": "WindowsChildEndpoints.channel.verify / InheritedIdentity.verify / WorkerOwnership",
+      "status": "BLOCKED_SOURCE_FOR_DESCENDANT_GRAPH",
+      "guard": "original complete native leaf roster remains unchanged; no PID filter",
+      "release": "existing original process/Job shutdown",
+      "remaining": "physical forwarding and complete global graph proof; old leaf binding correctly refuses inherited extra member"
+    },
+    {
+      "entry": "NativeController.bind_cleanup -> FixtureGuard.query -> WindowsSessionPort.native_query -> NativeQueryExecutor",
+      "status": "IMPLEMENTED_OFFLINE",
+      "guard": "exact pinned System32 netstat argv/image; prospectively charged process/Job/pipes/output; independent current native/CIM command/birth; <=6s/65536bytes",
+      "release": "actual terminal status/pipe EOF/owned query Job and handle close; unknown remains reserved and failed; no synthetic READY",
+      "remaining": "genuine Windows execution and runtime pin/ACL/dependency qualification under a separate native grant"
+    },
+    {
+      "entry": "WindowsSessionPort.query_result",
+      "status": "IMPLEMENTED_COMPATIBILITY_READBACK",
+      "guard": "exact guarded query role, bounded output and original exit before handle closure",
+      "release": "guarded process close verified",
+      "remaining": "full physical Python query target not qualified; native netstat uses direct executor"
+    },
+    {
+      "entry": "NativeController.bind_legacy_probes/probe_case/verify_probe_result -> LegacyProbeRunner -> LegacyProbeAdapter",
+      "status": "WORKER_PROJECTION_ONLY_OFFLINE",
+      "guard": "exact pinned guarded entry and retained session; unchanged case/nonce/identity/claims/source and real terminal cut",
+      "release": "normal exit/empty Job/current held-capability close evidence",
+      "remaining": "supervisor formal role and unexpected descendant cases refused; full inherited target production not qualified"
+    },
+    {
+      "entry": "OwnedStopAssembly -> GuardedStopCollector -> ThreeReaderCleanup/StrictProcessCleanup -> envelope release -> StopVerification",
+      "status": "THREE_COMPOSED_OFFLINE_SAMPLES_PASS",
+      "guard": "original exact accounting replay/ACK/drain/cash; netstat actual executor path; all three readers then strict process; same8s; all historical IDs in bounded8-identity groups",
+      "release": "complete shared-ledger/envelope closure and cumulative next-sample accounting",
+      "remaining": "full inherited child+descendant IPC+all legacy cases and actual native timings"
+    },
+    {
+      "entry": "Complete physical four-boundary path",
+      "status": "BLOCKED_SOURCE",
+      "guard": "no omitted stage or mock-only actor can become native acceptance",
+      "release": "no installed/PAPER/financial activation permitted",
+      "remaining": "connect exact blocked source entry points; current integration test does not cover full physical child path"
+    }
+  ],
+  "sources": [
+    {
+      "path": "backend/app/services/paper_epoch_fixture.py",
+      "working_bytes_sha256": "9a1dd565ad2da92c81b2a9fdbd7874e20d5b9894755f875615b35a372c1242d3",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "backend/app/services/paper_writer_fixture.py",
+      "working_bytes_sha256": "c99ac5fdcabbdc0318f6965c01e1b92409c8c274fb7789ec29afaa1c8dc54a97",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "backend/app/services/quality_dips_unified_writer.py",
+      "working_bytes_sha256": "b8824d095752727cf95bd202e0c34ca4ccd47abb1742e9d43368b51145f29b7c",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "backend/app/services/unified_native_writer.py",
+      "working_bytes_sha256": "b7d8058360d8121682ad98b27ef358726d3c33c062dcdca62ed5cf5c6255f3a6",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "backend/app/services/unified_paper_runtime.py",
+      "working_bytes_sha256": "7602589c37b65c0624f0dbfd23d02446f193443b7e34ce70fd8a8dda62d0d674",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "backend/app/services/unified_portfolio_custody.py",
+      "working_bytes_sha256": "1fd0225496573651e72e3c696beb842b505108b4518d34d55d0d8fef8b4d0e73",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "backend/app/services/unified_writer_roster.py",
+      "working_bytes_sha256": "e70ba05f7d297702bc14629fa458efee313573af7dba1687ff7fc22ba4c0a1c5",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_bootstrap_lease.py",
+      "working_bytes_sha256": "4123fd53c3563a07e7fea243f38d86b913fcec2245fdd55f97e84a775ad2d9c3",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_child_bootstrap.py",
+      "working_bytes_sha256": "21f3cc36283359570fe93e75378f0d2d658bc85ead861234c5258832c65e98e6",
+      "selected_boundary_calls": [
+        {
+          "line": 116,
+          "call": "self.identity.verify"
+        },
+        {
+          "line": 135,
+          "call": "self.channel.send"
+        },
+        {
+          "line": 169,
+          "call": "self.identity.verify"
+        },
+        {
+          "line": 179,
+          "call": "self.channel.send"
+        },
+        {
+          "line": 201,
+          "call": "self.identity.verify"
+        },
+        {
+          "line": 213,
+          "call": "self.channel.send"
+        },
+        {
+          "line": 119,
+          "call": "self.verify_source"
+        },
+        {
+          "line": 136,
+          "call": "self.channel.receive"
+        },
+        {
+          "line": 189,
+          "call": "self.channel.receive"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_child_entry.py",
+      "working_bytes_sha256": "6489e1c335e4fdf4ab6d013eadfb8e75fd4c5bf19184f66bcbe0523a85d98715",
+      "selected_boundary_calls": [
+        {
+          "line": 151,
+          "call": "calls.wait"
+        },
+        {
+          "line": 260,
+          "call": "identity.verify"
+        },
+        {
+          "line": 153,
+          "call": "calls.close"
+        },
+        {
+          "line": 283,
+          "call": "self.book.close"
+        },
+        {
+          "line": 298,
+          "call": "self.files.read"
+        },
+        {
+          "line": 314,
+          "call": "self.book.close"
+        },
+        {
+          "line": 481,
+          "call": "self.bootstrap_book.close"
+        },
+        {
+          "line": 483,
+          "call": "self.observer_batch.finish"
+        },
+        {
+          "line": 485,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 447,
+          "call": "self.files.read"
+        },
+        {
+          "line": 455,
+          "call": "self.book.close"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_cleanup_providers.py",
+      "working_bytes_sha256": "1b9b24848b9f9eaff91c78530bd9d70b1533f75dddeb7757bbae64e82d169e5f",
+      "selected_boundary_calls": [
+        {
+          "line": 228,
+          "call": "self.tables.read"
+        },
+        {
+          "line": 275,
+          "call": "provider.read"
+        },
+        {
+          "line": 401,
+          "call": "self.tables.read"
+        },
+        {
+          "line": 46,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 73,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 97,
+          "call": "self.allocations.release"
+        },
+        {
+          "line": 76,
+          "call": "self.allocations.release"
+        },
+        {
+          "line": 84,
+          "call": "self.api.release"
+        },
+        {
+          "line": 85,
+          "call": "self.allocations.release"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_fixture_guard.py",
+      "working_bytes_sha256": "d4d37c9e8e8409f7cc8f849364678353e9e89d3fb8329048c764566779aa4453",
+      "selected_boundary_calls": [
+        {
+          "line": 354,
+          "call": "self.paths.verify"
+        },
+        {
+          "line": 362,
+          "call": "self.reserve"
+        },
+        {
+          "line": 373,
+          "call": "self.release"
+        },
+        {
+          "line": 382,
+          "call": "self.reserve"
+        },
+        {
+          "line": 396,
+          "call": "self.release"
+        },
+        {
+          "line": 418,
+          "call": "self.reserve"
+        },
+        {
+          "line": 430,
+          "call": "self.release"
+        },
+        {
+          "line": 808,
+          "call": "self.reserve"
+        },
+        {
+          "line": 809,
+          "call": "self.reserve"
+        },
+        {
+          "line": 967,
+          "call": "self.reserve"
+        },
+        {
+          "line": 1113,
+          "call": "self.connection.execute"
+        },
+        {
+          "line": 1150,
+          "call": "bound.verify"
+        },
+        {
+          "line": 1166,
+          "call": "self.guard.processes.communicate"
+        },
+        {
+          "line": 1169,
+          "call": "self.close"
+        },
+        {
+          "line": 1177,
+          "call": "self.guard.processes.wait"
+        },
+        {
+          "line": 1186,
+          "call": "self.close"
+        },
+        {
+          "line": 103,
+          "call": "self.read"
+        },
+        {
+          "line": 447,
+          "call": "self.reserve"
+        },
+        {
+          "line": 466,
+          "call": "self.reserve"
+        },
+        {
+          "line": 485,
+          "call": "self.reserve"
+        },
+        {
+          "line": 520,
+          "call": "self.reserve"
+        },
+        {
+          "line": 576,
+          "call": "self.release"
+        },
+        {
+          "line": 585,
+          "call": "self.reserve"
+        },
+        {
+          "line": 679,
+          "call": "self.reserve"
+        },
+        {
+          "line": 684,
+          "call": "self.processes.create_suspended"
+        },
+        {
+          "line": 759,
+          "call": "self.processes.query_result"
+        },
+        {
+          "line": 874,
+          "call": "self.stop.finish"
+        },
+        {
+          "line": 956,
+          "call": "self.reserve"
+        },
+        {
+          "line": 965,
+          "call": "self.release"
+        },
+        {
+          "line": 1053,
+          "call": "self.guard.reserve"
+        },
+        {
+          "line": 1064,
+          "call": "self.execute"
+        },
+        {
+          "line": 1085,
+          "call": "self.guard.release"
+        },
+        {
+          "line": 1096,
+          "call": "self.close"
+        },
+        {
+          "line": 1100,
+          "call": "self.db.close"
+        },
+        {
+          "line": 1105,
+          "call": "self.guard.release"
+        },
+        {
+          "line": 81,
+          "call": "self.io.read_exact"
+        },
+        {
+          "line": 756,
+          "call": "self.processes.native_query"
+        },
+        {
+          "line": 979,
+          "call": "db.execute"
+        },
+        {
+          "line": 1018,
+          "call": "db.close"
+        },
+        {
+          "line": 1020,
+          "call": "self.release"
+        },
+        {
+          "line": 1056,
+          "call": "self.db.execute"
+        },
+        {
+          "line": 1199,
+          "call": "roster.exit"
+        },
+        {
+          "line": 1244,
+          "call": "roster.verify"
+        },
+        {
+          "line": 1248,
+          "call": "self.guard.resources.close"
+        },
+        {
+          "line": 130,
+          "call": "self.read"
+        },
+        {
+          "line": 140,
+          "call": "self.read"
+        },
+        {
+          "line": 765,
+          "call": "child.close"
+        },
+        {
+          "line": 140,
+          "call": "self.read"
+        },
+        {
+          "line": 972,
+          "call": "db.execute"
+        },
+        {
+          "line": 981,
+          "call": "db.execute"
+        },
+        {
+          "line": 985,
+          "call": "db.execute"
+        },
+        {
+          "line": 975,
+          "call": "db.execute"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_harness.py",
+      "working_bytes_sha256": "d00b349e0b2bff63124c4bd272139a61b05d9cc40d07b24d1b85c43198f9464f",
+      "selected_boundary_calls": [
+        {
+          "line": 272,
+          "call": "journal.read"
+        },
+        {
+          "line": 667,
+          "call": "binding.verify"
+        },
+        {
+          "line": 931,
+          "call": "self.resources.read"
+        },
+        {
+          "line": 946,
+          "call": "self.bindings[name].verify_exit"
+        },
+        {
+          "line": 948,
+          "call": "self.verify"
+        },
+        {
+          "line": 965,
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 976,
+          "call": "self.paths.verify"
+        },
+        {
+          "line": 977,
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 981,
+          "call": "self.paths.verify"
+        },
+        {
+          "line": 1055,
+          "call": "self.ownership.verify"
+        },
+        {
+          "line": 1105,
+          "call": "self.ownership.verify"
+        },
+        {
+          "line": 1260,
+          "call": "self.resources.read"
+        },
+        {
+          "line": 1272,
+          "call": "self.resources.read"
+        },
+        {
+          "line": 512,
+          "call": "self.journal.read"
+        },
+        {
+          "line": 835,
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 895,
+          "call": "old.verify"
+        },
+        {
+          "line": 779,
+          "call": "self.journal.read"
+        },
+        {
+          "line": 926,
+          "call": "bound.verify"
+        },
+        {
+          "line": 1059,
+          "call": "self.resources.read"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_intrinsic_io.py",
+      "working_bytes_sha256": "cf75f86741588bfef5212ca766311a725c8910507e25b4f1cd9bf4bced251632",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_ipc.py",
+      "working_bytes_sha256": "12305d0386cd6cb68ad9ae913ff44945890f72150a8944d1a0f9d17a56cafebf",
+      "selected_boundary_calls": [
+        {
+          "line": 291,
+          "call": "self.channel.receive"
+        },
+        {
+          "line": 319,
+          "call": "self.resources.read"
+        },
+        {
+          "line": 331,
+          "call": "self.resources.read"
+        },
+        {
+          "line": 333,
+          "call": "self.channel.send"
+        },
+        {
+          "line": 137,
+          "call": "self.endpoint.read_exact"
+        },
+        {
+          "line": 141,
+          "call": "self.endpoint.read_exact"
+        },
+        {
+          "line": 236,
+          "call": "self.resources.read"
+        },
+        {
+          "line": 425,
+          "call": "self.channel.send"
+        },
+        {
+          "line": 483,
+          "call": "self.proofs.release"
+        },
+        {
+          "line": 261,
+          "call": "self.resources.close"
+        },
+        {
+          "line": 426,
+          "call": "self.mailbox.receive"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_job_budget.py",
+      "working_bytes_sha256": "94fbd893895a4765098610c23b5eb544c8eb6b267bc186d8e8e16ca8e013aa4b",
+      "selected_boundary_calls": [
+        {
+          "line": 51,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 61,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 71,
+          "call": "self.calls.assign"
+        },
+        {
+          "line": 115,
+          "call": "binding.verify"
+        },
+        {
+          "line": 161,
+          "call": "capability.verify"
+        },
+        {
+          "line": 400,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 403,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 407,
+          "call": "self.calls.assign"
+        },
+        {
+          "line": 97,
+          "call": "self.calls.assign"
+        },
+        {
+          "line": 344,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 346,
+          "call": "self.allocations.release"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_legacy_entry.py",
+      "working_bytes_sha256": "5c02a840acad881f20678f76de04e23b9d5207d4f3971584143a4d5591f13150",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_legacy_probe.py",
+      "working_bytes_sha256": "12ac00baeca894f2d09af776b795fd53ff7e06225de06123ab80b3a09d84be22",
+      "selected_boundary_calls": [
+        {
+          "line": 44,
+          "call": "c.verify_source"
+        },
+        {
+          "line": 59,
+          "call": "bound.verify"
+        },
+        {
+          "line": 60,
+          "call": "p.communicate"
+        },
+        {
+          "line": 91,
+          "call": "child.close"
+        },
+        {
+          "line": 130,
+          "call": "self.verify"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_native_controller.py",
+      "working_bytes_sha256": "dad1ec2f7075d9ddf2bb43b491f96351515547d32e00334c6651907c6c571690",
+      "selected_boundary_calls": [
+        {
+          "line": 71,
+          "call": "self.read"
+        },
+        {
+          "line": 99,
+          "call": "self.read"
+        },
+        {
+          "line": 108,
+          "call": "self.read"
+        },
+        {
+          "line": 117,
+          "call": "self.read"
+        },
+        {
+          "line": 266,
+          "call": "self.legacy_probes.run_case"
+        },
+        {
+          "line": 327,
+          "call": "allocations.reserve"
+        },
+        {
+          "line": 341,
+          "call": "allocations.reserve"
+        },
+        {
+          "line": 359,
+          "call": "escrow.reserve"
+        },
+        {
+          "line": 363,
+          "call": "escrow.close"
+        },
+        {
+          "line": 365,
+          "call": "paths.verify"
+        },
+        {
+          "line": 366,
+          "call": "escrow.reserve"
+        },
+        {
+          "line": 369,
+          "call": "escrow.close"
+        },
+        {
+          "line": 489,
+          "call": "self.aggregate.close"
+        },
+        {
+          "line": 542,
+          "call": "self.legacy_probes.verify"
+        },
+        {
+          "line": 148,
+          "call": "self.resources.reserve"
+        },
+        {
+          "line": 331,
+          "call": "self.files.read"
+        },
+        {
+          "line": 338,
+          "call": "self.files.close"
+        },
+        {
+          "line": 340,
+          "call": "allocations.release"
+        },
+        {
+          "line": 347,
+          "call": "self.files.close"
+        },
+        {
+          "line": 349,
+          "call": "allocations.release"
+        },
+        {
+          "line": 389,
+          "call": "self.verify_source"
+        },
+        {
+          "line": 506,
+          "call": "self.files.read"
+        },
+        {
+          "line": 523,
+          "call": "self.book.close"
+        },
+        {
+          "line": 160,
+          "call": "self.resources.close"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_native_objects.py",
+      "working_bytes_sha256": "04833d9a0950ecf510092e7bafe1bab96770a7ec98e5700e92c37b19cf283265",
+      "selected_boundary_calls": [
+        {
+          "line": 247,
+          "call": "self.aggregate.bind_retained"
+        },
+        {
+          "line": 261,
+          "call": "bound.verify_exit"
+        },
+        {
+          "line": 157,
+          "call": "self.staging.stage"
+        },
+        {
+          "line": 176,
+          "call": "self.staging.verify"
+        },
+        {
+          "line": 178,
+          "call": "self.peer.verify"
+        },
+        {
+          "line": 211,
+          "call": "self.staging.verify"
+        },
+        {
+          "line": 213,
+          "call": "self.peer.verify"
+        },
+        {
+          "line": 228,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 249,
+          "call": "self.staging.verify"
+        },
+        {
+          "line": 250,
+          "call": "self.peer.verify"
+        },
+        {
+          "line": 263,
+          "call": "self.staging.finish"
+        },
+        {
+          "line": 266,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 268,
+          "call": "self.allocations.release"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_native_query.py",
+      "working_bytes_sha256": "abc293a1d6c3f6edd6b35fe1a4e02eaafe5174f978811e77cf0df478e250181c",
+      "selected_boundary_calls": [
+        {
+          "line": 39,
+          "call": "self.verify"
+        },
+        {
+          "line": 138,
+          "call": "p.allocations_port.reserve"
+        },
+        {
+          "line": 165,
+          "call": "r.reserve"
+        },
+        {
+          "line": 243,
+          "call": "self.calls.assign"
+        },
+        {
+          "line": 264,
+          "call": "p.aggregate.bind_query"
+        },
+        {
+          "line": 321,
+          "call": "capability.exit"
+        },
+        {
+          "line": 215,
+          "call": "self.calls.create_suspended"
+        },
+        {
+          "line": 269,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 271,
+          "call": "p.allocations_port.release"
+        },
+        {
+          "line": 452,
+          "call": "r.close"
+        },
+        {
+          "line": 317,
+          "call": "capability.verify"
+        },
+        {
+          "line": 379,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 381,
+          "call": "p.allocations_port.release"
+        },
+        {
+          "line": 384,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 389,
+          "call": "p.allocations_port.release"
+        },
+        {
+          "line": 232,
+          "call": "p.allocations_port.release"
+        },
+        {
+          "line": 302,
+          "call": "self.pipes.read"
+        },
+        {
+          "line": 354,
+          "call": "self.calls.terminate_owned_job"
+        },
+        {
+          "line": 358,
+          "call": "self.calls.wait"
+        },
+        {
+          "line": 393,
+          "call": "p.allocations_port.release"
+        },
+        {
+          "line": 356,
+          "call": "self.calls.terminate_created"
+        },
+        {
+          "line": 175,
+          "call": "self.files.read"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_native_session.py",
+      "working_bytes_sha256": "f5dfecbd902cc42ad632bdcccd3729de3d15d366090f22bd48028a32c5425c82",
+      "selected_boundary_calls": [
+        {
+          "line": 158,
+          "call": "self.communicate"
+        },
+        {
+          "line": 163,
+          "call": "child.close"
+        },
+        {
+          "line": 182,
+          "call": "self.controller.verify_source"
+        },
+        {
+          "line": 197,
+          "call": "self.stop_assembly.send"
+        },
+        {
+          "line": 201,
+          "call": "self.stop_assembly.collect"
+        },
+        {
+          "line": 233,
+          "call": "self.controller.verify_source"
+        },
+        {
+          "line": 536,
+          "call": "child.binding.verify"
+        },
+        {
+          "line": 539,
+          "call": "self.resources.read"
+        },
+        {
+          "line": 562,
+          "call": "child.binding.verify"
+        },
+        {
+          "line": 571,
+          "call": "self.protocol.release"
+        },
+        {
+          "line": 608,
+          "call": "self.calls.wait"
+        },
+        {
+          "line": 639,
+          "call": "self.protocol.close"
+        },
+        {
+          "line": 714,
+          "call": "self.protocol.close"
+        },
+        {
+          "line": 772,
+          "call": "child.channel.send"
+        },
+        {
+          "line": 790,
+          "call": "child.channel.send"
+        },
+        {
+          "line": 793,
+          "call": "self.endpoints.communicate"
+        },
+        {
+          "line": 796,
+          "call": "self.endpoints.close"
+        },
+        {
+          "line": 802,
+          "call": "child.channel.send"
+        },
+        {
+          "line": 865,
+          "call": "child.channel.send"
+        },
+        {
+          "line": 138,
+          "call": "self.native_queries.execute"
+        },
+        {
+          "line": 485,
+          "call": "self.calls.assign"
+        },
+        {
+          "line": 538,
+          "call": "self.aggregate.bind_retained"
+        },
+        {
+          "line": 614,
+          "call": "self.protocol.communicate"
+        },
+        {
+          "line": 617,
+          "call": "self.calls.wait"
+        },
+        {
+          "line": 627,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 646,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 712,
+          "call": "self.calls.wait"
+        },
+        {
+          "line": 718,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 753,
+          "call": "child.channel.receive"
+        },
+        {
+          "line": 458,
+          "call": "self.calls.create_suspended"
+        },
+        {
+          "line": 806,
+          "call": "child.channel.receive"
+        },
+        {
+          "line": 856,
+          "call": "child.channel.receive"
+        },
+        {
+          "line": 703,
+          "call": "self.calls.terminate_owned_job"
+        },
+        {
+          "line": 709,
+          "call": "self.calls.terminate_created"
+        },
+        {
+          "line": 405,
+          "call": "self.files.read"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_outputs.py",
+      "working_bytes_sha256": "b97dd9a75fbcec66029a3577d09a4d8235c6b3b84a10be3b5a9cf2716d09d669",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_owned_stop.py",
+      "working_bytes_sha256": "ab050a1822fc9701b0f937d7ae50e8e98880114d82069469fe450f4567f092d4",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_pipe_transport.py",
+      "working_bytes_sha256": "8f191dc124f77c7a859fea6e56037e8696f5222467c5c4c9cc2fc55eb5d9c059",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_remote_handles.py",
+      "working_bytes_sha256": "f0dd91429a324e83f1b88c2a4bfdbb7f91c8a88a130f5eb620bf14eae3c054a2",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_session_io.py",
+      "working_bytes_sha256": "68f4cb9743df344d9508213c14309a25262f6f88b125d28b806a667cb5a8b83b",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_stop.py",
+      "working_bytes_sha256": "47eabd2597b1b3f4ea01cb9f3dfb09fc78945f2b8c367a8099e2266ebfe8b83f",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_suspended_graph.py",
+      "working_bytes_sha256": "57187701324bc44e0bd336a3dd46ef8303d32d39a77b21db1175e0d1a2886f9b",
+      "selected_boundary_calls": [
+        {
+          "line": 146,
+          "call": "self.calls.hold_created_thread"
+        },
+        {
+          "line": 242,
+          "call": "self.calls.resume_staged_thread"
+        },
+        {
+          "line": 279,
+          "call": "self.verify"
+        },
+        {
+          "line": 83,
+          "call": "r.allocations.reserve"
+        },
+        {
+          "line": 136,
+          "call": "r.files.read"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_test_driver.py",
+      "working_bytes_sha256": "dad21034c7ab30c990cd52ea95849f5281b09fa120828741da3b61ae21fc822b",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_cim.py",
+      "working_bytes_sha256": "e00e018b54f4bb2f5bfe3fe1677c94d7e580dee48f533a432ddf911e570f6738",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_endpoints.py",
+      "working_bytes_sha256": "3d0b7cbbfc07fe69040558a129e52a56cc38be1b0620a3de213126a4eccdc3ec",
+      "selected_boundary_calls": [
+        {
+          "line": 76,
+          "call": "port.controller.verify_source"
+        },
+        {
+          "line": 77,
+          "call": "port.controller.verify_source"
+        },
+        {
+          "line": 78,
+          "call": "port.controller.verify_source"
+        },
+        {
+          "line": 82,
+          "call": "lease.reserve"
+        },
+        {
+          "line": 330,
+          "call": "state['lease'].release"
+        },
+        {
+          "line": 380,
+          "call": "transport.read_exact"
+        },
+        {
+          "line": 411,
+          "call": "identity.verify"
+        },
+        {
+          "line": 263,
+          "call": "child.channel.receive"
+        },
+        {
+          "line": 284,
+          "call": "child.channel.send"
+        },
+        {
+          "line": 287,
+          "call": "child.channel.receive"
+        },
+        {
+          "line": 365,
+          "call": "identity_box[0].verify"
+        },
+        {
+          "line": 228,
+          "call": "port.controller.verify_source"
+        },
+        {
+          "line": 378,
+          "call": "transport.read_exact"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_io.py",
+      "working_bytes_sha256": "ee2164abee29fd30ef5fbf8bfa8948d53678c46d6afaf7a1121513b9e7c117cf",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_process.py",
+      "working_bytes_sha256": "150b39a891ecb38a43aa2b317af7aaee14cb5ac9f4f92a2569207f0f1d01ebee",
+      "selected_boundary_calls": [
+        {
+          "line": 473,
+          "call": "self.allocations.reserve"
+        },
+        {
+          "line": 523,
+          "call": "self.calls.close"
+        },
+        {
+          "line": 525,
+          "call": "self.allocations.release"
+        },
+        {
+          "line": 211,
+          "call": "self.close"
+        },
+        {
+          "line": 502,
+          "call": "self.calls.wait"
+        },
+        {
+          "line": 226,
+          "call": "self.close"
+        },
+        {
+          "line": 510,
+          "call": "self.calls.wait"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/aip06_windows_pump.py",
+      "working_bytes_sha256": "072fc6962c128b9c45aba5e4773c5b69a0942425d2976e79b866a4a96dc62f0b",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/disposable_host_owner.py",
+      "working_bytes_sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/launch_ownership.py",
+      "working_bytes_sha256": "83dca6bfe3a71b7cea5ed98d65cb69be63c117efaad68e8fe3127a5735bb572c",
+      "selected_boundary_calls": [
+        {
+          "line": 232,
+          "call": "self.verify"
+        }
+      ]
+    },
+    {
+      "path": "scripts/observation_runtime/launch_ownership_windows.py",
+      "working_bytes_sha256": "e44c16d384924d9043a3fde6972ed4f04bbd4e48966c9cac7bbda3a8f9bdb4a4",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/native_fixture_budget.py",
+      "working_bytes_sha256": "5ada66b71081e12d90e0f46fb368a418c1821afc2a5ff219d726e3fb358cbd4d",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/observation_runtime/personal_native_job.py",
+      "working_bytes_sha256": "72f5ab065527c7d291ad1fa060c0ad2470c1c5d69b77a32675cc82d65b2ab829",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/volume_inspector/financial_record_store.py",
+      "working_bytes_sha256": "2dd5f672aab4e030ad185947836808b4932f3ee4ad65a21481f5887061e11c79",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/volume_inspector/financial_reporting.py",
+      "working_bytes_sha256": "47cb9603f02ba1a4f5222c1f499fd01e36e74dcf410e3db1190bc64cdb22b63c",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/volume_inspector/operational_autonomous_store.py",
+      "working_bytes_sha256": "81b2b3d754f88be404990ff4e70611d01901bb46babadb8901f775f4554f7726",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/volume_inspector/resting_order_store.py",
+      "working_bytes_sha256": "5c0ca6c9a5da57b9f12caaeabb1b72652e27eeeb9cab1dd928c3737c23f778ba",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/volume_inspector/shared_fence.py",
+      "working_bytes_sha256": "ca4b2eeef33cce9e65375d2e13dbf46139d80d0ef9e953f83bf773f8e3e6c241",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/volume_inspector/unified_portfolio_store.py",
+      "working_bytes_sha256": "186bcc9acc69780ed2f8be59ffe05955d3bf259509f7c7e2b9accb6db696d97e",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "scripts/volume_inspector/windows_output.py",
+      "working_bytes_sha256": "a5bf5a5205176abf603b03dcfd0de66e602f1bd855cdcbc4debf8d4c7e64a107",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/launch_ownership_child.py",
+      "working_bytes_sha256": "954034279f5c01a1d794990f74cd1f58863651dedc079550819943f98492c5de",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/perp_order_crash_child.py",
+      "working_bytes_sha256": "a0e30ffaaebc25d2d665e38e7e20e9f528ff2421a62830f41b9bc69d637fd729",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/perp_order_native_fixture.py",
+      "working_bytes_sha256": "4ce231e39b30a3c9dd9e717b1c022bc23e130765539bbd7153b6bec1f0ad2d40",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/personal_complete_native_stop_fixture.py",
+      "working_bytes_sha256": "d691347afe3749b3c4ede566c71155190a29dfc73115eab01fc508e99c9a0d82",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/personal_fixture_budget.py",
+      "working_bytes_sha256": "22421b4ad882cebcf04f6cb501bdc209491d674e67a1b90d2cee8aa56cc6c355",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/personal_fixture_sources.py",
+      "working_bytes_sha256": "f91f7a968680f521daaa3aca6ad37cf1610b54f5599b70597448efa23d086a35",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/personal_owned_stop_child.py",
+      "working_bytes_sha256": "42abe74436181f4a7bdb6cb8a2a495d80dc0f828b250e8c8794e267bc827a6d8",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/personal_readonly_restart_child.py",
+      "working_bytes_sha256": "2c371e434b14d774d719e1f2abf2ead30f735f7509faf31e26b9c20a1a48cb48",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/qd_autonomous_binding_fixture.py",
+      "working_bytes_sha256": "d4fc17168bb44719551eeb300481c234f1a8c143be6e185bb0277e2e685fe379",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/qd_autonomous_native_fixture.py",
+      "working_bytes_sha256": "6be18c4ce8480c1e6d5c3f87e5a7424dbef7835bc5422db95119e044a0ef9a84",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/qd_autonomous_runtime_fixture.py",
+      "working_bytes_sha256": "d09cbcd69c55c12fda81f24aae67cb076e7dd3d7df1a69cddbdfd555ec85a68e",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/run_launch_ownership_native.py",
+      "working_bytes_sha256": "64728147dc2cb0b13f0007311a3ddca9294f6f589354a436028064884b29f8a2",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_aip06_fixture_guard_integration.py",
+      "working_bytes_sha256": "fe9275df12b8b9e34a859e1ac6e72975b7f88e8750f30d5fc59997271161056c",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_aip06_native_session_stop.py",
+      "working_bytes_sha256": "ffaf351c3aae4d5264d75d9e55ccbaec3d90a03e1342304aa3d0b8e51907c4ba",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_aip06_physical_native_proofs.py",
+      "working_bytes_sha256": "ed2e3a39f30cc8d643aa8a2eb6977b33f01c051787524ed3d448f372907fffdd",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_aip06_physical_path.py",
+      "working_bytes_sha256": "66cc3c2fcb551e14a4b60f17bff34778b0e110fc57e899df186975e7fa517673",
+      "selected_boundary_calls": [
+        {
+          "line": 159,
+          "call": "GuardedNetstat(x.guard, ARGS).read"
+        },
+        {
+          "line": 252,
+          "call": "x.c.probe_case"
+        },
+        {
+          "line": 218,
+          "call": "x.calls.finish"
+        },
+        {
+          "line": 245,
+          "call": "x.c.probe_case"
+        },
+        {
+          "line": 260,
+          "call": "x.c.verify_probe_result"
+        },
+        {
+          "line": 267,
+          "call": "x.c.probe_case"
+        },
+        {
+          "line": 313,
+          "call": "x.ledger.reserve"
+        },
+        {
+          "line": 388,
+          "call": "old_sockets.collect"
+        },
+        {
+          "line": 391,
+          "call": "sockets.collect"
+        },
+        {
+          "line": 394,
+          "call": "old_processes.collect"
+        },
+        {
+          "line": 395,
+          "call": "processes.collect"
+        },
+        {
+          "line": 554,
+          "call": "x.ledger.reserve"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_aip06_source_closure.py",
+      "working_bytes_sha256": "afcb1301859e6b73e84929bc7f231108cb04044311b0191697d56ddef11b7b0c",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_aip06_suspended_graph.py",
+      "working_bytes_sha256": "5011ed2ad671845fe005cbbe28b88d800fb0aa9e127036cbaea48c98c611b55e",
+      "selected_boundary_calls": [
+        {
+          "line": 26,
+          "call": "x.ledger.reserve"
+        },
+        {
+          "line": 118,
+          "call": "creator.reserve"
+        },
+        {
+          "line": 120,
+          "call": "x.calls.create_suspended"
+        },
+        {
+          "line": 145,
+          "call": "r.stage_suspended"
+        },
+        {
+          "line": 150,
+          "call": "r.resume_staged"
+        },
+        {
+          "line": 153,
+          "call": "r.import_binding"
+        },
+        {
+          "line": 174,
+          "call": "r.release"
+        },
+        {
+          "line": 184,
+          "call": "x.calls.close"
+        },
+        {
+          "line": 186,
+          "call": "x.ledger.close"
+        },
+        {
+          "line": 197,
+          "call": "f.peer_process.communicate"
+        },
+        {
+          "line": 198,
+          "call": "x.aggregate.close"
+        },
+        {
+          "line": 257,
+          "call": "f.registry.stage_suspended"
+        },
+        {
+          "line": 296,
+          "call": "f.registry.stage_suspended"
+        },
+        {
+          "line": 311,
+          "call": "f.registry.stage_suspended"
+        },
+        {
+          "line": 312,
+          "call": "f.registry.resume_staged"
+        },
+        {
+          "line": 99,
+          "call": "creator.reserve"
+        },
+        {
+          "line": 128,
+          "call": "x.calls.assign"
+        },
+        {
+          "line": 181,
+          "call": "x.calls.close"
+        },
+        {
+          "line": 183,
+          "call": "f.creator.release"
+        },
+        {
+          "line": 248,
+          "call": "f.registry.stage_suspended"
+        },
+        {
+          "line": 252,
+          "call": "f.registry.resume_staged"
+        },
+        {
+          "line": 259,
+          "call": "f.peer.verify"
+        },
+        {
+          "line": 262,
+          "call": "f.registry.staging.verify"
+        },
+        {
+          "line": 285,
+          "call": "calls.hold_created_thread"
+        },
+        {
+          "line": 286,
+          "call": "calls.resume_staged_thread"
+        },
+        {
+          "line": 299,
+          "call": "f.registry.staging.verify"
+        },
+        {
+          "line": 303,
+          "call": "f.registry.staging.verify"
+        },
+        {
+          "line": 305,
+          "call": "f.registry.resume_staged"
+        },
+        {
+          "line": 315,
+          "call": "f.registry.resume_staged"
+        },
+        {
+          "line": 149,
+          "call": "r.staging.verify"
+        },
+        {
+          "line": 290,
+          "call": "calls.hold_created_thread"
+        },
+        {
+          "line": 291,
+          "call": "calls.resume_staged_thread"
+        }
+      ]
+    },
+    {
+      "path": "tests/test_aip06_windows_adapters.py",
+      "working_bytes_sha256": "6be93ed58652918bd9a5428b6a27efa2eb0260efda26068235ee6ea42bc9072a",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_perp_native_shutdown.py",
+      "working_bytes_sha256": "701054fe996fc48c51c8cbbd38eb4e68c0d962b4d2ac784a6a33dd3fe7fe76a1",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_perp_order_crash_race_native.py",
+      "working_bytes_sha256": "348f19686fcdad0ce3878b68fa0c1b6d3fa79931c313e4d2567bb55c02ade272",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_personal_native_pipeline_capacity.py",
+      "working_bytes_sha256": "14997405a21395b6c555399d519bc9ab58630fa38e7a3ce356b6c3770bcae260",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_personal_owned_stop_timing.py",
+      "working_bytes_sha256": "527a2cf1bf0058754f1bc36aba6856200f07bba8854d9451934a9e3c5252081b",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_qd_unified_shutdown.py",
+      "working_bytes_sha256": "45d1b064119d95d7521c56cac1eea9bc907074034baefcae61d705b2c177c51c",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_unified_actual_native_lanes.py",
+      "working_bytes_sha256": "bef27fefb812a89831c9d2b9a29a3f541d3a42fca98f206c64af7eaa4aa7be03",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_unified_native_writer.py",
+      "working_bytes_sha256": "405d6487ed4cc9b9b30447929db91435371037e482c146710a6a2afce91177f3",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/test_unified_source_capacity_native.py",
+      "working_bytes_sha256": "ed76230d759575a322c4581fb264f9fdf5d3197167cd183f56d7ef46ed000ac2",
+      "selected_boundary_calls": []
+    },
+    {
+      "path": "tests/unified_actual_lanes_fixture.py",
+      "working_bytes_sha256": "d67800b9fea5c7619555a7da52a4c40bd89e20f0fae95aeaa70d14a8d0c9e62d",
+      "selected_boundary_calls": []
+    }
+  ]
+}

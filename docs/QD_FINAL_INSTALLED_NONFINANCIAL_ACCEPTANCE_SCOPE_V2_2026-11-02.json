@@ -1,0 +1,109 @@
+{
+  "schema": "QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_SCOPE_V2",
+  "status": "AUTHORIZATION_PENDING_NO_RUN",
+  "starting_checkpoint": "68b2356245e2684bb65cd8ebc1afb8801078f01b",
+  "branch": "chatgpt/atlas-rebuild-v1",
+  "public_scope_document": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_SCOPE_V2_2026-11-02.json",
+  "evidence_root": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v2-20261102",
+  "source_manifest_sha256": "bec6af1bd1383746bc929b5e63ac8f6ebbb2fd00d5ba6e1fa3aa690b1d68b0cf",
+  "source_files": 100,
+  "application_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "application": {
+    "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+    "receipt": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-2c039af29dfefd1df77e0caa3db3fdf5ed188118.json",
+    "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+    "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118"
+  },
+  "support_id": "5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+  "support_destination": "D:\\AtlasRuntime\\launchers\\5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+  "support_control": "D:\\AtlasRuntime\\support-installations\\5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+  "support_manifest_canonical_sha256": "7947f54e82d74079b378ad14c238dadb4259671ee7ed5c9d03e952d5d8327cd3",
+  "support_archive_sha256": "dc6269c8b7ff6babcf73340c5aa5987a128ae1d76e6092ce1def653814af01bf",
+  "support_receipt_sha256": "01bb0f6efb04c706e594acb8c63759ee682e4bce2f2062882015edff36d6ce91",
+  "support_intent_sha256": "270ebc37107734a845e9bb9c4ef831152e43f8069a1328570b27597418b16a79",
+  "support_ack_sha256": "2d87da5b5b9959d5e0933d730e26b2a425f7bddd1b80d089fec98536a3b62851",
+  "application_journal_sha256": "27940d77ef60d5389581213f6334910fdc84677c85639aeb20c50bc10d644f13",
+  "baseline": {
+    "revision": 4,
+    "selected": null,
+    "head": "bdfe3b9a58605667dbf3a1b74b035236c196445697759cc82cd9124e22f7a419",
+    "freshly_verified": false,
+    "source": "FRESH_READ_ONLY_VERIFICATION_REQUIRED_IN_THIS_READINESS_AND_AGAIN_BEFORE_FUTURE_ACCEPTANCE"
+  },
+  "limits": {
+    "seconds": 600,
+    "entries": 8192,
+    "accounted_bytes": 67108864
+  },
+  "cycle_limits": {
+    "maximum_cycles": 2,
+    "application_seconds": 120,
+    "total_attempted_http_requests": 96,
+    "readiness_seconds": 180,
+    "browser_acknowledgement_seconds": 45,
+    "complete_stop_seconds": 8
+  },
+  "clock": {
+    "maximum_uncertainty_ms": 1000,
+    "maximum_age_seconds": 120,
+    "expected_source": "time.windows.com,0x9",
+    "passive_observation_maximum_seconds": 180,
+    "configuration_changes": false,
+    "expected_service_startup": "Automatic (Win32_Service.StartMode Auto; registry Start 2), operator configured; no agent service mutation"
+  },
+  "allowed_mutations": [
+    "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v2-20261102\\<test-owned evidence, helper claims, temp/cache, logs, browser timings and receipts>",
+    "D:\\AtlasRuntime\\selection\\<exact create-new revision-5 pending/commit hardlink pair>",
+    "D:\\AtlasRuntime\\selection\\<exact create-new revision-6 rollback pending/commit hardlink pair>",
+    "Repository documentation, tests and explicit non-force Git checkpoint"
+  ],
+  "selection": {
+    "root": "D:\\AtlasRuntime\\selection",
+    "select_revision": 5,
+    "select_only_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "rollback_revision": 6,
+    "restores": "bdfe3b9a58605667dbf3a1b74b035236c196445697759cc82cd9124e22f7a419",
+    "final_selected": null,
+    "mechanism": "EXISTING_VERIFIED_GENERAL_KNOWN_HEAD_ROLLBACK_NOT_INITIAL_BASELINE_SHORTCUT",
+    "uncertain_effects": "PRESERVE_NO_RETRY_NO_RESET_NO_ADOPTION"
+  },
+  "process_scope": [
+    "One normal-token test supervisor and owned Job; retained exact native worker identity",
+    "Exact installed frozen D:-resident Python via verified installed PowerShell adapter",
+    "Only test-owned diagnostic Windows query helpers with PID/creation/image claims",
+    "One genuine browser test tab closed before each acknowledgement; do not terminate unrelated browser processes"
+  ],
+  "cleanup": {
+    "order": [
+      "accepted Stop ACK",
+      "fresh IP_HELPER, raw CIM, NETSTAT bundle",
+      "strict CIM/process roster snapshot LAST",
+      "unchanged actual next_cycle gate before Open2",
+      "final EOF/drain and exit code before handle closure",
+      "fresh final socket/process readback for both ports",
+      "verified rollback to revision-4 known head via new revision-6 receipt",
+      "original journal/receipt byte preservation and Job/port/handle readback"
+    ],
+    "maximum_cim_age_seconds": 2,
+    "maximum_reader_age_seconds": 10,
+    "maximum_collection_seconds": 5,
+    "forced_termination": "EXACT_OWNED_JOB_EMERGENCY_CONTAINMENT_ONLY_ALWAYS_FAILS_ACCEPTANCE"
+  },
+  "prohibited": [
+    "SUPPORT_REINSTALL",
+    "JOURNAL_RESET",
+    "FROZEN_APPLICATION_MODIFICATION",
+    "PROVIDER_CONNECTION",
+    "FINANCIAL_WRITER_OR_ACCOUNT_ACTIVATION",
+    "PAPER_OR_LIVE_TRADING",
+    "REAL_ORDERS",
+    "DESKTOP_SHORTCUT_OR_AUTOSTART_CHANGE",
+    "WINDOWS_TIME_OR_NETWORK_CONFIGURATION",
+    "FORCED_SYNCHRONIZATION",
+    "GENESIS_ACCESS",
+    "UNRELATED_PROCESS_TERMINATION",
+    "DESTRUCTIVE_GIT"
+  ],
+  "approval": "ONE_NEW_EXPLICIT_OPERATOR_GRANT_FOR_THIS_CANONICAL_SCOPE_HASH_AND_REVIEWED_GIT_HEAD_REQUIRED_BEFORE_NATIVE_PREFLIGHT_OR_ANY_OPERATIONAL_MUTATION"
+}

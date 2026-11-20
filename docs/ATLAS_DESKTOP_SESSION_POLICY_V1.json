@@ -1,0 +1,20 @@
+{
+  "schema": "ATLAS_DESKTOP_SESSION_POLICY_V1",
+  "operator_decision_date": "2026-10-26",
+  "operating_model": "INTERMITTENT_USER_STARTED_DESKTOP_SESSIONS",
+  "always_on_required": false,
+  "automatic_restart_allowed": false,
+  "normal_close": "GRACEFUL_FLATTEN_OR_EXPLICIT_INCOMPLETE",
+  "reconcile_before_new_admission": true,
+  "restart_resets_capacity": false,
+  "financial_history_retained": true,
+  "startup_authorization_granted": false,
+  "strict_profiles_unchanged": true,
+  "governance_decisions_changed": 0,
+  "windows_account": "EXISTING_CURRENT_ACCOUNT",
+  "deployment_drive": "D:",
+  "live_money_implementation_allowed": false,
+  "paper_execution": "AUTONOMOUS_WITHIN_EXPLICITLY_STARTED_SESSION",
+  "per_trade_confirmation_required": false,
+  "user_shutdown_exit_reason": "USER_SHUTDOWN"
+}

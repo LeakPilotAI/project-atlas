@@ -194,3 +194,197 @@ def test_tickers_received_is_snapshot_not_sum(tmp_path, monkeypatch) -> None:
     h = p.last_24h()
     assert h["markets"] == 233
     assert h["liquid"] == 80
+
+
+
+def test_quality_ema_history_fallback() -> None:
+    """Insufficient history must not fabricate an EMA50 trend."""
+    from app.services.perp_micro_coach import _ema
+
+    closes = [100.0 + i * 0.1 for i in range(48)]
+    ema21 = _ema(closes, 21)
+    ema50 = _ema(closes, 50) if len(closes) >= 50 else None
+
+    assert ema21 is not None
+    assert ema50 is None
+
+
+def test_quality_ema50_available_with_50_candles() -> None:
+    """Full history permits independent EMA-stack evaluation."""
+    from app.services.perp_micro_coach import _ema
+
+    closes = [100.0 + i * 0.1 for i in range(50)]
+    ema21 = _ema(closes, 21)
+    ema50 = _ema(closes, 50)
+
+    assert ema21 is not None
+    assert ema50 is not None
+    assert ema21 != ema50
+
+
+
+def test_quality_ema_scoring_behavior() -> None:
+    """EMA50 history must affect LONG/SHORT scores as designed."""
+    from app.services.perp_micro_coach import _ema
+
+    coach = PerpMicroCoach()
+    coach._vol_map["BTC"] = 8_000_000
+    coach._oi_map["BTC"] = 8_000_000
+
+    expected = {
+        ("UP", "LONG"): (90.0, 92.0),
+        ("UP", "SHORT"): (90.0, 98.0),
+        ("DOWN", "LONG"): (108.0, 116.0),
+        ("DOWN", "SHORT"): (90.0, 92.0),
+    }
+
+    for (direction, side), (expected_48, expected_50) in expected.items():
+        step = 0.1 if direction == "UP" else -0.1
+        closes = [100.0 + i * step for i in range(50)]
+        scores = []
+
+        for n in (48, 50):
+            history = closes[:n]
+            price = history[-1]
+            sma20 = _sma(history, 20)
+            assert sma20 is not None
+
+            rsi = 20.0 if side == "LONG" else 80.0
+
+            ok, score, reason = coach._setup_quality(
+                "BTC", side, price, history, rsi, sma20, 3.0
+            )
+
+            assert ok is False
+            assert "ATR too tight" in reason
+            scores.append(score)
+
+        assert scores == [expected_48, expected_50]
+        assert _ema(closes, 21) != _ema(closes, 50)
+
+
+
+def test_rr_precision_tolerance() -> None:
+    """Tiny floating-point noise must not reject intended 1.8R geometry."""
+    import math
+
+    min_rr = 1.8
+
+    def rejected(rr: float) -> bool:
+        return rr < min_rr and not math.isclose(
+            rr, min_rr, rel_tol=1e-12, abs_tol=0.0
+        )
+
+    assert rejected(1.7999999999999812) is False
+    assert rejected(1.7999999999999703) is False
+    assert rejected(1.79) is True
+    assert rejected(1.5) is True
+
+def test_instrumented_rr_precision_real_branch(monkeypatch) -> None:
+    """Exercise the actual R:R gate without paper trades or persistent writes."""
+    import asyncio
+    from collections import Counter
+    from types import SimpleNamespace
+    from unittest.mock import AsyncMock, MagicMock
+
+    import app.services.paper_try_symbol as scanner
+    import app.services.paper_pipeline as pipeline_module
+    import app.services.paper_journal as journal_module
+    import app.services.shadow_research as shadow_module
+    import app.services.funnel_research as funnel_module
+
+    counts = Counter()
+    rejects = Counter()
+
+    pipeline = SimpleNamespace(
+        inc=lambda key, amount=1: counts.update({key: amount}),
+        inc_reject=lambda key: rejects.update({key: 1}),
+        mark_error=lambda message: None,
+        last_candle_ok_at=None,
+        last_qualified_at=None,
+    )
+
+    journal = SimpleNamespace(
+        log_candidate=AsyncMock(),
+        open_trade=AsyncMock(
+            side_effect=AssertionError("Paper trade must not open")
+        ),
+    )
+
+    shadow = SimpleNamespace(record_evaluation=MagicMock())
+    funnel = SimpleNamespace(observe=MagicMock())
+
+    monkeypatch.setattr(pipeline_module, "paper_pipeline", pipeline)
+    monkeypatch.setattr(journal_module, "paper_journal", journal)
+    monkeypatch.setattr(shadow_module, "shadow_research", shadow)
+    monkeypatch.setattr(funnel_module, "funnel_research", funnel)
+
+    settings = SimpleNamespace(
+        perp_micro_majors_list=[],
+        perp_micro_min_rr=1.8,
+        perp_micro_rsi_long=28.0,
+        perp_micro_rsi_short=72.0,
+        perp_micro_min_extension_pct=1.4,
+        perp_micro_max_extension_pct=3.5,
+        perp_micro_htf_align=False,
+    )
+
+    monkeypatch.setattr(scanner, "get_settings", lambda: settings)
+
+    # This fixture produces an R:R microscopically below 1.8
+    # solely because of floating-point rounding.
+    closes = [0.1] * 20
+    price = 0.1
+    for _ in range(30):
+        price *= 0.998
+        closes.append(price)
+
+    from app.services.perp_micro_coach import _atr_proxy, _rsi, _sma
+    import math
+
+    atr = _atr_proxy(closes, 14)
+    rsi = _rsi(closes, 14)
+    sma = _sma(closes, 20)
+
+    assert rsi is not None and rsi <= 28.0
+    assert sma is not None
+    assert 1.4 <= abs(price - sma) / sma * 100 <= 3.5
+
+    stop = price - 1.5 * atr
+    risk = abs(price - stop)
+    target = price + 1.8 * risk
+    actual_rr = abs(target - price) / risk
+
+    assert actual_rr < 1.8, (
+        "Fixture must reproduce the original rounding rejection"
+    )
+    assert math.isclose(
+        actual_rr, 1.8, rel_tol=1e-12, abs_tol=0.0
+    )
+
+    class FakeCoach:
+        _vol_map = {"ATLAS_RR_TEST": 8_000_000.0}
+        _oi_map = {"ATLAS_RR_TEST": 8_000_000.0}
+
+        async def _fetch_closes(self, symbol, n):
+            assert symbol == "ATLAS_RR_TEST"
+            assert n == 50
+            return list(closes)
+
+        def _setup_quality(self, *args, **kwargs):
+            return True, 100.0, "test-qualified"
+
+    async def run():
+        return await scanner.instrumented_try_symbol(
+            FakeCoach(), "ATLAS_RR_TEST", price
+        )
+
+    result = asyncio.run(run())
+
+    assert result is False
+    assert counts["quality_pass"] == 1
+    assert counts["rr_pass"] == 1
+    assert counts["rejected_rr"] == 0
+    assert rejects["RISK_REWARD"] == 0
+    assert rejects["TIER"] == 1
+    journal.open_trade.assert_not_awaited()

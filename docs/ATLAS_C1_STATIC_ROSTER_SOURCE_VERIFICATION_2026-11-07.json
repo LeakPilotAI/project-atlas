@@ -1,0 +1,179 @@
+﻿{
+    "schema":  "ATLAS_C1_STATIC_ROSTER_SOURCE_VERIFICATION_V1",
+    "status":  "STATIC_SOURCE_VERIFIED_NATIVE_ENROLLMENT_BLOCKED",
+    "source":  "docs/PAPER_C1_STATIC_ROSTER_ACCEPTANCE_V1_2026-10-26.json",
+    "verified_role_count":  15,
+    "source_present_count":  15,
+    "writer_enrolled_count":  0,
+    "native_resource_enrolled_count":  0,
+    "receipt_present_count":  0,
+    "roles":  [
+                  {
+                      "role":  "QD_DECISION",
+                      "source_path":  "backend/app/services/quality_dips_autonomous_paper.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "QD_SOURCE",
+                      "source_path":  "scripts/volume_inspector/operational_autonomous_store.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "QD_PROJECTION",
+                      "source_path":  "scripts/volume_inspector/financial_reporting.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "QD_REPORT",
+                      "source_path":  "scripts/volume_inspector/financial_reporting.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "QD_COORDINATION",
+                      "source_path":  "backend/app/services/quality_dips_operational_runtime.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "QD_RANKING_PUBLICATION",
+                      "source_path":  "backend/app/services/paper_source_publication.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "PERP_SOURCE",
+                      "source_path":  "backend/app/services/unified_native_writer.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "PERP_PROJECTION",
+                      "source_path":  "scripts/volume_inspector/financial_reporting.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "PERP_REPORT",
+                      "source_path":  "scripts/volume_inspector/financial_reporting.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "PERP_ORDERS",
+                      "source_path":  "scripts/volume_inspector/resting_order_store.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "PERP_FUNDING",
+                      "source_path":  "backend/app/services/perp_source_planner.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "PERP_MARK",
+                      "source_path":  "backend/app/services/perp_source_planner.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "PERP_MARKET_PUBLICATION",
+                      "source_path":  "backend/app/services/paper_source_publication.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "GLOBAL_CUSTODY",
+                      "source_path":  "backend/app/services/unified_portfolio_custody.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  },
+                  {
+                      "role":  "SESSION_RESERVATION",
+                      "source_path":  "backend/app/services/quality_dips_personal_dependencies.py",
+                      "source_exists":  true,
+                      "writer_enrolled":  false,
+                      "native_resource_enrolled":  false,
+                      "receipt_present":  false
+                  }
+              ],
+    "exclusions":  [
+                       {
+                           "exclusion":  "LEGACY_INVESTMENT",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       },
+                       {
+                           "exclusion":  "LEGACY_PREDICTION",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       },
+                       {
+                           "exclusion":  "LEGACY_MANUAL_PERP",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       },
+                       {
+                           "exclusion":  "LEGACY_JOURNAL",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       },
+                       {
+                           "exclusion":  "RESEARCH_MUTATION",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       },
+                       {
+                           "exclusion":  "INCEPTION_PUBLISHER",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       },
+                       {
+                           "exclusion":  "RECOVERY_WRITER",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       },
+                       {
+                           "exclusion":  "LEGACY_SCANNER_FINANCIAL_MIRROR",
+                           "status":  "REQUIRED_NOT_INDEPENDENTLY_VERIFIED",
+                           "independent_receipt_present":  false
+                       }
+                   ],
+    "exclusions_independently_verified_count":  0,
+    "read_only_actual_preflight_authorized":  false,
+    "runtime_consumable":  false,
+    "startup_authorized":  false,
+    "next_action":  "Obtain independent C1 native security review and exact scoped authorization for actual resource enrollment and exclusion observation; do not infer native authority from source paths."
+}

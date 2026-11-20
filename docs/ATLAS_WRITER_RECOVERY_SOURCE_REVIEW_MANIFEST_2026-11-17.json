@@ -1,0 +1,110 @@
+{
+  "schema": "ATLAS_WRITER_RECOVERY_MINIMUM_SUCCESSOR_SOURCE_REVIEW_V1",
+  "base_selected_source": "96c6b85f76368a69bfd035cbcf3eb05776c21525",
+  "base_native_revision": 21,
+  "base_selected_artifact": "fcf87dd612b66e5fbbd645462104c968473db218eaa844a18efa682cefdbbae0",
+  "starting_review_commit": "f4dec0e85d2e46c7c335eb6f8eb28fe00fa87c13",
+  "status": "SOURCE_REVIEW_ONLY; NATIVE_QUALIFICATION_AND_INSTALLABLE_RELEASE_REVIEW_PENDING",
+  "files": {
+    "backend/app/services/personal_writer_generation.py": {
+      "sha256": "971a174fc8551cfacaea8b7f168317cd0e1b38b99243b924e2f2a9629b9d636b",
+      "bytes": 8512,
+      "base_r23_git_blob_sha256": null,
+      "new_module_relative_to_r23": true
+    },
+    "backend/app/services/quality_dips_autonomous_enrollment.py": {
+      "sha256": "93f67fa95334c08cd3f2d5c5233c73262062c45284ddc061a7ea8e89594b8aec",
+      "bytes": 17632,
+      "base_r23_git_blob_sha256": "57446854c5df5d34c53e1dfa33e26e4eec648ecdf82700689ea10f68d1727e21",
+      "new_module_relative_to_r23": false
+    },
+    "scripts/observation_runtime/personal_perp_runtime_current.py": {
+      "sha256": "3303618f8025fad6e8bd7ca38afdb1b52302ca12cf9604a12355b7a11232ac3d",
+      "bytes": 14723,
+      "base_r23_git_blob_sha256": null,
+      "new_module_relative_to_r23": true
+    },
+    "scripts/observation_runtime/personal_owner_continuity_v2.py": {
+      "sha256": "a47580aa0fc8bb868d8f85d2fce96ed2724cb4957f827bc384477fecfff48948",
+      "bytes": 17903,
+      "base_r23_git_blob_sha256": null,
+      "new_module_relative_to_r23": true
+    },
+    "scripts/observation_runtime/personal_native_selected_owned_job_preflight.py": {
+      "sha256": "c2d2488f7cf7633370186ec550f2d54011ced2fa4dc43aa239108699f10d1a17",
+      "bytes": 30048,
+      "base_r23_git_blob_sha256": "3efa48caf6c2c89f4d50dd1e48b5208912bb173e26ff0f7a9204ed6671ccf178",
+      "new_module_relative_to_r23": false
+    },
+    "scripts/observation_runtime/personal_native_original_self_job.py": {
+      "sha256": "dc0ad637ce73c011346da3adffb17b9415c03e19fabbf9cefd64951d413e4395",
+      "bytes": 7484,
+      "base_r23_git_blob_sha256": "c893190f051a442da5652440a2ce96bdc95984e2627190676c0c495c1fbc016a",
+      "new_module_relative_to_r23": false
+    },
+    "scripts/observation_runtime/personal_selected_paper_operation_issuer.py": {
+      "sha256": "4203b012128d0f1da24ad906b216bb67ea5aa3c82cf197dae21a4c054ace8e76",
+      "bytes": 14318,
+      "base_r23_git_blob_sha256": "a73389a8620aaaf22aa7ed413b7c3b0143ea8dc1588319da0e936ccb411fecb4",
+      "new_module_relative_to_r23": false
+    },
+    "scripts/observation_runtime/personal_selected_qd_sec_watch_issuer.py": {
+      "sha256": "e8dec0c321c0555d5faa8dea6e644f54a955464a763187fe70830d8819d4bee6",
+      "bytes": 11895,
+      "base_r23_git_blob_sha256": "e83908f7ec1c3b1f2270aca3c9280e04dcd8489fd03d80162300cd262a8562d1",
+      "new_module_relative_to_r23": false
+    },
+    "scripts/observation_runtime/personal_activation_commission.py": {
+      "sha256": "81b8d3cf6f2a35df11586236f2d5a07f4918346868490dc76f4404fe88caf557",
+      "bytes": 24048,
+      "base_r23_git_blob_sha256": "fc680caab963354c17486f85e98153730899a1ec306e6a93ab8246400a8f08f8",
+      "new_module_relative_to_r23": false
+    },
+    "scripts/observation_runtime/personal_writer_generation.py": {
+      "sha256": "5a5ed975aaa1bf339e492365f86d841d43d25ae5a848f786e610d1a27eef7d44",
+      "bytes": 23193,
+      "base_r23_git_blob_sha256": null,
+      "new_module_relative_to_r23": true
+    },
+    "scripts/observation_runtime/personal_writer_ownership.py": {
+      "sha256": "4e1aeaa0958357c19c6c4e468345a19f75a8dafd1c99ac531d568b51b1878a62",
+      "bytes": 15321,
+      "base_r23_git_blob_sha256": "5ef6acb79a93266ad7dd9dd86be2ac2a1bbe579d673f38ca2295083a4772afe8",
+      "new_module_relative_to_r23": false
+    },
+    "scripts/observation_runtime/personal_installation_technical.py": {
+      "sha256": "f002408e9960f7af6ba806430d143278b92a2ab3cc976b529032a5df85d1d0b6",
+      "bytes": 14460,
+      "base_r23_git_blob_sha256": "1a33e673ee5cb446da5b12da5675bebff59191d4de496022e23eff073e035fac",
+      "new_module_relative_to_r23": false
+    }
+  },
+  "explicit_source_manifest": true,
+  "excluded": [
+    "existing_r23_approval_pin_scripts",
+    "credentials",
+    "private_evidence",
+    "financial_records",
+    "untracked_backups",
+    "dependencies",
+    "installer_or_selector"
+  ],
+  "does_not_grant": [
+    "installation",
+    "selection",
+    "native_financial_acceptance",
+    "financial_approval",
+    "provider_access",
+    "account_creation",
+    "PAPER_startup"
+  ],
+  "frozen_r23_payload_and_original_records_unchanged": true,
+  "no_release_identifier_or_installation_receipt_created": true,
+  "canonical_scope_sha256": "5e7313a3a58b2d1b106b49efde947b62c4c7bbc40ce9af8bf228ef3a5c209fbf",
+  "review_archive": "D:\\Work\\Project Atlas\\logs\\diagnostics\\atlas-writer-recovery-20261117-r01\\writer-recovery-source-review.zip",
+  "review_archive_sha256": "f4048c3ded0bbf132c3e30d33767adddd3d0c87336cdd3e579762e73a5bb4909",
+  "archive_entries": 13,
+  "source_bytes": 199537,
+  "archive_bytes": 57424,
+  "archive_readback_verified": true
+}

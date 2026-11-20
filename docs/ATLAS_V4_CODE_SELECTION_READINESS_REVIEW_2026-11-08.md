@@ -1,0 +1,25 @@
+# Atlas V4 read-only code-selection readiness review — 2026-11-08
+
+**Status: V4 native verifier PASS; CODE SELECTION NOT AUTHORIZED OR EXECUTED; financial PAPER remains INACTIVE.** This is not any of the nine operational launch gate acceptances.
+
+## Native host facts independently reread
+- Current native selector: revision **8**, action **SELECT**, release `de437abe888a2d20746762a39402ae421417c1f6`; canonical record head `b72191583451f42f01fb4a44388b5f0211fd75f95c9f70bb029449d258db614a`.
+- Unselected installed candidate: `fc07ba532f9b88a2b6d281a4f5c60ef2b72deaed`; native root `D:\AtlasRuntime\releases\fc07ba532f9b88a2b6d281a4f5c60ef2b72deaed`.
+- Retained candidate receipt `logs/diagnostics/qd-unselected-release-fc07ba532f9b88a2b6d281a4f5c60ef2b72deaed.json`, SHA-256 `2b282dc6ee1dc84e9742f672b972e7ebd5809ba3fda073e7073be5f25d7eadd7`; artifact digest `d7724787ef6f459d3a130f915dc7823ccc3de9c3d8337af4b948879e211ee5b5`.
+- A **fresh independent actual-host** `NativeInstalledReleaseVerifier.open` call reconstructed the exact `QD_INSTALLED_RELEASE_REFERENCE_V1` from the receipt and verified the candidate and its acknowledged installation journal; returned `V4_SELECTOR_NATIVE_VERIFIER_PASSED`. It exited successfully without selection, installed-code mutation, account enrollment, provider calls or runtime Start.
+- Existing independent native receipt/inventory verification remains documented in `ATLAS_V4_UNSELECTED_NATIVE_INSTALL_VERIFIED_2026-11-08.md`: **10,482 files and 914 directories**, with zero retained verifier handles.
+
+## Source and regression follow-through
+- Reviewed `scripts/release_selection.py` and `scripts/release_selection_store.py`. Actual native selection requires exact installed-release reference, unconsumed `QD_CODE_SELECTION_AUTHORIZATION_V1`, explicit `approved=True`, expected current selector head, genuine operational Windows clock capability, native publication/ACK and independent post-publication verification. Current installation authorization is not a selection grant.
+- Repaired only a stale test assumption in `tests/test_personal_v4_release_install_proposal_offline.py`: the reviewed V4 proposal is now evaluated correctly both before and after one-time installation. The real `INSTALLATION_ALREADY_EXISTS_PRESERVE_NO_RETRY` refusal remains mandatory for any existing target/receipt/journal, including dangling links. No installer/source hashes, selection guard, clock threshold or acceptance checks were relaxed.
+- Relevant selector/installation focused suite rerun **76 passed, 8 skipped, zero failed**; skipped cases are not native/launch acceptance. The pre-repair suite had 75 passed, 8 skipped, 1 failed solely because it asserted the already-installed target did not exist.
+- Independent additional six-suite offline commissioning regression: **141 passed, zero failed**, covering native financial authority, installed owner lifetime, installed Stop owner, native owned shutdown, shutdown account scope and unified PAPER runtime. These do not execute a real PAPER session or satisfy operational gate acceptance.
+
+## Explicit remaining boundaries
+1. **Separate selection decision:** no exact operator-issued selection authorization was supplied or exercised for V4, and revision 8 remains selected. Do not manufacture an operation ID, infer selection from source-copy approval, modify shortcut targets, or publish a selector revision during offline preparation.
+2. **Financial account commissioning:** both QD and HL native namespaces and schema drafts exist, but enrolled writer identities, real inception timestamps, accepted policies, source histories, authenticated ownership/custody and account acceptance identifiers remain outstanding. Fresh read-only draft checks confirmed **both six-role account drafts are bound to selected revision-8 artifact digest `241a1650b65bec8f2127e14d8a7f7f17caba2cbf6049788759d65e702b4d23bf`, NOT candidate V4 digest `d7724787ef6f459d3a130f915dc7823ccc3de9c3d8337af4b948879e211ee5b5`**. Both have null writers and acceptance IDs, and neither inception is published. A future V4 selector change cannot silently adopt the old draft: fresh exact binding, resource/epoch admission and explicit inception approval are required.
+3. **Provider/source rights:** entitlement and approved operational data source evidence are incomplete; provider checks remain **ON HOLD** pending explicit authorization.
+4. **FINAL LAUNCH batch:** operational PAPER Start, owned Stop/flatten of BOTH accounts, durable receipt readback, restart/reconciliation, browser/listener equivalence, supervised end-to-end and elapsed soak remain deferred until genuinely authorized and executable. No live trading, Genesis changes, Windows autostart or financial sessions.
+5. Formal operational acceptance: **0/9 gates**. A verified selection candidate is necessary progress but not evidence of profitable or operational PAPER trading.
+
+**Next safe work:** finish additional read-only/offline account/source and desktop ownership readiness checks. Prepare any reviewed code-selection decision separately, preserving V4 immutability and the current selection until express approval.

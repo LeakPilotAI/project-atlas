@@ -1,0 +1,44 @@
+# Atlas R15 — offline preproduction closeout (November 10, 2026)
+
+## Executive operating result
+
+**All work executed in this closeout stayed local, source-only/read-only or disposable-test-only. The first real financial PAPER session is still NO-GO.** The exercise does **not** infer eligibility to initialize protected accounts or place simulated orders from positive test results.
+
+The selected native release is **R14** (13-record selection, `r0013.json` SHA-256 `6b1e04b8f733d46421c81a5d158dbafbecf052e6f3a8e8289d175caca96d4e31`). R15 is a *frozen 960-file source-only archive*, not an installed release. Neither R14's consumed one-shot installation/selection consent nor a prior failed native release target can be reused.
+
+## Concrete improvements completed this session
+
+1. **R15 code-only native installation plan validated using the existing production plan checker** — 960 reviewed tracked source files, 9,566 retained native Python dependency files, **10,526 total planned files, 912 directories, 263,545,933 bytes**. Exact archive SHA-256 `f6cb597a53373efee929c306ae42537e16abcbcf6e57f7bd23ee92e8570160c0`, source inventory digest `31df928fd182f4508ff84d4342eff5dc4ce6acb5cea68adc9f20265b23a8bb82`, dependency receipt SHA `b1363f4514d3cdce4a1914e79d14842ece94136ed5d035ea195b4883da99a7a0`, dependency inventory digest `93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91`. Unopened planned target: `D:\AtlasRuntime\releases\2c79a8d846d6b33669008114732ae5896153812a`. Nothing was installed/copy-staged.
+2. **Added fail-closed, non-activating R15 plan CLI** `python -B -m scripts.observation_runtime.atlas_r15_code_install_plan_preflight --inspect`. Checks real selected R14 original-handle selector evidence, source-freeze scope, native dependency ledger, archive/selected tracked file identities, full collision-safe planned namespace and target vacancy. No `--install` operation exists. A create-only signed-by-hash snapshot is `docs/ATLAS_R15_CODE_ONLY_NATIVE_INSTALL_PLAN_2026-11-10.json`, SHA-256 `e9afbf7103af3a118100c6151fef06d2a85d2faca4c0820b2bb0891d18443636`.
+3. **Ran offline account/restart/reporting regression:** native PAPER journal lifecycle, publication memory across restart, accounting writers, persisted Stop receipt ledger, daily reports and unified runtime: **200 passed, 1 skipped, zero failed**.
+4. **Ran offline desktop/alerts regression:** actual installed R14 Python owner Win32 signal and durable two-lane Stop fixture, native PowerShell Stop transport, blocked legacy desktop launcher, desktop Stop handoff, Discord lifecycle and outbox persistence: **75 passed, zero failed** (two pre-existing dependency deprecation warnings). These exercises prove existing contracts only; desktop shortcuts remain blocked until a genuinely enrolled financial owner exists.
+5. **Ran Kalshi offline scope and public quote contract tests:** **43 passed, zero failed**. Permanent intended strategy is **newly listed single YES/NO markets only** (no combos, parlays or multi-leg). Legacy entry/autostart remains disabled, public research/close recovery retained, new-listing PAPER engine **not commissioned**, no provider call was made by this work.
+6. **Added one-command non-activating holistic closeout CLI** `python -B -m scripts.observation_runtime.atlas_r15_offline_closeout --inspect`, which composes current native selected R14 identity, R15 code proposal, R14 two-lane source research status, Alpaca IEX offline guard, Hyperliquid existing request budget, protected PersonalPaper activation inventory, Kalshi permanent policy and the two workspace-only fixed modules. It returns `NO_GO` / exit 2 and refuses contradictory / falsely promoted source evidence. Create-only snapshot `docs/ATLAS_R15_OFFLINE_CLOSEOUT_2026-11-10.json`, SHA-256 `18cccd31971946cae42c2802750a5a7e22e3f36686b5e1f7d6086d5bef4c5959`.
+7. **Tests of the new install plan/closeout and frozen source contract:** final scoped runs **69 passed** and **67 passed**, zero failures.
+
+**Final successful suites this session: 454 tests passed, 1 skipped, zero failures**, across five serial low-resource Windows IDLE runs (69 + 200 + 75 + 43 + 67). The initial 1 failed test in the new installer-plan suite was an incorrect fixture error-label assertion and corrected before its passing rerun; no operating behavior was changed. Prior source-freeze suite (106 passed) is a separate earlier checkpoint and is not double-counted here.
+
+## What is done versus what remains
+
+| Workstream | Confirmed offline completion | What cannot yet be certified |
+|---|---|---|
+| Reproducible R15 successor source | SHA-pinned 960-file source zip plus exact 10,526-file native dependency plan | Real native installation/readback, future one-shot code-only selection |
+| Native writer custody & financial clock | Workspace writer lease exit checks, two-lane custody tests, R14 chain-compatible clock code | Current selected R14 still contains **old** roster and **old** 12-record clock; successor code must be installed/verified/selected |
+| Quality Dips / Alpaca | 13,487-symbol **research** inventory; offline 30-symbol IEX limitations and source identities | No authenticated fresh eligible quotes, independent provider entitlement, verified Robinhood universe, forward source publication or real enrolled writer |
+| Hyperliquid | Public book schema and safe refusal parsing; exact persistent 12-request budget | Earlier BTC real public sample was refused, original cause unknown; **2 requests remain**, no auto-retry/reset, no approved real PAPER native writer |
+| Kalshi | New-listings-only strategy policy locked; legacy autostart/entry blocked; research and exit contracts tested | Live new-listing public evidence and independently commissioned genuine new-listing YES/NO PAPER engine |
+| Financial Stop/restart | Synthetic owned two-lane Stop, durable SQLite receipt recovery, unknown-effect fail-closed, accounting/report tests | Genuine QD+HL financial writer ownership, real durable flat/drain under accepted operator session, startup/shutdown shortcut certification |
+| Dashboard/Discord | Existing local tests and Discord outbox lifecycle pass | Integrated live PAPER owner/reporting source, validated alert delivery in the accepted session |
+| Soak/profitability | Offline guards, fixture tests and source/package proofs | Continuous supervised PAPER operation over time and independent accounting acceptance |
+
+**Still doable before regular market opens, but requiring their own separate approvals or actual protected native operations:** one-shot code-only R15 installation, independent native installed readback and one-shot **code-only selection**; native activation/enrollment of protected PAPER accounts; independent financial clock/ledger proof; authorized local supervised owner and desktop handoff. Current PersonalPaper parent has **zero accepted activation records or enrolled children**, so cannot certify these from code/test checks. Separate operator authority and technical prerequisites must be honored even when no live feed is needed.
+
+**Blocked on independently verified market access/market evidence:** current permitted Alpaca IEX quote subscriptions and source completeness/eligibility, Hyperliquid current public book/funding/fee rights and price freshness, Kalshi listing/YES-NO book eligibility, and end-to-end financial PAPER entry/monitor/Stop with real source readback. The user has not authorized accessing private Alpaca credentials for a bounded data-only live IEX probe; no such access was attempted.
+
+**After first supervised PAPER:** restart/soak tests for real sessions, daily financial reconciliation/alert delivery and ultimately months of evidence. Calendar market hours do not prevent code work but do prevent proving liquid regular-hours stock prices in an off-hours fixture.
+
+## Safety and next action
+
+**PAPER financial operating acceptance remains 0 of 9: NO-GO.** R14's legacy batch launchers were not unblocked; no operating child, real financial ledger, trading order, private credential/provider connection, installed immutable release write, code-only selector revision, paid data/VPS, Windows clock/boot setting, or Project Genesis modification occurred. The remaining native code installation and financial enrollment cannot be self-certified merely by user interest in finishing; preserve their separate approvals and technical acceptance.
+
+Next efficient work: authorize/review the *exact* pinned R15 **code-only** native installation and later independent **code-only selection**, and separately complete the provider data-only entitlement observation and protected financial writer/ledger acceptance. Do not keep rebuilding source-only release candidates unless the existing 960-file candidate is proven invalid. Focus subsequent executions on those concrete blockers rather than more redundant test loops.

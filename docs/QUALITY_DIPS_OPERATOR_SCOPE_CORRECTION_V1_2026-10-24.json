@@ -1,0 +1,18 @@
+{
+  "schema": "QD_OPERATOR_SCOPE_CORRECTION_V1",
+  "date": "2026-10-24",
+  "status": "OFFLINE_IMPLEMENTED_NOT_OPERATIONALLY_ACCEPTED",
+  "supersedes_restriction": "MSFT_ONLY",
+  "instrument_scope": "All eligible ranked stocks and ETFs with independently verified identity, execution support, fresh ranking and price evidence",
+  "opening_cash_usd": "1000",
+  "maximum_entry_usd": "100",
+  "maximum_open_positions": 1,
+  "long_only": true,
+  "fractional_only_where_supported": true,
+  "scale_in": false,
+  "entries_and_exits": "MANUAL_CONFIRMATION",
+  "overnight_holding": true,
+  "startup_authorized": false,
+  "operational_acceptance": false,
+  "report": "docs/QUALITY_DIPS_SELECTED_POLICY_V1_2026-10-24.md"
+}

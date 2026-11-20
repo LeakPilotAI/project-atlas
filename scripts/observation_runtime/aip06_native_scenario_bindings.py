@@ -1,0 +1,154 @@
+"""Exact dispatcher-to-source bindings; missing native producers fail closed.
+
+No default subprocess, fault injection or synthetic capacity result. A pinned
+per-case guarded context must exist before executing the existing source case.
+Cases with no reviewed native producer remain explicitly unbound.
+"""
+
+from dataclasses import dataclass
+
+from scripts.observation_runtime.aip06_acceptance_control import scenarios
+from scripts.observation_runtime.aip06_acceptance_plan import schedule
+from scripts.observation_runtime.aip06_harness import LIMITS, ROOTS, need
+
+
+@dataclass(frozen=True)
+class NativeScenarioContract:
+    id: str
+    source_case: str | None
+    roles: tuple
+    max_children: int
+    seconds: int
+    fault_boundary: str
+    stop_ns: int = 8 * 10**9
+    ipc_ns: int = 6 * 10**9
+
+
+def contracts():
+    faults = {'F05': 'hard-realized-session-loss-before-next-admission-no-counterpart-write',
+              'F06': 'input-clock-provider-expiry-before-next-admission',
+              'F09': 'once-only-inception-interrupted-at-each-durable-cut',
+              'F11': 'actual-bounded-native-pressure-with-reserved-stop',
+              'F12': 'source-producer-continuation-read-model-committed-notification-native-binding',
+              'BOOTSTRAP-IPC-FAULTS': 'bootstrap-credit-receipt-ACK-and-drain-exact-cuts',
+              'OWNERSHIP-PROBES': 'contained-unknown-child-and-independent-complete-roster'}
+    source = {r['id']: r for r in schedule()}
+    return tuple(NativeScenarioContract(s.id, source[s.id].get('source_case'), s.roles,
+        source[s.id]['max_children'], s.seconds, faults.get(s.id, 'original-reviewed-source-case')) for s in scenarios())
+
+
+class OwnershipProbeDriver:
+    """Exact ownership-probe producer; no authority to create a host."""
+
+    def __init__(self):
+        self.contract = next(c for c in contracts() if c.id == 'OWNERSHIP-PROBES')
+        self.attempted = False
+        self.failed = False
+        self.bound_context = None
+
+    def verify(self, context, *, deadline_ns):
+        need(context.contract == self.contract and context.roles == self.contract.roles,
+             'EXACT_OWNERSHIP_PROBE_CONTEXT')
+        context.verify(deadline_ns=deadline_ns)
+        if self.bound_context is None:
+            self.bound_context = context
+        need(self.bound_context is context, 'ORIGINAL_OWNERSHIP_PROBE_CONTEXT_CONTINUITY')
+
+    def execute(self, context, reservation, *, deadline_ns):
+        need(not self.attempted and not self.failed, 'ONCE_ONLY_OWNERSHIP_PROBE_DRIVER')
+        self.attempted = True
+        try:
+            self.verify(context, deadline_ns=deadline_ns)
+            need(reservation == context.reservation and reservation.get('held') is True,
+                 'ORIGINAL_OWNERSHIP_PROBE_RESERVATION_REQUIRED')
+            context.require_execution()
+            need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BEFORE_EFFECT')
+            supervisor = context.controller.probe_supervisor(deadline_ns=deadline_ns)
+            need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_BETWEEN_EFFECTS')
+            unexpected = context.controller.probe_unexpected_children(deadline_ns=deadline_ns)
+            need(context.controller.clock() < deadline_ns, 'OWNERSHIP_PROBE_DEADLINE_AFTER_EFFECT')
+            return {'supervisor': supervisor, 'unexpected_children': unexpected}
+        except BaseException:
+            self.failed = True
+            raise
+
+
+class NativeScenarioBinding:
+    """No mutation of global targets or reuse of a finished guard's role map.
+
+    context must provide the already qualified per-case guard/namespace and
+    original prospective ticket. That concrete isolated-context producer is
+    still required; an arbitrary module label cannot grant it.
+    """
+    def __init__(self, contract, *, source_pins, context=None, fault_driver=None):
+        need(contract in contracts(), 'EXACT_NATIVE_SCENARIO_CONTRACT')
+        self.contract, self.source_pins, self.context, self.fault_driver = contract, dict(source_pins), context, fault_driver
+        self.roles = contract.roles
+
+    def check(self, controller, guard, *, deadline_ns):
+        guard.check()
+        need(controller.clock() < deadline_ns and guard.processes is controller.process_port
+             and controller.profile['source_pins'] == self.source_pins,
+             'CURRENT_PINNED_GUARDED_NATIVE_SCENARIO')
+        need(self.context is not None, 'QUALIFIED_PER_CASE_PHYSICAL_CONTEXT_MISSING:' + self.contract.id)
+        need(self.context.guard is guard and self.context.controller is controller
+             and self.context.contract == self.contract and self.context.roles == self.roles,
+             'NO_CROSS_CONTEXT_ROLE_OR_ACCOUNT_ADOPTION')
+        self.context.verify(deadline_ns=deadline_ns)
+        if self.contract.source_case is None:
+            need(self.fault_driver is not None, 'ACTUAL_NATIVE_FAULT_LOAD_PRODUCER_MISSING:' + self.contract.id)
+            need(self.fault_driver.contract == self.contract, 'EXACT_FAULT_POINT_AND_ROLE_CONTRACT')
+            self.fault_driver.verify(self.context, deadline_ns=deadline_ns)
+
+    def reserve(self, guard, *, deadline_ns):
+        need(self.context is not None and self.context.guard is guard, 'PREDECLARED_CASE_CONTEXT_REQUIRED')
+        self.check(self.context.controller, guard, deadline_ns=deadline_ns)
+        ticket = self.context.reserve(deadline_ns=deadline_ns)
+        state = guard.resources.read()['state']
+        need(type(ticket) is dict and ticket.get('scenario') == self.contract.id
+             and ticket.get('root') == ROOTS['E'] and ticket.get('roles') == self.roles
+             and ticket.get('held') is True and ticket.get('stop_capacity_reserved') is True
+             and state['resources'].get(ticket.get('key'), {}).get('closed') is False
+             and state['resources'][ticket['key']]['owner'] == guard.owner,
+             'GENUINE_SHARED_LEDGER_CASE_RESERVATION')
+        return ticket
+
+    def execute(self, controller, guard, reservation, *, deadline_ns):
+        self.check(controller, guard, deadline_ns=deadline_ns)
+        need(self.context.reservation == reservation and reservation['roles'] == self.roles,
+             'EXACT_CASE_RESERVATION_BEFORE_EXECUTION')
+        # Reviewed fixtures require an independent host; refuse before even
+        # consulting an execution gate supplied by an unqualified context.
+        if self.contract.source_case is not None:
+            raise ValueError('REVIEWED_SOURCE_REQUIRES_INDEPENDENT_PHYSICAL_HOST')
+        # Every physical host must explicitly qualify its own execution
+        # boundary. A duck-typed or subclassed context must not bypass the
+        # scoped controller's refusal merely by having a different type.
+        need(callable(getattr(self.context, 'require_execution', None)),
+             'EXPLICIT_PHYSICAL_CASE_HOST_EXECUTION_GATE_REQUIRED')
+        self.context.require_execution()
+        result = self.fault_driver.execute(self.context, reservation, deadline_ns=deadline_ns)
+        need(controller.clock() < deadline_ns, 'NATIVE_SCENARIO_DEADLINE')
+        return result  # Original source results never confer native PASS.
+
+    def release(self, guard, reservation, evidence, *, deadline_ns):
+        need(self.context is not None and guard is self.context.guard, 'ORIGINAL_CASE_RELEASE_CONTEXT')
+        return self.context.release(reservation, evidence, deadline_ns=deadline_ns)
+
+    def abort(self, guard, reservation, *, deadline_ns):
+        need(self.context is not None and guard is self.context.guard, 'ORIGINAL_CASE_ABORT_CONTEXT')
+        return self.context.abort(reservation, deadline_ns=deadline_ns)
+
+
+def bindings(source_pins, *, contexts=None, fault_drivers=None):
+    contexts = {} if contexts is None else contexts
+    fault_drivers = {} if fault_drivers is None else fault_drivers
+    need(type(contexts) is dict and type(fault_drivers) is dict,
+         'EXACT_NATIVE_BINDING_MAP_TYPES')
+    ids = {c.id for c in contracts()}
+    need(set(contexts) <= ids and set(fault_drivers) <= ids, 'NO_UNREVIEWED_NATIVE_SCENARIO')
+    need(all(c.source_case is None for c in contracts() if c.id in fault_drivers),
+         'NO_FAULT_DRIVER_ON_REVIEWED_SOURCE_CASE')
+    need(max(c.max_children for c in contracts()) + 2 <= LIMITS['processes'], 'OWNER_AND_DESCENDANT_CAPACITY')
+    return {c.id: NativeScenarioBinding(c, source_pins=source_pins, context=contexts.get(c.id),
+             fault_driver=fault_drivers.get(c.id)) for c in contracts()}

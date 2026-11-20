@@ -1,0 +1,28 @@
+{
+  "adjusted_series": "PRESENT_NOT_AUTHENTICATED",
+  "adjustment_basis": "UNVERIFIED",
+  "asset_class": "US_ETF",
+  "bar_n": 1,
+  "live_status": "NOT_ESTABLISHED",
+  "mode": "SYNTHETIC_REPLAY",
+  "network_authorized": false,
+  "observed_at": "2026-10-20T14:01:10+00:00",
+  "price_basis": "CHART_QUOTE_CLOSE_NOT_VERIFIED_UNADJUSTED",
+  "provider_delay_unit": "UNVERIFIED",
+  "provider_reported_delay": 15,
+  "recovery_authorized": false,
+  "rows": [
+    {
+      "bar_close": 101.0,
+      "reported_adjusted_close": 50.5,
+      "session": "REGULAR",
+      "timestamp": "2026-10-20T14:00:00+00:00"
+    }
+  ],
+  "schema": "ATLAS_CHART_PROVENANCE_V1",
+  "source_authenticated": false,
+  "source_sha256": "d58a52fe329ea7b4935fd93201b8ac3b337fe8a09d82a3e53382b110107cc3cd",
+  "startup_authorized": false,
+  "symbol": "SPY",
+  "trading_authorized": false
+}

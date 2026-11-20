@@ -1,0 +1,23 @@
+{
+  "exit_code": 0,
+  "timeout": false,
+  "start": "2026-10-18T22:28:32.137155-05:00",
+  "end": "2026-10-18T22:28:32.274185-05:00",
+  "elapsed_seconds": 0.14100000000053114,
+  "args": [
+    "context",
+    "inspect",
+    "desktop-linux",
+    "--format",
+    "{\"Name\":{{json .Name}},\"DockerHost\":{{json .Endpoints.docker.Host}}}"
+  ],
+  "stdout_bytes": 82,
+  "stderr_bytes": 0,
+  "within_output_bound": true,
+  "stdout": "{\"Name\":\"desktop-linux\",\"DockerHost\":\"npipe:////./pipe/dockerDesktopLinuxEngine\"}\n",
+  "stderr": "",
+  "payload": {
+    "Name": "desktop-linux",
+    "DockerHost": "npipe:////./pipe/dockerDesktopLinuxEngine"
+  }
+}

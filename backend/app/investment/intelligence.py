@@ -34,17 +34,19 @@ def evaluate_equity_move(
     history_root=None,
     headlines: Optional[list] = None,
     deteriorating: bool = False,
+    bars_by_symbol=None,
 ) -> Dict[str, Any]:
-    asset_bars = _bars(entry.symbol, history_root)
+    read_bars = (lambda symbol: bars_by_symbol.get(symbol, ())) if bars_by_symbol is not None else (lambda symbol: _bars(symbol, history_root))
+    asset_bars = read_bars(entry.symbol)
     spy_sym = universe.spy_symbol()
     qqq_sym = universe.qqq_symbol()
     sector_sym = universe.sector_etf_for(entry)
     rel: RelativeReport = relative_report(
         symbol=entry.symbol,
         asset_bars=asset_bars,
-        spy_bars=_bars(spy_sym, history_root) if spy_sym else (),
-        qqq_bars=_bars(qqq_sym, history_root) if qqq_sym else (),
-        sector_bars=_bars(sector_sym, history_root) if sector_sym else (),
+        spy_bars=read_bars(spy_sym) if spy_sym else (),
+        qqq_bars=read_bars(qqq_sym) if qqq_sym else (),
+        sector_bars=read_bars(sector_sym) if sector_sym else (),
         spy_symbol=spy_sym,
         qqq_symbol=qqq_sym,
         sector_symbol=sector_sym,

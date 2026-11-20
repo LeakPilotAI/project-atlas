@@ -1,0 +1,646 @@
+{
+  "schema": "QD_FINAL_INSTALLED_ACCEPTANCE_SOURCE_MANIFEST_V4",
+  "status": "EXACT_REVIEW_PINS_NOT_AUTHORIZATION",
+  "files": [
+    {
+      "path": "backend/app/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/adapters/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/adapters/hyperliquid.py",
+      "bytes": 31041,
+      "sha256": "569ebc50346c727f1ce7749ead57458e76a0f3aba0adebb82ac3d48b0b7efa88"
+    },
+    {
+      "path": "backend/app/adapters/hyperliquid_gate_registry.py",
+      "bytes": 1099,
+      "sha256": "4a6299ef8faa8d70d024ce9c163db74a39eff94ba9b1cf48a0e29c1863b97674"
+    },
+    {
+      "path": "backend/app/adapters/hyperliquid_request_gate.py",
+      "bytes": 4330,
+      "sha256": "eb72c56d442a5f945544fedb6b679c698376b9f3f7e4712b5d47e73f9b55728c"
+    },
+    {
+      "path": "backend/app/api/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/api/quality_dips_selected_paper.py",
+      "bytes": 8541,
+      "sha256": "f73703b30e75e51d0f95ddc1eca13460b817fec9b2176a76355fce7f4588ac8b"
+    },
+    {
+      "path": "backend/app/core/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/core/config.py",
+      "bytes": 10588,
+      "sha256": "029edaf432156983f828e9d708c00d363dd352a79cd22c4165d5b5e6710f53e1"
+    },
+    {
+      "path": "backend/app/core/logging.py",
+      "bytes": 1455,
+      "sha256": "7d11796b990dc7cbee747a2fbbf69c96b18828d0c3bd9a152535af0d82f023da"
+    },
+    {
+      "path": "backend/app/core/market_freshness.py",
+      "bytes": 1144,
+      "sha256": "50613a933ffe26fbf82901b512e36bbdf53d7811df5035af9232d9d36d779b6f"
+    },
+    {
+      "path": "backend/app/investment/__init__.py",
+      "bytes": 3530,
+      "sha256": "106b571814e8238d2b90f0652f01cbe932ecd8b38e65ea9b0f7dcc57c7520c5d"
+    },
+    {
+      "path": "backend/app/investment/alpaca_iex.py",
+      "bytes": 18901,
+      "sha256": "55e063bfcfcd503002f718239470ae5b5f54bae8f8b8c46cab476284d406fbe7"
+    },
+    {
+      "path": "backend/app/investment/enums.py",
+      "bytes": 3314,
+      "sha256": "9887f824274aa38b802f35506475942d02e4731310aaa8dc8242862b80146b7b"
+    },
+    {
+      "path": "backend/app/investment/market_hours.py",
+      "bytes": 3467,
+      "sha256": "ac1b63a64d565f16b1ad53889e553c5eee9632e753aeebe6248c2db2b4de648d"
+    },
+    {
+      "path": "backend/app/investment/models.py",
+      "bytes": 9764,
+      "sha256": "e4b4234a1513b9dea65b46278ba05b60e874c449239247389e8d99c7fc333aec"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_candidate_evidence.py",
+      "bytes": 7744,
+      "sha256": "549d94dafd66f38ea385fd5fbfd4008e7a176bf69d7abfef9944eca16f7d1a44"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_operational_contract.py",
+      "bytes": 15156,
+      "sha256": "7b483c183cd970e0afb372640a9ba8b179b2f3883f5eed650a2242c4df4037ce"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_operational_replay.py",
+      "bytes": 6777,
+      "sha256": "559035555f21617cac92a1924b7ec354330795d097159027fda69e414aa54453"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_paper_exit_policy.py",
+      "bytes": 1632,
+      "sha256": "fb726a89e3e2a9f2aeea21c4cd9d397629dff257ee80c4d668902b29b66008c9"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_read_capability.py",
+      "bytes": 8304,
+      "sha256": "2ae3954e2b5cd62261ed65cb59a832af5e9e6765b2182a9cd30b707b0e34b69a"
+    },
+    {
+      "path": "backend/app/investment/quality_dips_v2_position_monitor.py",
+      "bytes": 6637,
+      "sha256": "15f9d73f429393de03712ee1c7e3f900c8b7fe5c4d5114131dcd75c339993069"
+    },
+    {
+      "path": "backend/app/services/__init__.py",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "backend/app/services/paper_coordination_sql.py",
+      "bytes": 3958,
+      "sha256": "5dfb1378ce02df279db96a2d0cda1fd5749874d60c77792bf340fa61e2fccd02"
+    },
+    {
+      "path": "backend/app/services/paper_daily_report.py",
+      "bytes": 25491,
+      "sha256": "f702c767e36b990182c28291c135d65da9589e0ddd63e5acc8b624c0dd5fcb22"
+    },
+    {
+      "path": "backend/app/services/paper_exit_history.py",
+      "bytes": 9980,
+      "sha256": "ca9eb3bca170a8faf7b8d3a2a8aa7ae60b35a91171b956c1d122f1096a24ab9d"
+    },
+    {
+      "path": "backend/app/services/paper_financial_audit.py",
+      "bytes": 23488,
+      "sha256": "fc39118e729a4d58209180e36239fa522937294cc36d7e8b544c50d55bc5b511"
+    },
+    {
+      "path": "backend/app/services/paper_financial_replay.py",
+      "bytes": 15027,
+      "sha256": "a67f555a0b044be819ebe4f9ed8260c2c47e4068d25b23cfccd1e4cd02c4bab1"
+    },
+    {
+      "path": "backend/app/services/paper_perp_transition.py",
+      "bytes": 24616,
+      "sha256": "d035d229bd5291a1742709f9b5d37bb4551bdb8013f4c413f4fbe66199cc76f1"
+    },
+    {
+      "path": "backend/app/services/paper_portfolio_risk.py",
+      "bytes": 13938,
+      "sha256": "fc45ec9a64f341bee767387319cbc2864d950654e2aa51ea49c89b289c7a0a03"
+    },
+    {
+      "path": "backend/app/services/paper_source_publication.py",
+      "bytes": 17012,
+      "sha256": "cb0bf9d2c614121d00fc8ab3e58f53db5fdd80a3b518f5126cdfb0bdbe878d06"
+    },
+    {
+      "path": "backend/app/services/perp_operational_contract.py",
+      "bytes": 2307,
+      "sha256": "61ff15c801b7ff86dc5cff492b6574fc080c18923f31f77d093cc1e28bc3a130"
+    },
+    {
+      "path": "backend/app/services/perp_resting_order.py",
+      "bytes": 5823,
+      "sha256": "1cf0243476c9c5f26fc243f120d474552c8c64c6151f6b7576723170f0f9f2a1"
+    },
+    {
+      "path": "backend/app/services/perp_resting_writer.py",
+      "bytes": 8336,
+      "sha256": "d97d3d56effba7c3eb54f1b792b5f181cac6de701fee5e442252c422c82d1c4f"
+    },
+    {
+      "path": "backend/app/services/personal_current_pins.py",
+      "bytes": 2949,
+      "sha256": "191e0e1303168d28b3cd251a5e7490a4aaeff99a26ad6115af4c6c6a392c83ed"
+    },
+    {
+      "path": "backend/app/services/personal_native_coordination.py",
+      "bytes": 5933,
+      "sha256": "68eafb2ac91769871074398174d363cd4c38bf767b6d2847886a6aa6f4cbebb5"
+    },
+    {
+      "path": "backend/app/services/personal_paper_runtime.py",
+      "bytes": 17154,
+      "sha256": "dee1a79095a346a9d9c1cd6de52f443adad88d7df4172eb5c74bebdf13f7db27"
+    },
+    {
+      "path": "backend/app/services/personal_publication_custody.py",
+      "bytes": 5366,
+      "sha256": "08a8f60f206ca2d65d3c7f77f538296710bed583778e7fc0b773731dbbd07e53"
+    },
+    {
+      "path": "backend/app/services/quality_dips_account_policy.py",
+      "bytes": 10468,
+      "sha256": "01a047c5166e7b09d85ccd1892a8627edf3abb224ddfe89cd2a12eecfe04455f"
+    },
+    {
+      "path": "backend/app/services/quality_dips_autonomous_binding.py",
+      "bytes": 15530,
+      "sha256": "f832d7581f2eea4bfc26e21fb72ca197393fcf6623e70e7ccfda7908a6e07a1c"
+    },
+    {
+      "path": "backend/app/services/quality_dips_autonomous_enrollment.py",
+      "bytes": 15695,
+      "sha256": "57446854c5df5d34c53e1dfa33e26e4eec648ecdf82700689ea10f68d1727e21"
+    },
+    {
+      "path": "backend/app/services/quality_dips_autonomous_integration.py",
+      "bytes": 13848,
+      "sha256": "bd7d60dfdbfdb32175b25856c7d24a5ce696d2dde4511039b7ce866fff87982e"
+    },
+    {
+      "path": "backend/app/services/quality_dips_autonomous_paper.py",
+      "bytes": 34445,
+      "sha256": "3407d670a9bc301751bce72d550a37755447e670ce48e88c4aa2c4b47478af6f"
+    },
+    {
+      "path": "backend/app/services/quality_dips_autonomous_runtime.py",
+      "bytes": 16750,
+      "sha256": "73e3ef69bc060c77123fe098c83233e2a28e72750c8895a9d61db9644283f05a"
+    },
+    {
+      "path": "backend/app/services/quality_dips_iex_input.py",
+      "bytes": 12431,
+      "sha256": "c5d502ee7d27fe702109e4d4ae7f141c032899638285f111740d839a61d902e3"
+    },
+    {
+      "path": "backend/app/services/quality_dips_operational_runtime.py",
+      "bytes": 9269,
+      "sha256": "4af5d16863f4bfaff7465bebd90724cf34cb84c54a2aa04f78923016717b523c"
+    },
+    {
+      "path": "backend/app/services/quality_dips_personal_dependencies.py",
+      "bytes": 5798,
+      "sha256": "a4a8004fbb393dbd88f1fd7adc23e81bf4172de32314599eb4fe0d7a95a8bc9b"
+    },
+    {
+      "path": "backend/app/services/quality_dips_publication_reader.py",
+      "bytes": 6523,
+      "sha256": "367e522ae7bfb006dd35909f3591709f4efddbd7a70cd2e91b4e7626b9a096c8"
+    },
+    {
+      "path": "backend/app/services/quality_dips_shutdown.py",
+      "bytes": 8596,
+      "sha256": "e40f84657d1c5ddace94c26ceafe6278d80d8515cd81fd34c077df0e9273a79d"
+    },
+    {
+      "path": "backend/app/services/quality_dips_stop_bridge.py",
+      "bytes": 8010,
+      "sha256": "11b4ccb7183d10f1c8b69a6e507cc392fa8fd47f6e2578e48f5c4354b54a8e4f"
+    },
+    {
+      "path": "backend/app/services/quality_dips_unified_writer.py",
+      "bytes": 14723,
+      "sha256": "b8824d095752727cf95bd202e0c34ca4ccd47abb1742e9d43368b51145f29b7c"
+    },
+    {
+      "path": "backend/app/services/unified_native_writer.py",
+      "bytes": 19556,
+      "sha256": "b7d8058360d8121682ad98b27ef358726d3c33c062dcdca62ed5cf5c6255f3a6"
+    },
+    {
+      "path": "backend/app/services/unified_paper_runtime.py",
+      "bytes": 28683,
+      "sha256": "7602589c37b65c0624f0dbfd23d02446f193443b7e34ce70fd8a8dda62d0d674"
+    },
+    {
+      "path": "backend/app/services/unified_portfolio_custody.py",
+      "bytes": 21404,
+      "sha256": "1fd0225496573651e72e3c696beb842b505108b4518d34d55d0d8fef8b4d0e73"
+    },
+    {
+      "path": "backend/app/trading_core/__init__.py",
+      "bytes": 640,
+      "sha256": "6a3325897dbfa0d15e8fdc16ece1d43424316464233e2f73e5f88f9de354dad5"
+    },
+    {
+      "path": "backend/app/trading_core/models.py",
+      "bytes": 4186,
+      "sha256": "de37c709893d01cef470c62cd37f636175e4ec8e9ab7c6b02833c04495754552"
+    },
+    {
+      "path": "backend/app/trading_core/perp_setup_state.py",
+      "bytes": 3969,
+      "sha256": "e2afd3c231dcb0784bfffdab124035e2d0b872f5d5d70d4be5d4f532a55ca99f"
+    },
+    {
+      "path": "docs/QD_SUPPORT_DEPLOYMENT_MANIFEST_V1_2026-11-02.json",
+      "bytes": 2978,
+      "sha256": "7947f54e82d74079b378ad14c238dadb4259671ee7ed5c9d03e952d5d8327cd3"
+    },
+    {
+      "path": "logs/diagnostics/qd-exact-promotion-preflight-v1-20261030/result.json",
+      "bytes": 3896,
+      "sha256": "71143e6597108a49a2b5866365317684dc717eb3815ec0ead4419625909b1b6c"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v2-20261102/cycle-1-ready.json",
+      "bytes": 2001,
+      "sha256": "df6380ee503ee45c244fdc6924330fc3bd1eabcb692e2eeccf2e2905546649be"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/capture.py",
+      "bytes": 150,
+      "sha256": "cfbf5ed35caa361f3befd4515cb07bad6dc086355793e349c6c92650f5d33ba9"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/clock_preflight.py",
+      "bytes": 3887,
+      "sha256": "73ad0ec6d3b64c00cf4a83ad2813a0ffcbcdd3bea4e6d7819a9e30ddd862b2e2"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/controller.ps1",
+      "bytes": 1616,
+      "sha256": "0cdb786137aeeebd267f7158b169510006f68e910c914f8bab8a0db613f1a886"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/gate.py",
+      "bytes": 3079,
+      "sha256": "7b699068fb4862804dbb48fa33afdf67d568b33bec0efa2169fae065bda515e3"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/metadata_preflight.ps1",
+      "bytes": 5960,
+      "sha256": "87f880ea454fab1c01ed96be7317bef4297fdfb6493648b8095c39976aab1b70"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/native_preflight.py",
+      "bytes": 10645,
+      "sha256": "992642779434ae1b54ad84ab11c6d19574a5f8b59506b4576ba639de18562194"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/restore_known_head.py",
+      "bytes": 2370,
+      "sha256": "409137d3a847f40ae23fb2b1dffa604d4de2edf3c849a462af4236f19212044e"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/supervise.py",
+      "bytes": 8169,
+      "sha256": "2b4a3ba36a78bad2e22e60e3e663b01e76b5a697a6de3c5b37a9d4246dbe0c57"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v4-20261103/worker.py",
+      "bytes": 15660,
+      "sha256": "6e82c786796e84b87f830513cc58fbcc0640ed4d4696a3532fe0992019296d88"
+    },
+    {
+      "path": "logs/diagnostics/qd-final-installed-v4-preparation-20261103/read-only-inventory-result.json",
+      "bytes": 15820,
+      "sha256": "b52acfb15cd30cc304deb00288fb53984df09f8e767c3dc020d97bb264edfa47"
+    },
+    {
+      "path": "scripts/acceptance_browser_ack.py",
+      "bytes": 2055,
+      "sha256": "d3c28d0d4d01dd53ffce0b8bcdda08dd8ab02f5a569876d43f04f0ede6272639"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/__init__.py",
+      "bytes": 79,
+      "sha256": "7191541bbc5cfac42b6621772e88a88937ac615db9cd8cbdca79cbbbd3a73181"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/capture.py",
+      "bytes": 150,
+      "sha256": "cfbf5ed35caa361f3befd4515cb07bad6dc086355793e349c6c92650f5d33ba9"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/clock_preflight.py",
+      "bytes": 3887,
+      "sha256": "73ad0ec6d3b64c00cf4a83ad2813a0ffcbcdd3bea4e6d7819a9e30ddd862b2e2"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/controller.ps1",
+      "bytes": 1616,
+      "sha256": "0cdb786137aeeebd267f7158b169510006f68e910c914f8bab8a0db613f1a886"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/gate.py",
+      "bytes": 2791,
+      "sha256": "972ef4f7a32bc8123cb73b91e1937f609f846f35f01ff23f988e1dcc0368c8ec"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/metadata_preflight.ps1",
+      "bytes": 5960,
+      "sha256": "87f880ea454fab1c01ed96be7317bef4297fdfb6493648b8095c39976aab1b70"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/native_preflight.py",
+      "bytes": 10645,
+      "sha256": "992642779434ae1b54ad84ab11c6d19574a5f8b59506b4576ba639de18562194"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/restore_known_head.py",
+      "bytes": 2370,
+      "sha256": "409137d3a847f40ae23fb2b1dffa604d4de2edf3c849a462af4236f19212044e"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/supervise.py",
+      "bytes": 8169,
+      "sha256": "2b4a3ba36a78bad2e22e60e3e663b01e76b5a697a6de3c5b37a9d4246dbe0c57"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/worker.py",
+      "bytes": 15660,
+      "sha256": "6e82c786796e84b87f830513cc58fbcc0640ed4d4696a3532fe0992019296d88"
+    },
+    {
+      "path": "scripts/acceptance_harness_v4/__init__.py",
+      "bytes": 73,
+      "sha256": "d460b33ed8c4ee74af952a6c1f1159aaf9a0701b0b3349873e2b130a99056d5b"
+    },
+    {
+      "path": "scripts/acceptance_harness_v4/gate.py",
+      "bytes": 3079,
+      "sha256": "7b699068fb4862804dbb48fa33afdf67d568b33bec0efa2169fae065bda515e3"
+    },
+    {
+      "path": "scripts/build_release_candidate.py",
+      "bytes": 22264,
+      "sha256": "2255e2f8c78891c4909387368a44c1fba8d5eaad59158119284e76357b3402d8"
+    },
+    {
+      "path": "scripts/install_verified_release.py",
+      "bytes": 15894,
+      "sha256": "7e383d14b0404f5d23fcbca75408a612dbf4bb413fade116cba14b9f52764fc6"
+    },
+    {
+      "path": "scripts/installed_nonfinancial_launcher.py",
+      "bytes": 35279,
+      "sha256": "0dc010fdb043a1709828506c80b4386ff1b43609e8d7eb11739dfe0acd10ef8f"
+    },
+    {
+      "path": "scripts/native_install_candidate.py",
+      "bytes": 11706,
+      "sha256": "2f5a203f9187b8b7c18d1bb8cd5ce2bf5fe82aecd50ea8b0097c4e37d4a767d0"
+    },
+    {
+      "path": "scripts/native_install_plan.py",
+      "bytes": 6010,
+      "sha256": "10bf8c2dd5d2ffdc3a92a576183a701e022c8e53bf5f948a6ad2fcaeb028263f"
+    },
+    {
+      "path": "scripts/observation_runtime/__init__.py",
+      "bytes": 82,
+      "sha256": "cdbbd7131041b0edd6bee8f456501ae260c5d4d1ef311cd524b619a6727ee8e2"
+    },
+    {
+      "path": "scripts/observation_runtime/acceptance_http_probe.py",
+      "bytes": 2073,
+      "sha256": "bde94b2118c4462be7afd56a66f4c91b3efbec904fae5c2d766bb6e3ee9f213a"
+    },
+    {
+      "path": "scripts/observation_runtime/disposable_host_owner.py",
+      "bytes": 8307,
+      "sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_capture.py",
+      "bytes": 5201,
+      "sha256": "e3856e4f28337daa9b8afc184e12b91745b4176b7fba87690f00bb3a20254cdf"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_capture_v4.py",
+      "bytes": 365,
+      "sha256": "f94d31e804e5bfc34b09d4e9760ad7c3d14adefabbd3b022a203ffaa05bac600"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_cleanup.py",
+      "bytes": 11780,
+      "sha256": "e6554cb916ddf0c4bcc07a7c7f981b9c73cfcdbd8c2a9f86d3d4575e6d599ba9"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_handoff.py",
+      "bytes": 9849,
+      "sha256": "799fd7d3d3c4265e37b66e8b2a6bf086dc64138f8ef2bec29a7a6085fbc8ec42"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_package.py",
+      "bytes": 8116,
+      "sha256": "ddfbfc15e9b193fb038b3b60fe73163bcb3ba2ac7b7e4b3b2ce804db5a1e1b38"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_sequence.py",
+      "bytes": 5813,
+      "sha256": "062a2c83c6f262b7b1ab077864b6961167321e3b709e1b91a0030dfd93cd1b5b"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_commissioning_runner.py",
+      "bytes": 12109,
+      "sha256": "dd6fa1ab0d2e16a6b63ee9a6dc857fc113f172d8051615980930006518849a9a"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_coordination_store.py",
+      "bytes": 25421,
+      "sha256": "d6e0c0f9599ac6b93977342ce142759903c3274a42745b160f2281502ad065f7"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_engine_session.py",
+      "bytes": 2993,
+      "sha256": "2672e94268ccdce4adf038c5199e055f98c64800047a6274f791263a17ab28c9"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_financial_authority.py",
+      "bytes": 13804,
+      "sha256": "4682c2b8e8c1ba5aa1ad7dbece2943bf0f8dea4b9b0b7f8ce7bb05f94e2d74b1"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_installation_technical.py",
+      "bytes": 10767,
+      "sha256": "93bfe3edfae9972bec66ae130ea86583edb8a711518303b61e844ec92ce3236d"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_local_authority.py",
+      "bytes": 9141,
+      "sha256": "a9ef5228e35fc0d125410d0d4b1b98c2a4fbf86708c29be33fb00ca1dd37975a"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_market_inputs.py",
+      "bytes": 8785,
+      "sha256": "d6afed4f2616cd6cdb99aa2335f44fa2f63f57dc092a7acadd50b2ade100e1de"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_paper_activation.py",
+      "bytes": 10985,
+      "sha256": "8bdf28f68c9e1657981614e84094d2da124acd00b055a8685a0ca3b98d4c5cf3"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_paper_inception.py",
+      "bytes": 18518,
+      "sha256": "3eeaf78da1b40e3fcf44e7980195c8dd390085c8c4c4aaa4a33d70c16e485e83"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_release_identity.py",
+      "bytes": 11332,
+      "sha256": "26699619e91ce71cdc4963702023d7f5302284e96b709a56135335c02fe77ac7"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_runtime_current.py",
+      "bytes": 16243,
+      "sha256": "7076c38b7ea70019a5c077438fa1d829c6a30537a23f2cbada016cf4b1228e12"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_windows_clock.py",
+      "bytes": 16202,
+      "sha256": "a1d21ca5f55579ebbc690347fee3b902c26ea4c5d7e1f6ae292945a4f174571e"
+    },
+    {
+      "path": "scripts/observation_runtime/personal_writer_ownership.py",
+      "bytes": 12022,
+      "sha256": "2bbd9ab97f661279e958bd1dba87b8439d68abd3f58648bdf6f2f8503b5ffec3"
+    },
+    {
+      "path": "scripts/observation_runtime/quality_dips_one_time_publisher.py",
+      "bytes": 12600,
+      "sha256": "d05601ddd6e475b6ceb49051bb580c1366091d4bd701c200278b20aefdad5720"
+    },
+    {
+      "path": "scripts/observation_runtime/quality_dips_read_service.py",
+      "bytes": 15773,
+      "sha256": "0f3c11e341bc27ff48064fb32908311f8c629648c57824a46a96005b673d1a65"
+    },
+    {
+      "path": "scripts/observation_runtime/socket_evidence.py",
+      "bytes": 13249,
+      "sha256": "e32650399490c1f11ebd7f0d942af186ab54535d95b231966e633c3f629abc74"
+    },
+    {
+      "path": "scripts/release_selection.py",
+      "bytes": 13639,
+      "sha256": "eece09f373f1264288df6de55368b8b934c04c70b5162ac922f221e3ed2fd0c6"
+    },
+    {
+      "path": "scripts/release_selection_store.py",
+      "bytes": 10913,
+      "sha256": "d7bfa6fbea33e28af1fda04e33c643e280623f5933170c98cc73afe3db94ad20"
+    },
+    {
+      "path": "scripts/support_deployment.py",
+      "bytes": 32277,
+      "sha256": "99709c9c68de8ea2df8c1220f12d62efdbee127a5e6897aef3885a1bcbc36c77"
+    },
+    {
+      "path": "scripts/volume_inspector/windows_output.py",
+      "bytes": 17914,
+      "sha256": "c304f3fd38dcd5dbedb5456bdb4eb41219b1ce12729aff64456ab42e84380926"
+    },
+    {
+      "path": "scripts/windows/Atlas-Acceptance-Resource-Audit.ps1",
+      "bytes": 4727,
+      "sha256": "e0cda6c705256a5f0becd98d50da67bd6e0102f4b7bac352406b50301bff2642"
+    },
+    {
+      "path": "scripts/windows/Atlas-Installed-Nonfinancial.psm1",
+      "bytes": 9484,
+      "sha256": "f753cf7fe2cbacbc5d8f480ee17b740f3375544397b62143eff80ba1f12bdd45"
+    },
+    {
+      "path": "scripts/windows/Atlas-Socket-Raw-Crosscheck.ps1",
+      "bytes": 1433,
+      "sha256": "d05680b3ca5f45cbcf83b2ab02c0085127f0ad0343637cce21a0806eb2ebc17f"
+    },
+    {
+      "path": "tests/harness_v3_fixture_controller.py",
+      "bytes": 4168,
+      "sha256": "e585b1fcc7fb9b7efc99ec9de18602ccbfbecf4021b6b551788f324d97a33686"
+    },
+    {
+      "path": "tests/run_tcp_cleanup_agreement_v4.py",
+      "bytes": 15137,
+      "sha256": "460a17f55b75cb5089738f9a22c374c12ead62231b34e2908dd6a695f90558de"
+    },
+    {
+      "path": "tests/test_acceptance_http_probe.py",
+      "bytes": 2909,
+      "sha256": "8e2544b0b56a3518a6228119dc9304576fabb3a12998192a1066afe4b7cabc67"
+    },
+    {
+      "path": "tests/test_harness_v3_worker_contract.py",
+      "bytes": 7589,
+      "sha256": "8893b57d6b69453de4d6236b5c4e156cb02ee830324b7e81ea7bbb30540f7e21"
+    },
+    {
+      "path": "tests/test_installed_acceptance_handoff.py",
+      "bytes": 8853,
+      "sha256": "77c4b659bd6508ab262565bb632040df5ed1d5406980e355cc5d46b5b8d7931f"
+    },
+    {
+      "path": "tests/test_installed_acceptance_package_v4.py",
+      "bytes": 7978,
+      "sha256": "d82e3fcf74dd992c6a1ca5b5b898fbf42d50f4938c0dda605381b8a82980fe14"
+    },
+    {
+      "path": "tests/test_installed_acceptance_sequence.py",
+      "bytes": 12393,
+      "sha256": "2de4dca28693406808dfea5d64896740a5f018bef748db4fe53851968397ea8d"
+    },
+    {
+      "path": "tests/test_tcp_cleanup_agreement_v4.py",
+      "bytes": 6395,
+      "sha256": "782c81087329730f305dc083a4ba6d7a1cb02a93e862e5b06fcae25d29b5ee58"
+    }
+  ]
+}

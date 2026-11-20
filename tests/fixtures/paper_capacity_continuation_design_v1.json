@@ -1,0 +1,149 @@
+{
+  "schema": "ATLAS_OFFLINE_CAPACITY_AND_CONTINUATION_EXAMPLES_V1",
+  "authority": "NONE_DESIGN_ONLY",
+  "limit": 128,
+  "scenarios": [
+    {
+      "name": "seven_empty_sessions",
+      "sessions": 7,
+      "global_records_per_session_lower_bound": 3,
+      "extra_global_records": 0,
+      "expected_global_lower_bound": 21
+    },
+    {
+      "name": "seven_qd_roundtrip_sessions",
+      "sessions": 7,
+      "global_records_per_session_lower_bound": 7,
+      "extra_global_records": 0,
+      "expected_global_lower_bound": 49
+    },
+    {
+      "name": "seven_two_lane_examples",
+      "sessions": 7,
+      "global_records_per_session_lower_bound": 13,
+      "extra_global_records": 0,
+      "expected_global_lower_bound": 91
+    },
+    {
+      "name": "four_empty_sessions_each_day_for_seven_days",
+      "sessions": 28,
+      "global_records_per_session_lower_bound": 3,
+      "extra_global_records": 0,
+      "expected_global_lower_bound": 84
+    },
+    {
+      "name": "four_qd_roundtrip_sessions_each_day_for_seven_days",
+      "sessions": 28,
+      "global_records_per_session_lower_bound": 7,
+      "extra_global_records": 0,
+      "expected_global_lower_bound": 196
+    },
+    {
+      "name": "one_two_lane_session_plus_sixty_accounting_updates",
+      "sessions": 1,
+      "global_records_per_session_lower_bound": 13,
+      "extra_global_records": 120,
+      "expected_global_lower_bound": 133
+    }
+  ],
+  "predecessor": {
+    "segment_id": "SYNTHETIC-SEGMENT-0",
+    "index": 0,
+    "account_state": {
+      "QUALITY_DIPS": {
+        "account_id": "SYNTHETIC-QD",
+        "epoch": "SYNTHETIC-QD-EPOCH",
+        "currency": "USD",
+        "cash": "1000",
+        "positions": {},
+        "pending": []
+      },
+      "HYPERLIQUID": {
+        "account_id": "SYNTHETIC-PERP",
+        "epoch": "SYNTHETIC-PERP-EPOCH",
+        "currency": "USDC",
+        "cash": "1000",
+        "positions": {},
+        "pending": []
+      }
+    },
+    "operation_ids": [
+      "SYNTHETIC-OP-0"
+    ],
+    "final": "SYNTHETIC-ACKNOWLEDGED-FINAL",
+    "unknown": false,
+    "resources": {
+      "QD_SOURCE": "SYNTHETIC-OLD-QD_SOURCE",
+      "PERP_SOURCE": "SYNTHETIC-OLD-PERP_SOURCE",
+      "REPORTS": "SYNTHETIC-OLD-REPORTS",
+      "ORDERS": "SYNTHETIC-OLD-ORDERS",
+      "GLOBAL": "SYNTHETIC-OLD-GLOBAL",
+      "SOURCE_PUBLICATIONS": "SYNTHETIC-OLD-SOURCE_PUBLICATIONS"
+    },
+    "high_water": {
+      "QD_SOURCE": 128,
+      "PERP_SOURCE": 128,
+      "REPORTS": 128,
+      "ORDERS": 128,
+      "GLOBAL": 128,
+      "SOURCE_PUBLICATIONS": 128
+    }
+  },
+  "successor": {
+    "schema": "ATLAS_CONTINUATION_DESIGN_FIXTURE_V1",
+    "execution_allowed": false,
+    "segment_id": "SYNTHETIC-SEGMENT-1",
+    "index": 1,
+    "previous_digest": "741313fe6ab0e903a00cd252ac40f1a191809322d72682a8238231522edc28f7",
+    "opening_state": {
+      "QUALITY_DIPS": {
+        "account_id": "SYNTHETIC-QD",
+        "epoch": "SYNTHETIC-QD-EPOCH",
+        "currency": "USD",
+        "cash": "1000",
+        "positions": {},
+        "pending": []
+      },
+      "HYPERLIQUID": {
+        "account_id": "SYNTHETIC-PERP",
+        "epoch": "SYNTHETIC-PERP-EPOCH",
+        "currency": "USDC",
+        "cash": "1000",
+        "positions": {},
+        "pending": []
+      }
+    },
+    "operation_ids": [
+      "SYNTHETIC-OP-1"
+    ],
+    "new_inception_count": 0,
+    "resources": {
+      "QD_SOURCE": "SYNTHETIC-NEW-QD_SOURCE",
+      "PERP_SOURCE": "SYNTHETIC-NEW-PERP_SOURCE",
+      "REPORTS": "SYNTHETIC-NEW-REPORTS",
+      "ORDERS": "SYNTHETIC-NEW-ORDERS",
+      "GLOBAL": "SYNTHETIC-NEW-GLOBAL",
+      "SOURCE_PUBLICATIONS": "SYNTHETIC-NEW-SOURCE_PUBLICATIONS"
+    },
+    "phase": "ACKNOWLEDGED",
+    "custody_receipt": "EXPLICIT_SYNTHETIC_DESIGN_RECEIPT"
+  },
+  "synthetic_expected_state": {
+    "QUALITY_DIPS": {
+      "account_id": "SYNTHETIC-QD",
+      "epoch": "SYNTHETIC-QD-EPOCH",
+      "currency": "USD",
+      "cash": "1000",
+      "positions": {},
+      "pending": []
+    },
+    "HYPERLIQUID": {
+      "account_id": "SYNTHETIC-PERP",
+      "epoch": "SYNTHETIC-PERP-EPOCH",
+      "currency": "USDC",
+      "cash": "1000",
+      "positions": {},
+      "pending": []
+    }
+  }
+}

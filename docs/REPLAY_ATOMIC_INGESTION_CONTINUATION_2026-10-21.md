@@ -1,0 +1,11 @@
+# Atomic isolated replay ingestion — 2026-10-21
+
+Sourceinspection found probability/matchedtargetsupport alreadyimplemented;advanced independentmarketreadiness instead. Reproduced batchatomicity defect:defaultmode1pass,but legacyisolation_levelNone andnativeautocommitTrue2fail because contextmanager didnotbegin/rollbackbatch;anearlierbar survivedlaterconflict.
+
+Added _write_batch explicitBEGIN. Legacymodesretainexisting connectioncontext commit/failurebehavior. Nativeautocommit uses explicitSQLCOMMIT/ROLLBACK because connection.commit/rollback are noops inthatmode. Refuses atransactionstillactiveaftercleanup. Nativewrite+rollbackfailure preservesboth originalerrorobjects inBaseExceptionGroup and retains instancefaultblockingreuse. Existingidleconnection/noimplicitcallercommit requirements remain. No journalformat/schemachanges orrealdataaccess.
+
+Files:scripts/observation_runtime/market_replay.py;new tests/test_replay_atomic_ingestion.py. Original2fail/1pass retained. Initialreplay/API/readviewregression83passed;expandedfinal88passed1.80s,0fail/skip/warnings(overlap). Eightnewcases cover3connectionmodes conflictrollback,3restart/duplicate/idleack modes,and2nativecommit/rollbackfault cases. TargetedRuff2filesPASS afternewtest importcorrection;compilation/diffPASS. SQLiteconfiguredcommit is notindependentbackup,crashsnapshot orhardwarepowerlossproof.
+
+21decisions/startuplock unchanged;productionNO-GO;nativebrowserNOT_ESTABLISHED;AFI1-10PENDING;sevenphases retained. No services/providers/Genesis/protectedstate/trading/Discord/Gitoperations orfreshruntimecensus.
+
+Next inspect read_view cleanup under nativeautocommitTrue:itcurrently calls connection.rollback,which isno-op for manuallybeguntransaction inthatmode. Reproduce usingtemporarySQLite anddecide minimalsafeSQLrollback compatibility whilepreserving failcloseduncertainty,callertransactionownership,andexistingcleanupfault tests. Thencontinueintegratedmarket/AFIofflinefunctionality;externallicensing/PITtruth/operationalbackup/resource/security/browsergates remainblocked.

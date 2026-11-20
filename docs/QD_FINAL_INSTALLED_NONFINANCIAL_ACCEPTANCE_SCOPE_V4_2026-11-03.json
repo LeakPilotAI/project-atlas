@@ -1,0 +1,195 @@
+{
+  "schema": "QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_SCOPE_V4",
+  "status": "SOURCE_AND_DISPOSABLE_VALIDATED_READY_FOR_SEPARATE_AUTHORIZATION",
+  "starting_checkpoint": "3374010c826fab2a1a2e4a5bfa0710ab022b3ecd",
+  "branch": "chatgpt/atlas-rebuild-v1",
+  "public_scope_document": "docs/QD_FINAL_INSTALLED_NONFINANCIAL_ACCEPTANCE_SCOPE_V4_2026-11-03.json",
+  "evidence_root": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v4-20261103",
+  "source_manifest_sha256": "4e92e55705465811106c067aebd6dcb24f96035d9af3fd44b2851b4131593140",
+  "source_files": 128,
+  "application_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+  "application": {
+    "artifact_digest": "94ec8b392dd9d0db13e01a8180dd7574baeb468b5e7bd9f3c209af05df048867",
+    "receipt": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-2c039af29dfefd1df77e0caa3db3fdf5ed188118.json",
+    "receipt_sha256": "c12ae55c8e31be813c1b3c1b7da87785c89af0945f73efa89621d5d846210915",
+    "release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "root": "D:\\AtlasRuntime\\releases\\2c039af29dfefd1df77e0caa3db3fdf5ed188118"
+  },
+  "support_id": "5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+  "support_destination": "D:\\AtlasRuntime\\launchers\\5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+  "support_control": "D:\\AtlasRuntime\\support-installations\\5b027d7dc0853975ee751c2c83145a9820a95da28041263b3585b56a4312eccc",
+  "support_manifest_canonical_sha256": "7947f54e82d74079b378ad14c238dadb4259671ee7ed5c9d03e952d5d8327cd3",
+  "support_archive_sha256": "dc6269c8b7ff6babcf73340c5aa5987a128ae1d76e6092ce1def653814af01bf",
+  "support_receipt_sha256": "01bb0f6efb04c706e594acb8c63759ee682e4bce2f2062882015edff36d6ce91",
+  "support_intent_sha256": "270ebc37107734a845e9bb9c4ef831152e43f8069a1328570b27597418b16a79",
+  "support_ack_sha256": "2d87da5b5b9959d5e0933d730e26b2a425f7bddd1b80d089fec98536a3b62851",
+  "application_journal_sha256": "27940d77ef60d5389581213f6334910fdc84677c85639aeb20c50bc10d644f13",
+  "baseline": {
+    "revision": 6,
+    "head": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+    "selected": null,
+    "freshly_verified": true,
+    "collected_utc_ns": 1793699365178939200,
+    "native_root": [
+      4004218753,
+      65536,
+      1532785
+    ],
+    "native_record_pairs": 6,
+    "namespace_files": 12,
+    "two_new_records_fit": true,
+    "source": "FRESH_READ_ONLY_NATIVE_PAIRS_FULL_CHAIN_AND_ACL_VERIFIED_NOT_AN_EXECUTION_GRANT",
+    "readback_path": "logs/diagnostics/qd-final-installed-v4-preparation-20261103/read-only-inventory-result.json",
+    "readback_sha256": "b52acfb15cd30cc304deb00288fb53984df09f8e767c3dc020d97bb264edfa47"
+  },
+  "limits": {
+    "seconds": 600,
+    "entries": 8192,
+    "accounted_bytes": 67108864
+  },
+  "cycle_limits": {
+    "maximum_cycles": 2,
+    "application_seconds": 120,
+    "total_attempted_http_requests": 96,
+    "readiness_seconds": 180,
+    "browser_acknowledgement_seconds": 45,
+    "complete_stop_seconds": 8
+  },
+  "clock": {
+    "maximum_uncertainty_ms": 1000,
+    "maximum_age_seconds": 120,
+    "expected_source": "time.windows.com,0x9",
+    "passive_observation_maximum_seconds": 180,
+    "configuration_changes": false,
+    "expected_service_startup": "Automatic (Win32_Service.StartMode Auto; registry Start 2), operator configured; no agent service mutation",
+    "required_service_state": "Running",
+    "required_startup": "Auto",
+    "fresh_at_selection": true,
+    "publication_check": "FROZEN_SELECTOR_GENUINE_CLOCK_REQUIRE_OPERATIONAL_IMMEDIATELY_BEFORE_NATIVE_PUBLISH;NO_REUSED_REVIEW_SAMPLE"
+  },
+  "allowed_mutations": [
+    "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-final-installed-nonfinancial-acceptance-v4-20261103\\<exact-owned diagnostics, temp/cache, logs, browser/Stop receipts and claims>",
+    "D:\\AtlasRuntime\\selection\\r0007.pending",
+    "D:\\AtlasRuntime\\selection\\r0007.json",
+    "D:\\AtlasRuntime\\selection\\r0008.pending",
+    "D:\\AtlasRuntime\\selection\\r0008.json",
+    "Repository checkpoint/report updates and non-force Git commit/push"
+  ],
+  "selection": {
+    "root": "D:\\AtlasRuntime\\selection",
+    "select_revision": 7,
+    "select_only_release": "2c039af29dfefd1df77e0caa3db3fdf5ed188118",
+    "rollback_revision": 8,
+    "restores": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+    "final_selected": null,
+    "mechanism": "EXISTING_VERIFIED_GENERAL_KNOWN_HEAD_ROLLBACK_NOT_INITIAL_BASELINE_SHORTCUT",
+    "uncertain_effects": "PRESERVE_NO_RETRY_NO_RESET_NO_ADOPTION",
+    "native_root": [
+      4004218753,
+      65536,
+      1532785
+    ]
+  },
+  "process_scope": [
+    "One normal-token test supervisor and owned Job; retained exact native worker identity",
+    "Exact installed frozen D:-resident Python via verified installed PowerShell adapter",
+    "Only test-owned diagnostic Windows query helpers with PID/creation/image claims",
+    "One genuine browser test tab closed before each acknowledgement; do not terminate unrelated browser processes"
+  ],
+  "cleanup": {
+    "order": [
+      "native READY/image verified; genuine browser witness and timely actual ACK receipt",
+      "post-ACK bounded HTTP diagnostics verify actual peer EOF and close owned client handles",
+      "single accepted Stop ACK persisted",
+      "fresh CIM, NETSTAT, IP_HELPER bundle exactly once",
+      "strict CIM/process roster snapshot LAST",
+      "unchanged actual next_cycle gate before Open2",
+      "final EOF/drain/reap before handle closure",
+      "fresh final socket/process readback for both owned ports",
+      "verified known-head rollback revision8 restoring revision6 UNSELECTED",
+      "original journal/receipt/ACK and all prior selector bytes unchanged; Job/process/port/handle readback"
+    ],
+    "maximum_cim_age_seconds": 2,
+    "maximum_reader_age_seconds": 10,
+    "maximum_collection_seconds": 5,
+    "forced_termination": "EXACT_OWNED_JOB_EMERGENCY_CONTAINMENT_ONLY_ALWAYS_FAILS_ACCEPTANCE",
+    "reader_order": [
+      "CIM",
+      "NETSTAT",
+      "IP_HELPER",
+      "STRICT_CIM_PROCESS_LAST"
+    ],
+    "peer_eof_before_stop": true,
+    "disagreement": "REFUSE;NO_RESAMPLING_FAILED_CYCLE_INTO_PASS;NO_STATE_NORMALIZATION"
+  },
+  "prohibited": [
+    "SUPPORT_REINSTALL",
+    "JOURNAL_RESET",
+    "FROZEN_APPLICATION_MODIFICATION",
+    "PROVIDER_CONNECTION",
+    "FINANCIAL_WRITER_OR_ACCOUNT_ACTIVATION",
+    "PAPER_OR_LIVE_TRADING",
+    "REAL_ORDERS",
+    "DESKTOP_SHORTCUT_OR_AUTOSTART_CHANGE",
+    "WINDOWS_TIME_OR_NETWORK_CONFIGURATION",
+    "FORCED_SYNCHRONIZATION",
+    "GENESIS_ACCESS",
+    "UNRELATED_PROCESS_TERMINATION",
+    "DESTRUCTIVE_GIT"
+  ],
+  "approval": "REVIEW_ONLY;ONE_FRESH_EXPLICIT_SINGLE_USE_INSTALLED_NONFINANCIAL_ACCEPTANCE_GRANT_REQUIRED;NONE_REQUESTED_OR_CONSUMED_DURING_PREPARATION",
+  "preselection_endpoint": {
+    "address": "127.0.0.1",
+    "port": 52159,
+    "source": "HISTORICAL_READY_FOR_ENDPOINT_IDENTITY_ONLY_NOT_CURRENT_SOCKET_OR_MARKET_EVIDENCE",
+    "path": "logs/diagnostics/qd-final-installed-nonfinancial-acceptance-v2-20261102/cycle-1-ready.json",
+    "sha256": "df6380ee503ee45c244fdc6924330fc3bd1eabcb692e2eeccf2e2905546649be",
+    "fresh_raw_observations_required": true,
+    "strict_snapshot_last": true,
+    "recheck_before_dispatch": true
+  },
+  "browser_handoff": {
+    "schema": "QD_BROWSER_HANDOFF_V3",
+    "origin": "VERIFIED_READY_OBSERVATION_BEFORE_UNRELATED_DIAGNOSTICS",
+    "seconds": 45,
+    "late_received_ack": "REFUSE_EVEN_IF_GENERATED_EARLIER",
+    "source_observation_signoffs": "GENUINE_BROWSER_DRIVER_REQUIRED_NO_PREACK",
+    "optional_reports_after_ack": true,
+    "consumer_receipt_persisted_before_http": true,
+    "one_thread_process_receiver": true,
+    "stop_ack_persisted_before_cleanup": true
+  },
+  "required_native_validation": {
+    "status": "FINAL_SOURCE_DISPOSABLE_TCP_TWO_CYCLE_PASSED",
+    "report": "docs/QD_WINDOWS_TCP_CLEANUP_AGREEMENT_V4_2026-11-03.md",
+    "complete_stop_seconds": [
+      2.3749056,
+      2.3473608
+    ],
+    "earlier_failed_v4_runs_preserved": 2,
+    "original_v3_failure_preserved": true,
+    "installed_acceptance_passed": false,
+    "no_operational_grant": true
+  },
+  "approval_status": "NOT_AUTHORIZED_FRESH_SINGLE_USE_GRANT_REQUIRED",
+  "runtime_isolation": {
+    "providers": false,
+    "financial_writers": false,
+    "trading": false,
+    "automatic_atlas_startup": false,
+    "workspace_application_fallback": false
+  },
+  "exclusions_preservation": {
+    "support_reinstallation": false,
+    "installation_journal_reset": false,
+    "application_payload_modification": false,
+    "automatic_atlas_startup": false,
+    "desktop_shortcut_changes": false,
+    "paper_or_live_startup": false,
+    "provider_connections": false,
+    "financial_activation": false,
+    "windows_time_or_network_changes": false,
+    "genesis_access": false,
+    "historical_decisions_changed": false
+  }
+}

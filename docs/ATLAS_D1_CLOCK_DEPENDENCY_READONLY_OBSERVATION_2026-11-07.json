@@ -1,0 +1,31 @@
+﻿{
+    "schema":  "ATLAS_D1_CLOCK_AND_DEPENDENCY_READONLY_OBSERVATION_V1",
+    "status":  "READ_ONLY_OBSERVATION_NOT_ACCEPTANCE",
+    "observed_at_local":  "2026-11-07T03:32:48.0815509-06:00",
+    "source_manifest":  "docs/PAPER_D1_DEPENDENCY_ENROLLMENT_MANIFEST_V1_2026-10-26.json",
+    "manifest_status":  "PROPOSED_NOT_ACCEPTED",
+    "deployment_drive":  "D:",
+    "windows_account":  "EXISTING_CURRENT_ACCOUNT_SID_NOT_OBSERVED_THIS_TASK",
+    "new_windows_account_allowed":  false,
+    "backup_failure_domain":  "INDEPENDENT_TARGET_AND_CUSTODIAN_UNASSIGNED",
+    "same_drive_coherent_rollback_protection_proven":  false,
+    "windows_clock":  {
+                          "status_query_exit_success":  true,
+                          "source_line":  "Source: time.windows.com,0x9",
+                          "last_successful_sync_line":  "Last Successful Sync Time: 11/7/2026 3:32:43 AM",
+                          "root_dispersion_line":  "Root Dispersion: 0.2406277s",
+                          "timezone":  "Central Standard Time",
+                          "read_only_query_only":  true,
+                          "accepted_trusted_clock_authority":  false
+                      },
+    "pending":  [
+                    "Independent real issuer/custodian and authority enrollment",
+                    "Accepted clock source/uncertainty and owner",
+                    "Independent backup failure domain and restore evidence",
+                    "Accepted currentness and rollback limitations",
+                    "Native continuation and namespace acceptance"
+                ],
+    "runtime_consumable":  false,
+    "startup_authorized":  false,
+    "note":  "Clock status observation is not an accepted trusted time source or permission to change clock settings."
+}

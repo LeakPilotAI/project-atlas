@@ -1,0 +1,108 @@
+{
+  "schema": "QD_TCP_CLEANUP_V4_INCREMENT_SOURCE_MANIFEST_V1",
+  "scope": "SOURCE_DISPOSABLE_INCREMENT_ONLY_NOT_INSTALLATION_INVENTORY_OR_AUTHORITY",
+  "starting_commit": "574f1a4c3804c493b44d4334edba110d31f2ef6c",
+  "installed_execution_authorized": false,
+  "files": [
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_capture.py",
+      "bytes": 5201,
+      "sha256": "e3856e4f28337daa9b8afc184e12b91745b4176b7fba87690f00bb3a20254cdf"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_capture_v4.py",
+      "bytes": 365,
+      "sha256": "f94d31e804e5bfc34b09d4e9760ad7c3d14adefabbd3b022a203ffaa05bac600"
+    },
+    {
+      "path": "scripts/observation_runtime/acceptance_http_probe.py",
+      "bytes": 2073,
+      "sha256": "bde94b2118c4462be7afd56a66f4c91b3efbec904fae5c2d766bb6e3ee9f213a"
+    },
+    {
+      "path": "scripts/observation_runtime/socket_evidence.py",
+      "bytes": 13249,
+      "sha256": "e32650399490c1f11ebd7f0d942af186ab54535d95b231966e633c3f629abc74"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_cleanup.py",
+      "bytes": 11780,
+      "sha256": "e6554cb916ddf0c4bcc07a7c7f981b9c73cfcdbd8c2a9f86d3d4575e6d599ba9"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_sequence.py",
+      "bytes": 5813,
+      "sha256": "062a2c83c6f262b7b1ab077864b6961167321e3b709e1b91a0030dfd93cd1b5b"
+    },
+    {
+      "path": "scripts/observation_runtime/installed_acceptance_handoff.py",
+      "bytes": 9849,
+      "sha256": "799fd7d3d3c4265e37b66e8b2a6bf086dc64138f8ef2bec29a7a6085fbc8ec42"
+    },
+    {
+      "path": "scripts/observation_runtime/disposable_host_owner.py",
+      "bytes": 8307,
+      "sha256": "d5535d566f69ccba69b0ede4e18e99fb8011537cf70e930585665f516970e8d5"
+    },
+    {
+      "path": "scripts/installed_nonfinancial_launcher.py",
+      "bytes": 35279,
+      "sha256": "0dc010fdb043a1709828506c80b4386ff1b43609e8d7eb11739dfe0acd10ef8f"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/capture.py",
+      "bytes": 150,
+      "sha256": "cfbf5ed35caa361f3befd4515cb07bad6dc086355793e349c6c92650f5d33ba9"
+    },
+    {
+      "path": "scripts/acceptance_harness_v3/worker.py",
+      "bytes": 15660,
+      "sha256": "6e82c786796e84b87f830513cc58fbcc0640ed4d4696a3532fe0992019296d88"
+    },
+    {
+      "path": "scripts/windows/Atlas-Socket-Raw-Crosscheck.ps1",
+      "bytes": 1433,
+      "sha256": "d05680b3ca5f45cbcf83b2ab02c0085127f0ad0343637cce21a0806eb2ebc17f"
+    },
+    {
+      "path": "scripts/windows/Atlas-Acceptance-Resource-Audit.ps1",
+      "bytes": 4727,
+      "sha256": "e0cda6c705256a5f0becd98d50da67bd6e0102f4b7bac352406b50301bff2642"
+    },
+    {
+      "path": "tests/run_tcp_cleanup_agreement_v4.py",
+      "bytes": 15137,
+      "sha256": "460a17f55b75cb5089738f9a22c374c12ead62231b34e2908dd6a695f90558de"
+    },
+    {
+      "path": "tests/harness_v3_fixture_controller.py",
+      "bytes": 4168,
+      "sha256": "e585b1fcc7fb9b7efc99ec9de18602ccbfbecf4021b6b551788f324d97a33686"
+    },
+    {
+      "path": "tests/test_tcp_cleanup_agreement_v4.py",
+      "bytes": 6395,
+      "sha256": "782c81087329730f305dc083a4ba6d7a1cb02a93e862e5b06fcae25d29b5ee58"
+    },
+    {
+      "path": "tests/test_acceptance_http_probe.py",
+      "bytes": 2909,
+      "sha256": "8e2544b0b56a3518a6228119dc9304576fabb3a12998192a1066afe4b7cabc67"
+    },
+    {
+      "path": "tests/test_harness_v3_worker_contract.py",
+      "bytes": 7589,
+      "sha256": "8893b57d6b69453de4d6236b5c4e156cb02ee830324b7e81ea7bbb30540f7e21"
+    },
+    {
+      "path": "tests/test_installed_acceptance_sequence.py",
+      "bytes": 12393,
+      "sha256": "2de4dca28693406808dfea5d64896740a5f018bef748db4fe53851968397ea8d"
+    },
+    {
+      "path": "tests/test_installed_acceptance_handoff.py",
+      "bytes": 8853,
+      "sha256": "77c4b659bd6508ab262565bb632040df5ed1d5406980e355cc5d46b5b8d7931f"
+    }
+  ]
+}

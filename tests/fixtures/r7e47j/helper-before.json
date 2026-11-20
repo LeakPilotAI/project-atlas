@@ -1,0 +1,39 @@
+{
+  "exit_code": 0,
+  "timeout": false,
+  "start": "2026-10-18T22:28:32.274185-05:00",
+  "end": "2026-10-18T22:28:32.312372-05:00",
+  "elapsed_seconds": 0.04699999999957072,
+  "args": [
+    "--host",
+    "npipe:////./pipe/dockerDesktopLinuxEngine",
+    "inspect",
+    "--type",
+    "container",
+    "39c207ea4fac5c578dcfc1e64bc6ff9680ef9029c68aee453c9ede1adff227c7",
+    "--format",
+    "{\"Id\":{{json .Id}},\"Image\":{{json .Image}},\"Labels\":{{json .Config.Labels}},\"Created\":{{json .Created}},\"State\":{\"Status\":{{json .State.Status}},\"Running\":{{json .State.Running}},\"Pid\":{{json .State.Pid}},\"StartedAt\":{{json .State.StartedAt}},\"FinishedAt\":{{json .State.FinishedAt}}}}"
+  ],
+  "stdout_bytes": 548,
+  "stderr_bytes": 0,
+  "within_output_bound": true,
+  "stdout": "{\"Id\":\"39c207ea4fac5c578dcfc1e64bc6ff9680ef9029c68aee453c9ede1adff227c7\",\"Image\":\"sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574\",\"Labels\":{\"org.atlas.inspector.source\":\"sha256:06d1ba89a7b89d0289ea0db87d5385797536eaa5033555822cb8f5d0325fe9a6\",\"org.atlas.synthetic.case\":\"good\",\"org.atlas.synthetic.operation\":\"r7e46z-c5d18d33a88e42cc\"},\"Created\":\"2026-10-18T07:36:43.654036716Z\",\"State\":{\"Status\":\"exited\",\"Running\":false,\"Pid\":0,\"StartedAt\":\"2026-10-18T07:36:43.829437977Z\",\"FinishedAt\":\"2026-10-18T07:36:44.181065639Z\"}}\n",
+  "stderr": "",
+  "payload": {
+    "Id": "39c207ea4fac5c578dcfc1e64bc6ff9680ef9029c68aee453c9ede1adff227c7",
+    "Image": "sha256:2ec3306c7d7e5714f49db15ea0db636622e01d061e87ceac27d0ec2bbd1b2574",
+    "Labels": {
+      "org.atlas.inspector.source": "sha256:06d1ba89a7b89d0289ea0db87d5385797536eaa5033555822cb8f5d0325fe9a6",
+      "org.atlas.synthetic.case": "good",
+      "org.atlas.synthetic.operation": "r7e46z-c5d18d33a88e42cc"
+    },
+    "Created": "2026-10-18T07:36:43.654036716Z",
+    "State": {
+      "Status": "exited",
+      "Running": false,
+      "Pid": 0,
+      "StartedAt": "2026-10-18T07:36:43.829437977Z",
+      "FinishedAt": "2026-10-18T07:36:44.181065639Z"
+    }
+  }
+}

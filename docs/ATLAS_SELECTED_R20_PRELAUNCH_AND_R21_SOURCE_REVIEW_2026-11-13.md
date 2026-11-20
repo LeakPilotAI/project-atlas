@@ -1,0 +1,35 @@
+# Atlas — selected R20 native prelaunch and auditable R21 source candidate (November 13, 2026)
+
+## What the ACTUAL selected original release proved
+
+The actual selected ORIGINAL R20 Windows interpreter, original Windows release-selection store, immutable R20 installed receipt and original install verifier ran in an isolated read-only check. The newly authored workspace \`atlas_selected_paper_prelaunch_evidence.py\` was invoked **as a script only**, with Python packages explicitly imported from selected installed R20, not as a fabricated installed-module candidate. It called the original \`require_selected_native_origin()\` plus the original \`inspect_two_lane_native_roots()\`.
+
+Actual receipt: \`logs/diagnostics/atlas-selected-original-native-prelaunch-sourceonly-20261113.json\`, SHA256 \`9d087a19ed891d102e8b003e0fe9a39107806e79056ef4e06621e30033a560e6\`.
+
+- Original code release \`d3c26d8189e4b18c0a88d0b4ebdec48b81838d1a\`, **installed source and original release artifact verified**.
+- All 12 native financial root IDs verified, and **12 of 12 roots empty**. No original first two coordination journals, FS1/FS3 financial account inception, PAPER portfolio, or native trade/Stop lease.
+- The new audited SEC WATCH-only QD issuer \`personal_selected_qd_sec_watch_issuer.py\` and source archive readback bridge \`personal_source_epoch_readback.py\` are **absent** from the genuinely installed selected R20 release, even though the D: workspace files are committed and tested. A workspace import/digest cannot grant their use in real operator operations.
+- \`paper_startup_authorized=false\`; \`live_trading_authorized=false\`; no files were written in the twelve original financial roots, and no additional release selected.
+- The **legacy nine-gate desktop checker** in \`scripts/windows/atlas_paper_readiness_check.py\` returns constant \`decision=NO_GO\`, all nine \`NOT_INDEPENDENTLY_VERIFIED\`, regardless of forward financial operational evidence. It is an intentionally conservative **permanent static veto**, not a live completed/remaining-work counter, and must NOT be represented to the user as actual current percentage. The \`personal_commissioning_preflight.py\` 12-check diagnostic also hardcodes OPERATIONAL_QD_SOURCE_PUBLICATION, FINANCIAL_INCEPTION and RUNTIME_AUTHORIZATION as false; its 7/12 observation is not equivalent to real financial acceptance. Both safety gates were left intact.
+
+## First-party provider rights and cost facts verified in parallel
+
+Alpaca's official \`https://docs.alpaca.markets/us/docs/about-market-data-api\` states that Trading API **Basic is free to personal users**; equity realtime coverage is **IEX single exchange**, not all-exchanges SIP NBBO; 30 WebSocket symbols per connection entitlement applies under Basic. The official paper specification \`https://docs.alpaca.markets/us/docs/paper-trading\` states an Alpaca paper-only user may use free real-time IEX data, and paper trading does not route live orders. Atlas previously executed actual four-symbol IEX data-only REST HTTP 200 authenticated requests with **zero fresh** overnight source quotes. This supports a *documented free personal source use case* but still does not accept executable quote freshness, specific account rights, current broker identity, the user's personal data license, or price provenance. DO NOT purchase SIP rights or pretend IEX provides NBBO.
+
+Hyperliquid's current first-party \`https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees\` lists baseline perpetual futures **0.045% taker / 0.015% maker** (4.5 / 1.5 basis points), matching Atlas's already independently recorded V4 conservative base-fee review. Actual account tier/referral/staking, HIP-3/market-specific modifiers and original hourly settlement actions are NOT established by this public base table. Hyperliquid's official \`https://hyperliquid.gitbook.io/hyperliquid-docs/historical-data\` states its original AWS S3 historic node archive is **requester pays**, incompatible with Atlas's free-data-only requirement. Its public \`fundingHistory\` rate records alone cannot authenticate original signed historical settlement oracle prices. No paid data, account login, wallet, or unverified synthesized price was used.
+
+## Source-only R21 release candidate
+
+New \`scripts/atlas_r21_source_review.py\` independently verifies the original R20 native selection at revision 19, the original all-file installed artifact, exact pinned R20 source archive SHA256, the selected current branch descendant and tracked unchanged source files, the runtime-document closure, the immutable pinned Python dependency inventory and **12 empty original financial roots**. It includes the three previously **uninstalled** successor modules plus all changed original code since R20, rejects untracked source, unsafe Windows path aliasing, excess size, changed source bytes, missing independent operator authorization and any existing release destination.
+
+Only after current source commit is clean can it build a content-addressed R21 source-only D: artifact, with create-only release target review and explicit **\`native_code_installed=false\`**, \`new_release_selected=false\`, \`financial_inception_verified=false\`, \`paper_start_authorized=false\` and \`live_trading_authorized=false\`.
+
+A verified R21 **source package is NOT an R21 installed selected release**. A separate native low-impact Windows create-only installer, one-time SID/source/clock scoped operator decision, full immutable native receipt, independent version-safe selected-revision record and operator financial commissioning are still required. The R20 native installer is pinned to its own frozen old source and MUST NOT be reused for R21 by changing a folder name or bypassing its original approval digest.
+
+## Actual remaining steps to full PAPER startup (not post-start months)
+
+Independent acceptance of legitimate current QD valuation/issuer/source rights and Hyperliquid signed hourly settlement original source; current source-epoch rollover + actual financial reader/Stop owner continuity; new R21 installed source under native selection with explicitly scoped approval; original dual coordination journals, native PAPER account inceptions; distinct pre/post-inception operator activations; original STOP-first session/financial writer readback and market-hours supervised acceptance.
+
+Do not mistake 0/9 constant desktop checker for a live progress gauge. The user wants Atlas **ready to START months of supervised PAPER**, not to wait until those months are completed beforehand. Extended performance review is only before considering LIVE money.
+
+Storage remains confined to \`D:\Work\Project Atlas\` for all new repo files and test/temp/diagnostic output. Retain \`D:\AtlasRuntime\`, \`D:\AtlasCustody\`, \`D:\AtlasPaper\` identity-bound original roots unchanged. No VPS, no paid sources, no C: orphan caches, no uncontrolled VS Code worker fan-out. Cleanup only verified Atlas-specific orphan temp at execution end.

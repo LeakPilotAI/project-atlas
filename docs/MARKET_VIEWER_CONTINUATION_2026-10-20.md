@@ -1,0 +1,33 @@
+# Portable market evidence viewer continuation — October20,2026
+
+## New usable functionality
+
+New frontend/offline/market-replay/mount.cjs renders local snapshot, quote-quality, retained research, replay/comparison companion and sanitized refusal exports using the existing validators. Source data is inserted with textContent only, never HTML. All refused/missing/pending cases remain visible. Snapshot prices usable at the report clock are separate from last recorded stale closes/references, with source/asset/session labels. Unknown values are unavailable, not0. Friendly state labels do not relabel tickers. Production NO-GO and report-clock-not-live limitations stay visible; no provider/order controls exist.
+
+The local-file loader clears old data before reading/verification; checks declared and actual UTF8 byte limits1MB; refuses unsupported schema/authority claims; suppresses late file reads and cross-type crypto results with a revision token; supports Clear/dispose and returns explicit AggregateError if refusal display itself cannot be cleared. File reads/digests are not forcibly canceled or hard-deadline-certified. Public current() returns a clone, not mutable internal state. No network, local storage, source-HTML execution or automatic startup.
+
+New build.mjs (ESM, no new dependencies) embeds validated consumer, renderer and reused forecast-accountability CSS into one strict hash-CSP HTML (connect/default none). Exclusive creation, bounded finite source footprint, short-write detection, fsync, descriptor-based read-back and final file identity checks precede acknowledgement. Close failures aggregate with primary errors. Existing/partial outputs are never overwritten/deleted. It is a static build artifact, not protected production release provisioning, backup, power-loss guarantee or privileged concurrent-source/filesystem exclusion.
+
+Artifact: logs/diagnostics/market-viewer-20261020/market-evidence.html (59170 bytes), SHA256 a33fc81782c19c1b2eaaa4a66550ed1b8f861fa71bc668aa52554efbb536303c. Opens local exports without Atlas/Next/Docker. No data is preloaded; no HTML/market metadata is fetched or uploaded. Full Atlas startup remains locked. Explicit builder example: node frontend/offline/market-replay/build.mjs <new-output.html>. README appended without altering prior bytes; modern File.text/TextEncoder/WebCrypto required.
+
+## Exact changes
+
+Added mount.cjs, build.mjs, viewer.test.mjs, tests/test_market_viewer_packaging.py and this report; appended market-replay README and full continuity document; updated only managed master checkpoint; generated artifact/receipt and fresh diagnostics. Existing validators and CSS remain byte-identical. New ESM builder avoids the existing synchronous builder require-import lint debt.
+
+## Exact validation
+
+655 expanded guarded market/replay/research Python tests passed in45.02s (prior654 +1 clean extraction/build dependency case).470 offline Node tests passed (prior439 +31 new viewer/publication tests). Zero final failures/skips/cancellations. Native File and WebCrypto, deterministic DOM and actual built-script VM bootstrap verified all6 export kinds, invalid replacements, missing/refused denominators, text injection, declared/actual UTF8 bounds, stale values, ticker labels, late reads/digests, disposal/render failures, exact CSP hashes, output collision, native temporary junction refusal, short writes, fsync/read-back/close failures. Existing outputs/data preserved. Clean source-candidate extraction builds actual HTML with all dependency files. Initial sandbox28 passed/1 junction creation denied preserved; unchanged native junction test passed, final31 native cases passed. Configured ESLint, targeted Ruff, Node syntax, Python compilation and Git diff pass; existing3 inherited builder findings unchanged/no waiver. Prior604 AFI evidence remains separate and preserved.
+
+This is DOM/VM/native-crypto/filesystem acceptance, NOT native browser visual or actual CSP enforcement acceptance. File URI WebCrypto and native browser rendering remain to be independently observed. No real market feed, production runtime isolation, Gaming Mode CPU/RAM/cadence acceptance, provider license or commercial/forecast skill is inferred.
+
+## Safety and remaining gates
+
+All21 decisions/startup denial unchanged; production NO-GO. Original seven phases, AFI1–10 PENDING, Gaming objective, normal PAPER cadence requirements, Genesis separation, E136 consent/recovery and Prediction Market Intelligence V2 safeguards retained. No providers/services/Atlas/Docker/Genesis, trading/PAPER/Discord activation, production state/configuration/ACL/shortcut/volume, backups/restoration or Git operations. Only synthetic fixtures and a new static artifact; no fresh runtime census.
+
+Actual read-only live session still requires selected provider rights/entitlements/session/history/storage/display coverage, wire timestamp/delay/adjustment/budget verification and approved fixed-release observation-only admission/lifecycle acceptance. Do not infer subscription/key presence or use the static viewer as a startup bypass. Source consistency is not provider authentication, source reproduction, complete calendars/coverage or profitable/calibrated research.
+
+## Exact continuation
+
+Latest pins/result under logs/diagnostics/market-viewer-20261020 include artifact and receipt. Approved updater verifies backup/read-back/outside-checkpoint byte equality. Native full Goal preserved with no duplicate/reset/completion/blocked claim or external unattended mechanism.
+
+Next selected task: independent native browser acceptance of this static file. First inspect applicable computer-use/testing instructions and existing documented browser capabilities without broad unrelated/Genesis surface inspection. Use only an isolated file-only synthetic test with bounded lifetime, no installed downloads, server/provider connections, production browser profile or shortcut changes. Verify actual native rendering/file load/clear/rejection, strict CSP/no network/storage behavior and basic keyboard/small-viewport layout; preserve screenshots/evidence if supported. Do not claim visual acceptance from the VM tests. If safe native capability is unavailable, record the exact gate and continue other offline work (e.g. bounded common navigation with the existing forecast viewer or remaining timeline/vintage time precision), rather than treating the whole Goal blocked. No service/provider/Atlas/Docker/Git/protected-state actions; retain all21 decisions/full seven-phase objective and production NO-GO. No broad new framework; no external daemon/scheduler.

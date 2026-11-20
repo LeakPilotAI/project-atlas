@@ -1,0 +1,40 @@
+# Atlas R24 — Hyperliquid six-request public-data source vetting
+**2026-11-18 | MADDOG | current selected code-only R24 | financial PAPER OFF, LIVE OFF**
+
+## Concrete implementation and green evidence
+
+Added a **new source-only, pure raw-JSON audit module**, `scripts/observation_runtime/atlas_r24_hl_six_public_info_readonly.py`, original source SHA256 **`db6414fca18066e419b269d8613a8aa6c8a036a7ba6fbf6b12a28fc1848d1c32`**. This does NOT modify or authenticate the immutable selected R24 installed release. It is a candidate source-checker that will require future separately reviewed code-only distribution before any operational use. Data-only diagnostics may use it without modifying financial or selected release state.
+
+The module accepts exactly six ordered original raw Hyperliquid public INFO responses:
+1. `metaAndAssetCtxs` (20 rate weight).
+2. First `predictedFundings` (20).
+3. `l2Book BTC` (2).
+4. `l2Book ETH` (2).
+5. `l2Book SOL` (2).
+6. Second `predictedFundings`, at least 10 seconds later (20).
+
+The sum of these six provider-weight allowances is **66**, below the official aggregate **1200/minute** IP REST allowance for an otherwise idle client; it is not a reservation in a global accepted provider budget. Official source: <https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/rate-limits-and-user-limits>. The public predictedFunding API is documented at <https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals>. The original provider response may legitimately be missing, stale, or out of sync. This cannot be silently corrected.
+
+Each frame must be complete, JSON with no duplicate keys, be bound to an exact 512-KiB-or-less original SHA256 raw payload, follow the six exact request kinds/coin/order, have 0–5-second HTTP timing and monotonic order, and be within one 75-second global cut with an independent dual-NTP uncertainty no greater than 1000ms. Actual `HlPerp` entries must be uniquely present for BTC, ETH, SOL; finite bounded rates, actual unmodified **future next UTC whole-hour funding timestamps**, consistent across both samples. No aligning stale timestamps to a convenient hour, no extrapolating settlement from predictions. Existing original `_paper_execution_observation` validates all three native BTC/ETH/SOL L2 books and metadata to the initial full public cut with book timestamps/both sides/spreads/size/market status. A publisher, fee schedule, settlement oracle, provider rights, PAPER account and live trade remain expressly FALSE even on hypothetical complete valid public data.
+
+Selected R24 native Python `-I -B -S`, original host two-logical-CPU admission `NativeR17CpuBudget`, CURRENT worktree original parser module and fixture tests: **39 passed, zero failed, zero skipped**, no public provider calls. The synthetic tests specifically reject stale `HlPerp.nextFundingTime`, duplicate rows/JSON, missing/forged venues, bogus timestamps/rates, stale or crossed/missing book sides, wrong source keys, unreasonable NTP bounds, order changes, request timeouts/response-length, and fake trading authority. JUnit `logs/diagnostics/atlas-r24-hl-six-public-info-20261118-r01/hl-six-public-schema-regressions.xml` SHA256 **`85f6d275947aea6e8ff9522af60c1dfa6372e2c3b76b77d4b43038f2fc5f1a02`**; Ruff F scoped source + tests + diagnostic audit **PASS**.
+
+A separate **genuinely selected R24 native** read-only two-peer precise NTP real-network probe (Google+Cloudflare) passed, actual independent UTC uncertainty **140ms**, independent peer disagreement **2ms**, exit0, all 12 original financial namespaces still EMPTY; original source-only receipt `logs/diagnostics/atlas-r24-hl-six-public-info-20261118-r01/selected-r24-independent-utc-clock-readonly.json`, SHA256 **`e4c51ad051e07cb8d18ead74a0a8c686ccb9e0e9b96f5e0235614b7e09607974`**. This is point-in-time time quality, NOT a continuously retained original 5+7 financial owner or a financial clock authority.
+
+## Review-only vetted local probe, separate approval needed
+
+Created the one-shot external **DATA-ONLY** Windows-local console script `logs/diagnostics/atlas-r24-hl-six-public-info-20261118-r01/one_time_hl_six_data_only.py`, SHA256 **`5474611b4f068e1c4aaed272f0d1fbf4c6eaef355304b5641cbe972b73b17d24`**. Its exact `--review` ran from genuine selected R24 Python and verified 12 original financial roots EMPTY, current installed R24 selector, exact noninstalled source-only parser hash, original bounded host admission, and single-use no-consent/no-existing-result namespace. **Exit0**, printed exact scope, zero HTTP/network made during review. It uses a visible genuine Windows interactive console and requires the person to independently type exactly:
+
+`APPROVE_ONE_ATLAS_R24_HL_BTC_ETH_SOL_SIX_PUBLIC_INFO_POSTS_DATA_ONLY_NO_FINANCIAL_START`
+
+Once typed, it creates one local process-SID-bound scope record **before** any new public INFO requests and has no retry. It requires an actual Google+Cloudflare two-peer original NTP source in the SAME process, original two-CPU host guard, no credentials, no wallet, no trading, original selected R24 source pin, and 12 original financial namespaces still EMPTY. It permits exactly six **serial** public `POST https://api.hyperliquid.xyz/info` actions, 75 seconds global, 5 seconds/request, 512KiB streaming cap per response, original raw payloads copied create-only to D diagnostic response files. Each attempt writes a create-only consumed attempt-intent **before** contacting the provider. A partial/uncertain request and consumed scope MUST NEVER be automatically retried. Original provider data can refuse all six even when HTTP succeeds. This experiment cannot grant provider license, genuine source issuer, original funds, account fees, settlement history or any financial Start.
+
+Visible Windows terminal launcher, SHA256 **`d50915a862687e98cedad82acdb550d610747c2f9cbec9b9a78974c0443afade`**, is `logs/diagnostics/atlas-r24-hl-six-public-info-20261118-r01/Approve-R24-HL-Six-Public-Data-Only.cmd`. It is **not** a desktop shortcut, no background daemon and no automatic Startup. At initial scope review, local approval was NOT typed, so **no HL public INFO request was made by this execution**. Operator can independently approve this separate data-only action and later share results for independent file-handle/readback proof. Never infer the local six-POST source evidence from successful synthetic tests or predicted public docs.
+
+## Original full PAPER production requirements and realistic execution estimate
+
+Original E1 three genuine source-rights/budget/economics acceptances **0/3**; original two simulated financial-account inceptions **0/2**. The original selected native 5+7 financial writer ownership/clock, two original financial coordination journals, two distinct local exact account approvals and FS1/FS3 native ACKs, postinception original QD WATCH source publisher and accepted 127-record epoch reader rollover, current genuine HL source/fee/settlement method, original Stop <=8 seconds durable FLAT recovery, and first supervised Hyperliquid intrahour-flat PAPER pilot are not accepted. The original 11-stage A–K prelaunch graph is NOT a percentage; months of PAPER soak after the first supervised start are distinct.
+
+Planning range remains **8–15+ substantial further accepted execution batches** before a safe first supervised financial PAPER pilot, subject to genuine source-rights and account-level external conditions; this range could expand or be unbounded if provider requirements cannot be satisfied. A green read-only public source review is progress but **not** a counted original accepted financial stage. All original financial states remain OFF until actual original authority and Stop-first gates pass; live-money trading never enabled without a separate future post-months review.
+
+**Verdict: R24 source-only HL forecast/book verifier implemented, 39 synthetic refusal tests pass, genuine native independent clock passes; no new accepted E1 source, financial owner, accounts, Stop or PAPER start.**

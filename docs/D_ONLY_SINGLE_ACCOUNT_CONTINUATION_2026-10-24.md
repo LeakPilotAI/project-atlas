@@ -1,0 +1,5 @@
+# D:-only existing-account continuation - 2026-10-24
+
+PermanentoperatorD:-only/existingWindowsaccount decision supersedesC:recommendation withoutrewritinghistory. ReadD_ONLY_SINGLE_ACCOUNT_DEPLOYMENT_2026-10-24.md andcanonicaldeploymentlocal_layout. NewprotectedchildpathsonD:only;nodrive/projectACLchanges,newaccounts,VPS/cloud/live-moneyimplementation. Policyguard117combinedpasses(15new)0fail0skip;558runtimefiles0issues.
+
+ZeroACTIVE/BLOCKED_WAIT. Exactnextaction:independentreviewofD:/sameaccountthreatmodel andactualissuer/current/high-water/clock/recoverymechanisms. AcceptB1scope/legacyexclusions,C1actualwriters/resources,D1custody;D:-onlylocalhashes cannotestablishindependentrollback/backupauthority. Then separatelyauthorizeconcretepublisher/custodyimplementation,namednewpathprovisioning/genesispublication,bridgeinstallandsupervisedreadonlylaunch. Noadditionalframework/demo needed. All21decisions/B1C1D1E1blocked/startuplocks unchanged;PAPERstartupNO;productionNO-GO.0of7days/0of30-60sessions.

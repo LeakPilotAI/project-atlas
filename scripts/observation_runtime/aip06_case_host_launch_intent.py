@@ -1,0 +1,145 @@
+"""Owner-side case-host launch preflight; never creates or authorizes a process."""
+
+import ntpath
+from scripts.observation_runtime.aip06_case_host_entry import HOST_ENTRY
+
+PREFLIGHT = ntpath.join(ntpath.dirname(HOST_ENTRY), 'aip06_host_preflight.py')
+from scripts.observation_runtime.aip06_harness import LIMITS, need
+from scripts.observation_runtime.aip06_scoped_context import CaseContext
+
+
+def inspect_launch_intent(case, reservation, *, deadline_ns):
+    """Verify retained owner/reservation and pinned target before launch assembly.
+
+    No synthetic Job, Stop, or process evidence is accepted here. The returned
+    data-only intent cannot be used as a process-creation capability.
+    """
+    need(type(case) is CaseContext, 'ORIGINAL_CASE_CONTEXT_FOR_HOST_LAUNCH')
+    case.verify(deadline_ns=deadline_ns)
+    need(case.factory.pending is case and reservation == case.reservation
+         and type(reservation) is dict and reservation.get('held') is True
+         and reservation.get('stop_capacity_reserved') is True,
+         'ORIGINAL_HELD_CASE_RESERVATION_FOR_HOST_LAUNCH')
+    controller = case.controller
+    guard = case.guard
+    need(guard.processes is controller.process_port
+         and case.factory.guard is guard and case.factory.controller is controller,
+         'ORIGINAL_CONTROLLER_OWNER_FOR_HOST_LAUNCH')
+    plan = case.factory.plan
+    need(type(plan) is dict and type(plan.get('source_pins')) is dict
+         and HOST_ENTRY in plan['source_pins']
+         and PREFLIGHT in plan['source_pins']
+         and controller.profile['source_pins'] == plan['source_pins']
+         and controller.profile['targets'].get('case_host') == HOST_ENTRY,
+         'PINNED_NATIVE_CASE_HOST_TARGET_REQUIRED')
+    need(type(plan.get('executable')) is str and plan['executable'],
+         'ORIGINAL_CASE_HOST_INTERPRETER_REQUIRED')
+    need(all(type(plan['source_pins'][path]) is str
+             and len(plan['source_pins'][path]) == 64
+             and all(char in '0123456789abcdef' for char in plan['source_pins'][path])
+             for path in (HOST_ENTRY, PREFLIGHT)),
+         'VALID_ORIGINAL_CASE_HOST_SOURCE_DIGESTS_REQUIRED')
+    # Pin membership is not a disk-integrity check. Reopen the two execution-
+    # critical sources through the original charged native-handle verifier
+    # before a guarded process can be allocated by the caller.
+    for path in (HOST_ENTRY, PREFLIGHT):
+        verified = controller.verify_source(path)
+        need(type(verified) is dict and verified.get('path') == path
+             and verified.get('sha256') == plan['source_pins'][path]
+             and verified.get('closed') is True,
+             'CLOSED_ORIGINAL_CASE_HOST_SOURCE_VERIFICATION_REQUIRED')
+    handoff = case.physical_host_handoff(reservation, deadline_ns=deadline_ns)
+    return {'schema': 'AIP06_CASE_HOST_LAUNCH_INTENT_V1',
+            'argv': (plan['executable'], '-B', HOST_ENTRY),
+            'handoff': handoff, 'native_acceptance': False,
+            'execution_authorized': False}
+
+
+def verify_reserved_suspended_plan(guard, argv, plan):
+    """Validate a case-host process plan before any ownership/handle allocation.
+
+    The original guard still owns all actual suspended creation, Job checks,
+    ledger reservations, Stop escrow and cleanup. This grants no authority.
+    """
+    port = getattr(guard.processes, 'port', guard.processes)
+    case = getattr(port, 'scoped_case', None)
+    need(type(case) is CaseContext and case.guard is guard
+         and case.factory.pending is case and case.reservation is not None,
+         'ORIGINAL_SCOPED_CASE_FOR_SUSPENDED_HOST_PLAN')
+    executable = case.factory.plan['executable']
+    need(type(argv) in (tuple, list) and len(argv) == 3
+         and all(type(arg) is str for arg in argv)
+         and tuple(argv) == (executable, '-B', HOST_ENTRY)
+         and case.controller.profile['targets'].get('case_host') == HOST_ENTRY,
+         'EXACT_SUSPENDED_CASE_HOST_COMMAND')
+    need(type(plan) is dict and plan.get('parent_owner') == guard.owner
+         and plan.get('name') == 'case_host'
+         and type(plan.get('resource_kinds')) is tuple
+         and {'job', 'thread', 'image', 'pipe'} <= set(plan['resource_kinds'])
+         and plan.get('job_limits') == {
+             'processes': LIMITS['processes'],
+             'private_bytes': LIMITS['private_bytes'],
+             'child_private_bytes': LIMITS['child_private_bytes'],
+             'cpu_ns': LIMITS['cpu_ns'], 'kill_on_close': True},
+         'ORIGINAL_OWNER_STOP_CAPACITY_AND_SUSPENDED_HOST_RESOURCES')
+    request = plan.get('request')
+    nonce = getattr(request, 'nonce', None)
+    planned = getattr(port, 'plans', {}).get(nonce)
+    need(type(nonce) is str and len(nonce) == 32
+         and getattr(request, 'role', None) == 'acceptance_worker'
+         and getattr(port, 'current_plan_nonce', None) == nonce
+         and type(planned) is dict and planned.get('plan') is plan
+         and planned.get('argv') == tuple(argv)
+         and planned.get('parent') == port.resources.state['owners'][guard.owner]
+         and planned.get('case_scope') == case.wire(),
+         'ORIGINAL_SINGLE_USE_NATIVE_CASE_HOST_PLAN_BINDING')
+    return None
+
+
+def verify_suspended_host_before_resume(session, job, guard):
+    """Check original suspended session receipts; not native acceptance authority."""
+    port = getattr(guard.processes, 'port', guard.processes)
+    from scripts.observation_runtime.aip06_native_session import Session
+    need(type(session) is Session and type(session.plan) is dict
+         and getattr(session.plan.get('request'), 'nonce', None) is not None
+         and type(job) is dict,
+         'TYPED_SUSPENDED_CASE_HOST_RECEIPT_REQUIRED')
+    recorded = getattr(port, 'plans', {}).get(session.plan['request'].nonce)
+    need(any(retained is session for retained in port.sessions) and recorded is not None
+         and recorded['plan'] is session.plan
+         and recorded['argv'] == tuple(session.argv),
+         'ORIGINAL_RETAINED_CASE_HOST_SESSION_REQUIRED')
+    need(session.name == 'case_host' and session.suspended is True
+         and session.failed is False and session.creation_attempted is True
+         and session.plan['parent_owner'] == guard.owner
+         and session.observer is session.plan['api']
+         and session.observer.parent == session.parent_handle
+         and session.observer.job == session.job
+         and session.launch_handle == session.runtime_handle
+         and type(session.launch_handle) is int and session.launch_handle > 0
+         and type(session.thread) is int and session.thread > 0
+         and type(session.job) is int and session.job > 0
+         and type(session.creation_native) is dict,
+         'RETAINED_SUSPENDED_CASE_HOST_CREATION_REQUIRED')
+    native = session.creation_native
+    need(type(native.get('pid')) is int and native['pid'] > 4
+         and type(job) is dict and job.get('suspended') is True
+         and job.get('handle') == session.job
+         and job.get('members') == [native['pid']]
+         and job.get('limits') == session.plan['job_limits']
+         and session.plan['job_limits']['kill_on_close'] is True,
+         'INDEPENDENT_ORIGINAL_CASE_HOST_JOB_OBSERVATION_REQUIRED')
+    need(session.plan['request'].nonce not in getattr(guard, 'retired_launch_nonces', set()),
+         'RETIRED_CASE_HOST_LAUNCH_NONCE')
+    observed = session.observer.observe(session.launch_handle)
+    parent = session.observer.observe(session.parent_handle)
+    need(type(observed) is dict and type(parent) is dict
+         and observed['pid'] == native['pid']
+         and observed['created'] == native['created']
+         and observed['image'] == native['image']
+         and observed['parent_pid'] == parent['pid']
+         and parent['pid'] == guard.resources.state['owners'][guard.owner]['pid']
+         and observed['command_line'] == session.plan['request'].launch_command
+         and session.observer.members() == {native['pid']},
+         'INDEPENDENT_CASE_HOST_OBSERVATION_REQUIRED')
+    return None

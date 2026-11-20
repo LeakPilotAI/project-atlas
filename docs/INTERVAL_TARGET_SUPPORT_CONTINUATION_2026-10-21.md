@@ -1,0 +1,11 @@
+# AFI interval target support — 2026-10-21
+
+Inspection confirmed intervalscoring and matchedcomparisons alreadyimplemented;no duplicateengine added. Existing singlemodelintervaltable showed resolvedcounts but no repeatedtarget support. Added derived intervalTargetSupport onvalidatedexisting rows/cohorts:distinct canonicalrecorded targetinstants,resolvedmissingclocks,repeatedtargetcounts,and explicit descriptive status. Pendingrows do not enter targetcounts;offsetequivalent timestamps countonce;missing legacyclocks unknown. Distinctdates do not proveindependence;calibration remainsfalse. Existing scores,report schemas,immutable reports and sourcepins unchanged. Newviewsource changes its commitment as intended;never rewrite oldarchives/packets.
+
+Files:frontend/offline/forecast-accountability/view.cjs;build.cjs;view.test.cjs;new interval-target-support.test.mjs. Existing mountedtable assertion updated to test originalevidencestatus at priorcolumn andnewtargetstatus. Builder adds4headers andclear independence caveat. Newhtml generatedonly in diagnostics viaexistingbuilder. No nativebrowserclaim.
+
+Original5missingfunction failures retained. Firstfull693run679pass/14fail:5newfixtureinvalididentity,1expectedcolumnlayoutchange,and8nativejunction/sandboxlimitations. CorrectedfixturetoUS_EQUITY:TEST,updatedspecificcolumnassertion,and reran nativeisolatedsuite:693passed2195.1402ms,0fail/skip. Finalnewtest convertedCJS->ESM toavoid3newrequirelintfindings:5tests passed84.1414ms. TargetedESLintview/newtestPASS;existingview.test.cjs8requirefindings remaininherited,no waiver. Priorbuilder3lintfindings unchanged. DiffcheckPASS;newbuildPASS. OriginalCJSfixture retainedasdiagnostictext. NativebrowserNOT_ESTABLISHED.
+
+All21decisions/startuplock unchanged;productionNO-GO;AFI1-10PENDING;no services/providers/Genesis/protectedstate/trading/Discord/Gitoperations orfreshruntimecensus. Sevenphases unchanged.
+
+Next implement backend parity for separate interval-target-support diagnostic usingexistingcohort/timevalidation,withoutaltering legacyreport schemas orstoredintervalscores. Add crosslanguage paritycases andmountedfilter/refusal/clearcoverage. Reuseexisting immutableevidence;no newconfidence/independenceclaim. Then continuefeasibleAFI/marketofflinefunctionality;external licensing/PITtruth/runtime/backup/resource/browser/securitygates stayblocked.

@@ -1,0 +1,155 @@
+{
+  "schema": "FS1_SYNTHETIC_GOLDEN_V1",
+  "captured_from": "3a005593eb98b5f69fe5e0c6118f8b6f4bb2fb2c",
+  "provenance": "GENERATED_DISPOSABLE_RECORDS_NO_PRIVATE_OR_MARKET_EVIDENCE",
+  "cases": [
+    {
+      "manifest": {
+        "schema": "PAPER_EPOCH_FIXTURE_V1",
+        "epoch": "fs1-quality_dips",
+        "strategy": "QUALITY_DIPS",
+        "currency": "USD",
+        "opening_cash": "1000",
+        "opened_at": 1792764000,
+        "timezone": "America/New_York",
+        "release": "fs1-synthetic",
+        "provenance": "EXPLICIT_SYNTHETIC_GOLDEN_NOT_FINANCIAL_EVIDENCE",
+        "cost_policy": "FIXTURE_ENTRY_NOTIONAL_ROUNDTRIP_V1",
+        "fees_bps": "2",
+        "slippage_bps": "2",
+        "initial_net_r": "0"
+      },
+      "sql_rows": [
+        [
+          1,
+          "entry",
+          "{\"epoch\":\"fs1-quality_dips\",\"expected_source_revision\":0,\"kind\":\"ENTRY\",\"manual\":true,\"operation_id\":\"entry\",\"origin_ref\":\"synthetic-origin\",\"quantity\":\"1\",\"quote\":{\"observed_at\":1792764000,\"price\":\"100\",\"source_id\":\"synthetic-golden\",\"symbol\":\"MSFT\"},\"risk_price\":null,\"schema\":\"PAPER_COMMAND_FIXTURE_V1\",\"side\":\"LONG\",\"symbol\":\"MSFT\",\"timestamp\":1792764000}",
+          "baa71c3ea0c21716acdd9c76064556f15f7df16be18328900e1a3df538613286",
+          "9f9bd29e6e50a598a125de6425626cba2e5be9f2e6c696c6b43c6ccc5a3cc00c",
+          "{\"epoch\":\"fs1-quality_dips\",\"operation_id\":\"entry\",\"payload_digest\":\"c2fd58f5e4a9fa92eed79dbdf4d04717b8836b7829290fd8606339d3ea3c843c\",\"position_id\":\"fs1-quality_dips:01ead4a62681a19f0ea202601186298fe3ecb27e47e7036195ee8bbf57bd369a\",\"position_revision\":1,\"production_authorized\":false,\"projection_required\":false,\"schema\":\"PAPER_RECEIPT_FIXTURE_V1\",\"source_revision\":1,\"startup_authorized\":false,\"state_digest\":\"98ead6d9348c9d0c812a266454ffbad7f7bb6cc438239d71e838836256744ce0\"}"
+        ],
+        [
+          2,
+          "partial",
+          "{\"epoch\":\"fs1-quality_dips\",\"expected_position_revision\":1,\"expected_source_revision\":1,\"kind\":\"EXIT\",\"manual\":true,\"operation_id\":\"partial\",\"position_id\":\"fs1-quality_dips:01ead4a62681a19f0ea202601186298fe3ecb27e47e7036195ee8bbf57bd369a\",\"quantity\":\"0.25\",\"quote\":{\"observed_at\":1792764000,\"price\":\"110\",\"source_id\":\"synthetic-golden\",\"symbol\":\"MSFT\"},\"schema\":\"PAPER_COMMAND_FIXTURE_V1\",\"timestamp\":1792764000}",
+          "9f9bd29e6e50a598a125de6425626cba2e5be9f2e6c696c6b43c6ccc5a3cc00c",
+          "872d985758fc8efc90de58a028609b6bcb51129ecb831f4a5ce8b46f27e9df41",
+          "{\"epoch\":\"fs1-quality_dips\",\"operation_id\":\"partial\",\"payload_digest\":\"b2ab37bf2fd4d00402c910d028417e0b555415acd68e81f1d5115d7db084da20\",\"position_id\":\"fs1-quality_dips:01ead4a62681a19f0ea202601186298fe3ecb27e47e7036195ee8bbf57bd369a\",\"position_revision\":2,\"production_authorized\":false,\"projection_required\":false,\"schema\":\"PAPER_RECEIPT_FIXTURE_V1\",\"source_revision\":2,\"startup_authorized\":false,\"state_digest\":\"a5fc59efdc0e4817a1032355d4c7e9a66eefde2fbc9f30cef0a077ff082a4e71\"}"
+        ],
+        [
+          3,
+          "final",
+          "{\"epoch\":\"fs1-quality_dips\",\"expected_position_revision\":2,\"expected_source_revision\":2,\"kind\":\"EXIT\",\"manual\":true,\"operation_id\":\"final\",\"position_id\":\"fs1-quality_dips:01ead4a62681a19f0ea202601186298fe3ecb27e47e7036195ee8bbf57bd369a\",\"quantity\":\"0.75\",\"quote\":{\"observed_at\":1792764000,\"price\":\"120\",\"source_id\":\"synthetic-golden\",\"symbol\":\"MSFT\"},\"schema\":\"PAPER_COMMAND_FIXTURE_V1\",\"timestamp\":1792764000}",
+          "872d985758fc8efc90de58a028609b6bcb51129ecb831f4a5ce8b46f27e9df41",
+          "f5785da8926a50ab9e128d17e28bf55868f55faf5141792b7c34491ff71eda0e",
+          "{\"epoch\":\"fs1-quality_dips\",\"operation_id\":\"final\",\"payload_digest\":\"98220d5effeb45e752c0d587e0e258e1529ddedffc9d5dd474b3187f2d18a938\",\"position_id\":\"fs1-quality_dips:01ead4a62681a19f0ea202601186298fe3ecb27e47e7036195ee8bbf57bd369a\",\"position_revision\":3,\"production_authorized\":false,\"projection_required\":false,\"schema\":\"PAPER_RECEIPT_FIXTURE_V1\",\"source_revision\":3,\"startup_authorized\":false,\"state_digest\":\"05a7b37f6175b8789ca786de41745a7fbc04b8ec56c14c1b9f0a7ca01ab956ab\"}"
+        ]
+      ],
+      "snapshot": {
+        "positions": {
+          "fs1-quality_dips:01ead4a62681a19f0ea202601186298fe3ecb27e47e7036195ee8bbf57bd369a": {
+            "symbol": "MSFT",
+            "side": "LONG",
+            "entry": "100",
+            "quantity": "1",
+            "remaining": "0.00",
+            "risk_price": null,
+            "revision": 3,
+            "origin_ref": "synthetic-origin",
+            "realized_net": "17.42"
+          }
+        },
+        "cash": "1017.42",
+        "gross": "17.50",
+        "costs": "0.08",
+        "net": "17.42",
+        "net_r": "0",
+        "revision": 3,
+        "last_clock": 1792764000,
+        "epoch": "fs1-quality_dips",
+        "strategy": "QUALITY_DIPS",
+        "report_state": "RECONCILED_FIXTURE_ONLY",
+        "equity": null,
+        "pending_projections": 0,
+        "startup_authorized": false,
+        "shutdown_authorized": false
+      },
+      "head": "f5785da8926a50ab9e128d17e28bf55868f55faf5141792b7c34491ff71eda0e",
+      "report_bytes": "{\"closing_cash\":\"1017.42\",\"closing_source_revision\":3,\"costs\":\"0.08\",\"day\":\"2026-10-23\",\"epoch\":\"fs1-quality_dips\",\"equity\":null,\"opening_cash\":\"1000\",\"realized_gross\":\"17.50\",\"realized_net\":\"17.42\",\"schema\":\"PAPER_DAILY_FIXTURE_V1\",\"shutdown_authorized\":false,\"source_head\":\"f5785da8926a50ab9e128d17e28bf55868f55faf5141792b7c34491ff71eda0e\",\"source_revision\":3,\"startup_authorized\":false,\"state\":\"RECONCILED_FIXTURE_ONLY\",\"timezone\":\"America/New_York\"}"
+    },
+    {
+      "manifest": {
+        "schema": "PAPER_EPOCH_FIXTURE_V1",
+        "epoch": "fs1-hyperliquid_manual",
+        "strategy": "HYPERLIQUID_MANUAL",
+        "currency": "USD",
+        "opening_cash": "1000",
+        "opened_at": 1792764000,
+        "timezone": "America/New_York",
+        "release": "fs1-synthetic",
+        "provenance": "EXPLICIT_SYNTHETIC_GOLDEN_NOT_FINANCIAL_EVIDENCE",
+        "cost_policy": "FIXTURE_ENTRY_NOTIONAL_ROUNDTRIP_V1",
+        "fees_bps": "2",
+        "slippage_bps": "2",
+        "initial_net_r": "0"
+      },
+      "sql_rows": [
+        [
+          1,
+          "entry",
+          "{\"epoch\":\"fs1-hyperliquid_manual\",\"expected_source_revision\":0,\"kind\":\"ENTRY\",\"manual\":true,\"operation_id\":\"entry\",\"origin_ref\":\"synthetic-origin\",\"quantity\":\"0.5\",\"quote\":{\"observed_at\":1792764000,\"price\":\"100\",\"source_id\":\"synthetic-golden\",\"symbol\":\"BTC\"},\"risk_price\":\"2\",\"schema\":\"PAPER_COMMAND_FIXTURE_V1\",\"side\":\"LONG\",\"symbol\":\"BTC\",\"timestamp\":1792764000}",
+          "832c3208cf26ca373b8ee5cce9561b4150b654e54e46cfb1b9bb57eea2318d46",
+          "34e6aece8dc47717e2e6002c61b9cdd81fa8cff4821b9ee0d66659948674d631",
+          "{\"epoch\":\"fs1-hyperliquid_manual\",\"operation_id\":\"entry\",\"payload_digest\":\"d8194652baea6e0595f9053046bb2f6ff05f20f325b8bdee55c9fab474cd6490\",\"position_id\":\"fs1-hyperliquid_manual:61236a5e26f4443a85b7e8d0ab8b1cb975cc072f49dc42388d554ff18a1e5caf\",\"position_revision\":1,\"production_authorized\":false,\"projection_required\":false,\"schema\":\"PAPER_RECEIPT_FIXTURE_V1\",\"source_revision\":1,\"startup_authorized\":false,\"state_digest\":\"d79c49faf90776442c38247dbf51d12b2879d9decff47a10ce7c207742162ff4\"}"
+        ],
+        [
+          2,
+          "partial",
+          "{\"epoch\":\"fs1-hyperliquid_manual\",\"expected_position_revision\":1,\"expected_source_revision\":1,\"kind\":\"EXIT\",\"manual\":true,\"operation_id\":\"partial\",\"position_id\":\"fs1-hyperliquid_manual:61236a5e26f4443a85b7e8d0ab8b1cb975cc072f49dc42388d554ff18a1e5caf\",\"quantity\":\"0.25\",\"quote\":{\"observed_at\":1792764000,\"price\":\"110\",\"source_id\":\"synthetic-golden\",\"symbol\":\"BTC\"},\"schema\":\"PAPER_COMMAND_FIXTURE_V1\",\"timestamp\":1792764000}",
+          "34e6aece8dc47717e2e6002c61b9cdd81fa8cff4821b9ee0d66659948674d631",
+          "dca4305cf2e362df921b2693b64526cfb6c98c10437fba984d02c667cd30a10f",
+          "{\"epoch\":\"fs1-hyperliquid_manual\",\"operation_id\":\"partial\",\"payload_digest\":\"6b8c214c186278055795b1b18922189a49cd17f82cf801c0d5e4cf3349ba5817\",\"position_id\":\"fs1-hyperliquid_manual:61236a5e26f4443a85b7e8d0ab8b1cb975cc072f49dc42388d554ff18a1e5caf\",\"position_revision\":2,\"production_authorized\":false,\"projection_required\":false,\"schema\":\"PAPER_RECEIPT_FIXTURE_V1\",\"source_revision\":2,\"startup_authorized\":false,\"state_digest\":\"017810081cdc2eb26e998049867fb195841332b328776deb04becdccd7908bc2\"}"
+        ],
+        [
+          3,
+          "final",
+          "{\"epoch\":\"fs1-hyperliquid_manual\",\"expected_position_revision\":2,\"expected_source_revision\":2,\"kind\":\"EXIT\",\"manual\":true,\"operation_id\":\"final\",\"position_id\":\"fs1-hyperliquid_manual:61236a5e26f4443a85b7e8d0ab8b1cb975cc072f49dc42388d554ff18a1e5caf\",\"quantity\":\"0.25\",\"quote\":{\"observed_at\":1792764000,\"price\":\"120\",\"source_id\":\"synthetic-golden\",\"symbol\":\"BTC\"},\"schema\":\"PAPER_COMMAND_FIXTURE_V1\",\"timestamp\":1792764000}",
+          "dca4305cf2e362df921b2693b64526cfb6c98c10437fba984d02c667cd30a10f",
+          "6e708cd2f19abe55c2acfdbe361f3aadc4553c46ba2231d3b62278752df71542",
+          "{\"epoch\":\"fs1-hyperliquid_manual\",\"operation_id\":\"final\",\"payload_digest\":\"50e3a7b9120ce67e505e6cda3d8563251275a0f9278892e934246f097dc1bdae\",\"position_id\":\"fs1-hyperliquid_manual:61236a5e26f4443a85b7e8d0ab8b1cb975cc072f49dc42388d554ff18a1e5caf\",\"position_revision\":3,\"production_authorized\":false,\"projection_required\":false,\"schema\":\"PAPER_RECEIPT_FIXTURE_V1\",\"source_revision\":3,\"startup_authorized\":false,\"state_digest\":\"b9566ca52c7841d6d3aaacff6c19710f28b4faf22077840e41549612a9bfe85f\"}"
+        ]
+      ],
+      "snapshot": {
+        "positions": {
+          "fs1-hyperliquid_manual:61236a5e26f4443a85b7e8d0ab8b1cb975cc072f49dc42388d554ff18a1e5caf": {
+            "symbol": "BTC",
+            "side": "LONG",
+            "entry": "100",
+            "quantity": "0.5",
+            "remaining": "0.00",
+            "risk_price": "2",
+            "revision": 3,
+            "origin_ref": "synthetic-origin",
+            "realized_net": "7.46"
+          }
+        },
+        "cash": "1007.46",
+        "gross": "7.50",
+        "costs": "0.04",
+        "net": "7.46",
+        "net_r": "7.46",
+        "revision": 3,
+        "last_clock": 1792764000,
+        "epoch": "fs1-hyperliquid_manual",
+        "strategy": "HYPERLIQUID_MANUAL",
+        "report_state": "RECONCILED_FIXTURE_ONLY",
+        "equity": null,
+        "pending_projections": 0,
+        "startup_authorized": false,
+        "shutdown_authorized": false
+      },
+      "head": "6e708cd2f19abe55c2acfdbe361f3aadc4553c46ba2231d3b62278752df71542",
+      "report_bytes": "{\"closing_cash\":\"1007.46\",\"closing_source_revision\":3,\"costs\":\"0.04\",\"day\":\"2026-10-23\",\"epoch\":\"fs1-hyperliquid_manual\",\"equity\":null,\"opening_cash\":\"1000\",\"realized_gross\":\"7.50\",\"realized_net\":\"7.46\",\"schema\":\"PAPER_DAILY_FIXTURE_V1\",\"shutdown_authorized\":false,\"source_head\":\"6e708cd2f19abe55c2acfdbe361f3aadc4553c46ba2231d3b62278752df71542\",\"source_revision\":3,\"startup_authorized\":false,\"state\":\"RECONCILED_FIXTURE_ONLY\",\"timezone\":\"America/New_York\"}"
+    }
+  ]
+}

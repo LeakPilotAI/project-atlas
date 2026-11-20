@@ -1,0 +1,28 @@
+﻿{
+    "schema":  "ATLAS_E1_FIRST_SESSION_CAPACITY_DECISION_PREP_V1",
+    "status":  "PROPOSAL_REQUIRES_ACCEPTANCE",
+    "source_matrix":  "docs/POST_V2_PAPER_ACCEPTANCE_MATRIX_2026-10-26.json",
+    "source_engineering":  "docs/SOURCE_PRODUCER_ROSTER_CAPACITY_2026-10-25.md",
+    "current_bounded_capacity_observed_in_source_document":  128,
+    "capacity_units":  "existing native financial/report/control bounded stores, not universal request counts",
+    "rollover_operationally_accepted":  false,
+    "first_session_options":  [
+                                  {
+                                      "id":  "BOUNDED_NO_ROLLOVER",
+                                      "description":  "Prove workload upper bounds and reserved headroom for entries, acknowledgements, exits, cancellations and final report; refuse/stop before exhaustion",
+                                      "requires":  "Independent operational workload-envelope and capacity admission acceptance"
+                                  },
+                                  {
+                                      "id":  "ACCEPTED_CONTINUATION",
+                                      "description":  "Separately review and implement operational immutable continuation/rollover before an unbounded session",
+                                      "requires":  "Native continuation schema, authority, capacity and recovery acceptance"
+                                  }
+                              ],
+    "recommended_next_review":  "Bounded no-rollover for supervised first session only, if proven; long-running operation requires continuation acceptance",
+    "current_missing_evidence":  "Actual operational workload envelope and capacity admission acceptance;operational rollover uninstalled",
+    "exact_next_action":  "For sessionone either prove and accept a bounded no-rollover envelope within every current store,or complete separately authorized operational continuation first;long-run target still needs accepted continuation",
+    "independent_acceptance":  null,
+    "provider_activation_authorized":  false,
+    "runtime_consumable":  false,
+    "startup_authorized":  false
+}

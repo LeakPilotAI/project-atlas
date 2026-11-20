@@ -1,0 +1,101 @@
+{
+  "schema": "ATLAS_NATIVE_RELEASE_RECOVERY_RESULT_V1",
+  "date": "2026-11-07",
+  "source_commit": "73cc1fb8bc934a25f54a3141a3b1db1dfdf469c6",
+  "status": "RELEASE_RECOVERED_OPERATIONAL_ACCEPTANCE_BLOCKED",
+  "application": {
+    "status": "CLEAN_NATIVE_OPERATIONAL_RELEASE_INSTALLED_UNSELECTED",
+    "source_commit": "4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+    "root": "D:\\AtlasRuntime\\releases\\4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+    "files": 10451,
+    "directories": 913,
+    "artifact_digest": "1a22ed8d3df2736254eadc32012c23a7843e3544ab6d513ce4d22358399ef028",
+    "receipt_sha256": "4618d828061558bf9ff21d16263a4b75332ca5a4c248558c3ef696e5e4e2b381",
+    "seconds": 167.453,
+    "selection_unchanged": true,
+    "old_release_preserved": true,
+    "financial_startup": false,
+    "providers_connected": false
+  },
+  "current_support": {
+    "root": "D:\\AtlasRuntime\\launchers\\2bd578c209d2cc046bd9de7cf4cc51049081f6649ea48e660efcf94d9ca34f1d",
+    "control": "D:\\AtlasRuntime\\support-installations\\2bd578c209d2cc046bd9de7cf4cc51049081f6649ea48e660efcf94d9ca34f1d",
+    "manifest_sha256": "f41920dbdbe473a32300f073419274aa203edc4e63af696773750465506ea08c",
+    "receipt_sha256": "687309e9e83ef4774e9e5df3549655553564428d8e5cc986abb76c2f58f1cc32",
+    "created_entries": 17,
+    "written_bytes": 170966,
+    "retained_handles_after_close": 0
+  },
+  "selection": {
+    "action": "SELECT",
+    "domain": "WINDOWS_LOCAL",
+    "operation": "4ef49923d0a9499e919bf3eecc75f05e",
+    "previous": "c9bc240c11c148cd6c6f6dda7c6760aa2d2ac9547ee8c44847bf239b6382ffbc",
+    "restores": null,
+    "revision": 7,
+    "schema": "QD_RELEASE_SELECTION_RECEIPT_V1",
+    "selected": {
+      "artifact_digest": "1a22ed8d3df2736254eadc32012c23a7843e3544ab6d513ce4d22358399ef028",
+      "domain": "WINDOWS_LOCAL",
+      "receipt": "D:\\Work\\Project Atlas\\logs\\diagnostics\\qd-unselected-release-4fad7ac195fd0b36f1b81577fabf1b8f69932eb9.json",
+      "receipt_sha256": "4618d828061558bf9ff21d16263a4b75332ca5a4c248558c3ef696e5e4e2b381",
+      "release": "4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+      "root": "D:\\AtlasRuntime\\releases\\4fad7ac195fd0b36f1b81577fabf1b8f69932eb9",
+      "schema": "QD_INSTALLED_RELEASE_REFERENCE_V1"
+    }
+  },
+  "selection_head": "1a339063cfad505cf9083191984c77cd67886932bea3b93e49d5e2486f5e4636",
+  "persistent_installed_readback_seconds": 13.172,
+  "post_host_integrity_verified": true,
+  "native_nonfinancial_diagnostic": {
+    "stop_seconds": 0.6088416999999999,
+    "http_status": 200,
+    "browser_acceptance": "NOT_ATTEMPTED_TRUSTED_CHROME_PROVIDER_UNAVAILABLE",
+    "financial_actions": 0,
+    "provider_connections": 0,
+    "three_reader_cleanup_agreement": true,
+    "strict_process_cleanup": true,
+    "terminal_socket_states": [
+      "TIME_WAIT_PID_0"
+    ],
+    "second_open_admitted": false
+  },
+  "regression_tests": {
+    "atlas-commissioning-bytecode-normal-20261107.xml": {
+      "passed": 160,
+      "failed": 0,
+      "skipped": 0
+    },
+    "atlas-support-recovery-20261107.xml": {
+      "passed": 179,
+      "failed": 0,
+      "skipped": 0
+    },
+    "atlas-startup-isolation-final-20261107.xml": {
+      "passed": 246,
+      "failed": 0,
+      "skipped": 0
+    }
+  },
+  "distinct_passed_union": 305,
+  "evidence_sha256": {
+    "native-install-result.json": "a22553baee10aac7d369a302a057d45944858f6c48a4d5809dc87ca69bb2b4ce",
+    "support-install-result.json": "0f835edfc280ad2d2659cc37d527d41cb21df8987775037bbd3b92741ab1fae7",
+    "selection-recovery-result.json": "e870e55e9234ee55955b7d94893e5cbad492efa866bd647c008cb2e611bb701e",
+    "isolated-installed-readback.json": "49ea229e80414e8c4bafdda73306faeeb450de6f97f94f223a1a8029f8c8ecb0",
+    "isolated-support-plan.json": "1a753f4c78e3fe99d501b902260e0020e1df6a0deeaa301af937328e973d76fb",
+    "isolated-support-install-result.json": "7724448e7625ff054828013bafeeacb24f89596c1620b9b2c76b79199e7d5ab5",
+    "isolated-selection-independent-readback.json": "9b1da043399ca44bab193c15dd0cf30ca8c2b68fa64c4e424fb1a41a08dcec9a",
+    "native-host-diagnostic.json": "b206ec5472e945356e34130fbf1c5213699253051a1c19394959d9aebab813c2",
+    "native-host-final-cleanup.json": "2893a39b07869f822bdb520d4cf4e50f04a0786a9094a846e6488148f64402fa",
+    "post-host-installed-readback.json": "390eaecccaf18f7ce5c78f1a55e3dfbbd76f466ecaed9d3af8d111d6e4e53a74"
+  },
+  "operational_gates_verified": 0,
+  "percent_complete": 0,
+  "percent_remaining": 100,
+  "account_inceptions_performed": 0,
+  "paper_running": false,
+  "production": "NO-GO",
+  "old_release_preserved": true,
+  "previous_selector_records_preserved": 6
+}

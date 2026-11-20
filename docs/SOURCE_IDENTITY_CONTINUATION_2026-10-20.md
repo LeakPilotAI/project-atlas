@@ -1,0 +1,23 @@
+# Source identity continuation — October 20, 2026
+
+## Implemented and verified
+
+Minimal source-candidate packaging correction: every selected Git path is validated before content reads; absolute, traversal, backslash, drive/stream and noncanonical spellings refuse. Source ancestors must be ordinary directories without Windows reparse attributes. Source files must be ordinary singly linked files without reparse attributes. The opened handle must match the expected device/file ID/type/link count/size/modification time before content access; ordinary in-place changes and namespace replacement are rechecked after reading. Descriptors close on refusal. Existing archives/evidence are not overwritten. No production path is integrated.
+
+Native synthetic hard-link positive control demonstrates that the previous Path.read_bytes boundary accepted the same linked source that the corrected boundary rejects. Concurrent replacement before open refuses before reading. Two synthetic metadata cases demonstrate pre-open refusal for ancestor reparse attributes/file symlink mode; these are mocked metadata, not native junction creation acceptance. No claim of hostile same-account write exclusion, administrator protection, cryptographic source authenticity or directory-wide locking. A privileged writer able to spoof timestamps or mutate bytes in place remains outside demonstrated guarantees.
+
+Windows compatibility defect found during implementation: strict cross-API ctime comparison falsely rejected unchanged files. Native diagnostics isolated ctime as the mismatching field. Correction compares creation/change time only within the same path or handle API before/after; exact cross-API identity/mode/link/size/mtime checks remain. No timestamps alone authorize source identity.
+
+## Exact validation and preserved failures
+
+27 native regression tests passed in18.50s:9 identity cases,8 Python packaging cases,10 extracted market combinations. After adding the hard-link previous-boundary positive control, the9 identity cases passed again in0.42s. Nested actual23 Node cases remain inside packaging acceptance and are not double-counted against the previously verified362 JavaScript suite. Prior604 AFI and362 JavaScript evidence/pins retained. Targeted Ruff, compilation and Git diff pass; updater parser previously passed with unchanged source.
+
+Original red tests and intermediate failures retained under logs/diagnostics/source-identity-20261020. The original sandbox hard-link case was denied by the sandbox and the original race test lacked its new hook, so those failures alone were not evidence of the original defect. Native positive-control acceptance supplies the hard-link reproduction. Intermediate corrected/native failures exposed the ctime compatibility regression and early path-check ordering; both corrected. No remaining native test failures/skips. The earlier10 extracted market sandbox timeouts remain preserved; native market acceptance remains separate from sandbox execution.
+
+All21 decisions unchanged, production NO-GO, seven-phase scope and AFI1–10 PENDING unchanged. No service/provider/Docker/Genesis, real store/volume, protected config/ACL/shortcut, recovery clearing, backup/restore or Git write. No fresh runtime census. Standalone offline viewers and in-process equity/ETF three-session fixture paths verified; full Atlas startup is not authorized. Live feeds remain blocked by provider-specific automated-use/session/history/storage/display rights, entitlements, request budgets and approved fixed-release observation-only runtime/lifecycle acceptance.
+
+## Exact continuation at session boundary
+
+Goal preserved; last get_goal status usageLimited from previous usage boundary. No duplicate/reset/external continuation mechanism; user manually resumed this offline execution. Do not mark roadmap complete. Latest verified master/result/133-file pins are under this diagnostics folder; compare before further edits.
+
+Next selected task: add a bounded read-only source-candidate archive verifier to the existing packaging module. Reuse its manifest and safe-path contract. Require explicit retained archive SHA; verify all declared members/hashes/lengths, reject duplicate/unexpected/missing members, traversal/symlink metadata, excessive sizes and altered manifest; no extraction or execution by default. Use disposable generated archives/adversarial fixtures, retain the limits of unsigned supplied-byte consistency. Avoid a new packaging/security framework, installation, network or promotion. Then continue useful authorized offline roadmap tasks. Preserve historical roadmap bytes and all21 decisions with the approved updater.

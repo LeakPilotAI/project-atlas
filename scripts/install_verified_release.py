@@ -1,0 +1,325 @@
+﻿"""One explicitly approved unselected D: code copy; never promotion or enrollment.
+
+Source-only until separately authorized. No selector, launcher, provider,
+financial root, account, service, credential or recovery mutation exists here.
+The existing native copier and installed release verifier supply physical facts.
+"""
+import argparse
+import hashlib
+import json
+import os
+import re
+import subprocess
+import sys
+import time
+from pathlib import Path
+
+from scripts.native_install_candidate import _copy_prepared_code
+from scripts.native_install_plan import prepare_install_inputs
+
+# Independent two-peer UTC authority has a distinct code-install profile.
+# Keep it disabled until an immutable new release source commit is separately
+# frozen and pinned. Never infer permission from a caller-selected proposal.
+INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT = 'af96bec0484a8e43f9965610e071a907a0d316bf'
+# V8 is a second, separately reviewed frozen code-only archive. The selected
+# V7 operator-clock path is NOT V8-certified; this permits no selection.
+INDEPENDENT_NTP_CODE_INSTALL_V8_SOURCE_COMMIT = 'c8cc4846508b29483d10a0b4c4353f8a26f1fc9c'
+INDEPENDENT_NTP_CODE_INSTALL_V8_ARCHIVE = 'd09717b36eaf9f484c4e7fa9dc5193aa6a1a147e8c7df5c0d0859bcee9f02a54'
+INDEPENDENT_NTP_CODE_INSTALL_V8_INVENTORY = '0b97513bfb318d3c656deef4061e9fe8de85af870cf7b87fcf77e6d894c47c6e'
+INDEPENDENT_NTP_CODE_INSTALL_V8_DEPENDENCY = '93e52e897fd2f2f3cc4b17bd3e804e8c598a1a3a8938c2b5c47d386890310c91'
+INDEPENDENT_NTP_CODE_ONLY_PROFILE = 'INDEPENDENT_TWO_PEER_NTP_CODE_INSTALL_V1'
+LEGACY_WINDOWS_CODE_ONLY_PROFILE = 'WINDOWS_TIME_CODE_INSTALL_V1'
+
+
+
+def bounded_child_diagnostic(raw):
+    """Retain the terminal refusal and a digest, without unbounded trace output."""
+    if type(raw) is not bytes:raise TypeError('CHILD_DIAGNOSTIC_BYTES_REQUIRED')
+    text=raw.decode('utf-8',errors='replace')
+    return {'schema':'QD_CHILD_DIAGNOSTIC_V1','bytes':len(raw),
+        'sha256':hashlib.sha256(raw).hexdigest(),'truncated':len(text)>4096,
+        'head':text[:2048],'tail':text[-2048:] if len(text)>2048 else ''}
+
+
+class InstalledReadbackRefusal(ValueError):
+    def __init__(self,stderr,*,returncode,stdout_bytes):
+        self.diagnostic=bounded_child_diagnostic(stderr)
+        self.diagnostic.update(returncode=returncode,stdout_bytes=stdout_bytes)
+        super().__init__('INSTALLED_RUNTIME_READBACK_REFUSED:'+json.dumps(self.diagnostic,sort_keys=True))
+
+
+def write_new_json(path, value):
+    raw=json.dumps(value,sort_keys=True,allow_nan=False).encode()
+    flags=os.O_WRONLY|os.O_CREAT|os.O_EXCL|getattr(os,'O_BINARY',0)
+    descriptor=os.open(path,flags,0o600)
+    with os.fdopen(descriptor,'wb') as stream:
+        stream.write(raw);stream.flush();os.fsync(stream.fileno())
+
+
+def installation_target(source_commit, receipt_path):
+    if type(source_commit) is not str or not re.fullmatch('[0-9a-f]{40}',source_commit):
+        raise ValueError('EXACT_SOURCE_COMMIT_REQUIRED')
+    destination=Path('D:/AtlasRuntime/releases')/source_commit
+    audit=Path(receipt_path).absolute()
+    expected=Path(__file__).resolve().parents[1]/'logs/diagnostics'/('qd-unselected-release-'+source_commit+'.json')
+    if audit!=expected or not audit.parent.is_dir():raise ValueError('EXACT_PRIVATE_INSTALL_RECEIPT_REQUIRED')
+    for path in (destination,audit,audit.with_suffix('.pending.jsonl')):
+        if os.path.lexists(path):raise ValueError('INSTALLATION_ALREADY_EXISTS_PRESERVE_NO_RETRY')
+        for parent in path.parents:
+            if parent.exists() and (not parent.is_dir() or parent.is_symlink() or parent.is_junction()):
+                raise ValueError('INSTALLATION_ANCESTOR_REFUSED')
+    if not destination.parent.is_dir():raise ValueError('ACCEPTED_RELEASE_PARENT_REQUIRED')
+    return destination,audit
+
+
+def validate_installed_readback(result,destination,receipt,artifact_digest,identity):
+    if type(result) is not dict or set(result)!={'layout','native_proof','handles_after_close'}:
+        raise ValueError('INSTALLED_NATIVE_PROOF_INCOMPLETE')
+    proof=result['native_proof'];layout=result['layout']
+    if (type(proof) is not dict or set(proof)!={'source_commit','artifact_digest','process','files','directories'}
+            or type(layout) is not dict or set(layout)!={'executable','base','prefix','base_prefix','stdlib','bits','version'}):
+        raise ValueError('INSTALLED_NATIVE_PROOF_INCOMPLETE')
+    process=proof['process']
+    if (type(process) is not dict or set(process)!={'pid','creation_filetime','image'}
+            or type(result['handles_after_close']) is not int or result['handles_after_close']!=0
+            or proof['source_commit']!=receipt['source_commit'] or proof['artifact_digest']!=artifact_digest
+            or type(proof['files']) is not int or proof['files']!=len(receipt['files'])
+            or type(proof['directories']) is not int or proof['directories']!=len(receipt['directories'])
+            or type(process['pid']) is not int or process['pid']!=identity['pid']
+            or type(process['creation_filetime']) is not int or process['creation_filetime']!=identity['created']
+            or type(process['image']) is not str or process['image'].casefold()!=identity['image']
+            or type(layout['bits']) is not int or layout['bits']!=64 or layout['version']!=[3,12]):
+        raise ValueError('INSTALLED_NATIVE_PROOF_INCOMPLETE')
+    for name in ('executable','base','prefix','base_prefix','stdlib'):
+        if type(layout[name]) is not str or not Path(layout[name]).is_absolute() or not Path(layout[name]).is_relative_to(destination):
+            raise ValueError('INSTALLED_LAYOUT_FOREIGN_PATH')
+    if (Path(layout['executable'])!=destination/'python/python.exe' or Path(layout['base'])!=destination/'python/python.exe'
+            or Path(layout['prefix'])!=destination/'python' or Path(layout['base_prefix'])!=destination/'python'
+            or Path(layout['stdlib'])!=destination/'python/Lib'):
+        raise ValueError('INSTALLED_LAYOUT_FOREIGN_PATH')
+    return result
+
+
+def installed_readback(destination, receipt, artifact_digest, *, timeout):
+    """Exact retained child; installed verifier, not a workspace verification callback."""
+    from scripts.observation_runtime.disposable_host_owner import (
+        observe_handle,
+        observe_pid,
+    )
+
+    code=r'''
+import json,sys,struct,sysconfig
+from pathlib import Path
+request=json.loads(sys.stdin.read());root=Path(request['receipt']['release_path'])
+if not sys.flags.isolated or not sys.flags.no_site or not sys.flags.dont_write_bytecode or not sys.dont_write_bytecode:raise ValueError('INSTALLED_STARTUP_ISOLATION_REQUIRED')
+if any(not Path(p).is_absolute() or not Path(p).resolve().is_relative_to(root) for p in sys.path if p):raise ValueError('INSTALLED_EXTERNAL_IMPORT_PATH')
+sys.path[:0]=[str(root/'backend'),str(root),str(root/'python/Lib/site-packages')]
+layout=dict(executable=sys.executable,base=getattr(sys,'_base_executable',None),prefix=sys.prefix,
+ base_prefix=sys.base_prefix,stdlib=sysconfig.get_path('stdlib'),bits=struct.calcsize('P')*8,version=list(sys.version_info[:2]))
+if layout['version']!=[3,12] or layout['bits']!=64:raise ValueError('INSTALLED_LAYOUT_VERSION')
+if any(not isinstance(layout[k],str) or not Path(layout[k]).resolve().is_relative_to(root) for k in ('executable','base','prefix','base_prefix','stdlib')):raise ValueError('INSTALLED_LAYOUT_FOREIGN_PATH')
+if any(not Path(p).resolve().is_relative_to(root) for p in sys.path if p):raise ValueError('INSTALLED_EXTERNAL_IMPORT_PATH')
+from scripts.observation_runtime.personal_release_identity import NativePersonalReleaseIdentity
+owner=NativePersonalReleaseIdentity(receipt=request['receipt'],artifact_digest=request['digest'])
+try:proof=owner.verify(release_digest=request['digest'])
+finally:owner.close()
+print(json.dumps({'layout':layout,'native_proof':proof,'handles_after_close':len(owner.handles)+len(owner.outputs)}))
+'''
+    env=dict(os.environ)
+    for name in ('PYTHONPATH','PYTHONHOME'):env.pop(name,None)
+    env.update(PYTHONDONTWRITEBYTECODE='1',PYTHONNOUSERSITE='1')
+    executable=destination/'python/python.exe'
+    with subprocess.Popen([str(executable),'-I','-B','-S','-c',code],cwd=destination,env=env,
+            stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE,
+            creationflags=subprocess.CREATE_NO_WINDOW) as child:
+        identity=observe_pid(child.pid)
+        if identity['created']!=observe_handle(int(child._handle)) or identity['image']!=str(executable).casefold():
+            child.stdin.close();child.wait(timeout=12);child._handle.Close()
+            raise ValueError('INSTALLED_CHILD_OWNERSHIP_REFUSED')
+        try:stdout,stderr=child.communicate(json.dumps({'receipt':receipt,'digest':artifact_digest}).encode(),timeout=timeout)
+        except subprocess.TimeoutExpired:
+            child.kill();child.communicate(timeout=5);child._handle.Close()
+            raise ValueError('EXACT_OWNED_INSTALL_READBACK_TIMEOUT') from None
+        if child.returncode or len(stdout)>65536:
+            child._handle.Close()
+            raise InstalledReadbackRefusal(stderr,returncode=child.returncode,stdout_bytes=len(stdout))
+    child._handle.Close()
+    result=json.loads(stdout.decode('utf-8-sig'))
+    return validate_installed_readback(result,destination,receipt,artifact_digest,identity)
+
+
+def install_unselected_release(*, approved_execution=False, archive=None, archive_sha256=None,
+        source_commit=None, inventory_digest=None, dependency_receipt=None, dependency_digest=None,
+        receipt_path=None, clock=None,
+        clock_profile=LEGACY_WINDOWS_CODE_ONLY_PROFILE):
+    if approved_execution is not True:raise ValueError('SEPARATE_CODE_INSTALL_AUTHORIZATION_REQUIRED')
+    # This invocation flag is not financial/session authority. Never default a
+    # clock or manufacture an issuer; the operator supplies a live native clock.
+    from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+    from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
+
+    if clock_profile == LEGACY_WINDOWS_CODE_ONLY_PROFILE:
+        if type(clock) is not LocalWindowsClock:
+            raise ValueError('GENUINE_INSTALL_CLOCK_REQUIRED')
+    elif clock_profile == INDEPENDENT_NTP_CODE_ONLY_PROFILE:
+        if type(clock) is not IndependentNtpClock:
+            raise ValueError('REVIEWED_INDEPENDENT_NTP_INSTALL_PIN_REQUIRED')
+        if source_commit == INDEPENDENT_NTP_CODE_INSTALL_V8_SOURCE_COMMIT:
+            if (archive_sha256 != INDEPENDENT_NTP_CODE_INSTALL_V8_ARCHIVE
+                    or inventory_digest != INDEPENDENT_NTP_CODE_INSTALL_V8_INVENTORY
+                    or dependency_digest != INDEPENDENT_NTP_CODE_INSTALL_V8_DEPENDENCY):
+                raise ValueError('EXACT_V8_NATIVE_CODE_INSTALL_SOURCE_PIN_REQUIRED')
+        elif (INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT is None
+                or source_commit != INDEPENDENT_NTP_CODE_INSTALL_SOURCE_COMMIT):
+            raise ValueError('REVIEWED_INDEPENDENT_NTP_INSTALL_PIN_REQUIRED')
+    else:
+        raise ValueError('UNREVIEWED_INSTALL_CLOCK_PROFILE')
+    prepared=prepare_install_inputs(archive=archive,archive_sha256=archive_sha256,source_commit=source_commit,
+        inventory_digest=inventory_digest,dependency_receipt=dependency_receipt,dependency_digest=dependency_digest,
+        require_tracked=True)
+    if inventory_digest is None:raise ValueError('EXACT_SELECTED_SOURCE_INVENTORY_REQUIRED')
+    destination,audit=installation_target(source_commit,receipt_path)
+    runtime='qd-unselected-code-install-'+source_commit
+
+    def admission():
+        clock.require_operational(runtime)
+        if time.monotonic()-prepared['started']>600:raise ValueError('INSTALLATION_DEADLINE')
+        return True
+
+    admission()
+    intent={'schema':'ATLAS_UNSELECTED_CODE_INSTALL_INTENT_V1','source_commit':source_commit,
+        'archive_sha256':archive_sha256,'inventory_sha256':inventory_digest,'dependency_sha256':dependency_digest,
+        'destination':str(destination),'selection_allowed':False,'financial_authority':False}
+    journal=audit.with_suffix('.pending.jsonl')
+    write_new_json(journal,intent)
+
+    def record(value):
+        raw=b'\n'+json.dumps(value,sort_keys=True,allow_nan=False).encode()
+        with journal.open('ab') as stream:stream.write(raw);stream.flush();os.fsync(stream.fileno())
+
+    try:
+        copied=_copy_prepared_code(destination=destination,archive_sha256=archive_sha256,source_commit=source_commit,
+            prepared=prepared,observer=record,admission=admission)
+        admission()
+        receipt={'schema':'ATLAS_QD_D_RUNTIME_INSTALLATION_V1','stage':'D_RUNTIME_LAYOUT_VERIFIED',
+            'release_path':str(destination),'source_commit':source_commit,'files':copied['files'],
+            'directories':copied['directories'],'archive_sha256':archive_sha256,'inventory_sha256':inventory_digest,
+            'selected':False,'financial_effects':False,'provider_connections':False,'operational_acceptance':False}
+        pin=hashlib.sha256(json.dumps(receipt['files'],sort_keys=True,separators=(',',':')).encode()).hexdigest()
+        result=installed_readback(destination,receipt,pin,timeout=min(180,max(1,600-(time.monotonic()-prepared['started'])-5)))
+        admission();receipt.update(layout=result['layout'],artifact_digest=pin)
+        write_new_json(audit,receipt)
+        record({'stage':'UNSELECTED_CODE_INSTALL_VERIFIED','receipt_sha256':hashlib.sha256(audit.read_bytes()).hexdigest()})
+        return receipt
+    except (ValueError,OSError,RuntimeError,KeyError,TypeError):
+        record({'stage':'FAILED_PRESERVE_PARTIAL_NO_RETRY_OR_SELECTION'})
+        raise
+
+
+def validate_proposal(proposal):
+    fields={'schema','status','source_commit','archive','archive_sha256','inventory_sha256','dependency_receipt',
+        'dependency_sha256','destination','receipt_path','selected','adapter_source_sha256','limits',
+        'financial_enrollment','provider_activation','paper_startup','promotion'}
+    if (type(proposal) is not dict or set(proposal)!=fields
+            or proposal['schema']!='QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V1'
+            or proposal['status']!='PROPOSAL_NOT_PERMISSION'
+            or any(proposal[k] is not False for k in ('selected','financial_enrollment','provider_activation','paper_startup','promotion'))
+            or type(proposal['source_commit']) is not str or not re.fullmatch('[0-9a-f]{40}',proposal['source_commit'])
+            or any(type(proposal[k]) is not str for k in ('archive','destination','receipt_path','dependency_receipt'))
+            or proposal['limits']!={'seconds':600,'entries':40000,'bytes':1024**3}):
+        raise ValueError('UNSELECTED_CODE_SCOPE_REQUIRED')
+    if Path(proposal['destination'])!=Path('D:/AtlasRuntime/releases')/proposal['source_commit']:
+        raise ValueError('EXACT_INSTALL_DESTINATION_REQUIRED')
+    repo=Path(__file__).resolve().parents[1]
+    if (not Path(proposal['archive']).is_absolute() or Path(proposal['archive']).drive.upper()!='D:'
+            or not Path(proposal['archive']).is_relative_to(repo/'logs/diagnostics')):
+        raise ValueError('EXACT_LOCAL_SOURCE_ARCHIVE_REQUIRED')
+    if Path(proposal['dependency_receipt'])!=repo/'logs/diagnostics/qd-d-runtime-coordination-installation-20261028.json':
+        raise ValueError('EXACT_DEPENDENCY_RECEIPT_REQUIRED')
+    for name in ('archive_sha256','inventory_sha256','dependency_sha256'):
+        if type(proposal[name]) is not str or not re.fullmatch('[0-9a-f]{64}',proposal[name]):
+            raise ValueError('EXACT_INSTALL_PIN_REQUIRED')
+    return proposal
+
+
+def main(argv=None):
+    argv=sys.argv[1:] if argv is None else argv
+    if '--execute-approved-unselected' not in argv:
+        raise SystemExit('REFUSED: source-only adapter; separately reviewed exact installation invocation required.')
+    parser=argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--execute-approved-unselected',action='store_true')
+    parser.add_argument('--proposal',required=True)
+    parser.add_argument('--proposal-sha256',required=True,help='Approved canonical UTF8/LF proposal hash')
+    args=parser.parse_args(argv)
+    from scripts.build_release_candidate import source_bytes
+    from scripts.observation_runtime.personal_windows_clock import LocalWindowsClock
+
+    repo=Path(__file__).resolve().parents[1]
+    expected=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V2_2026-10-30.json'
+    candidate=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V3_2026-11-08.json'
+    candidate_v4=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V4_2026-11-08.json'
+    candidate_v5=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V5_R1_2026-11-08.json'
+    candidate_v6=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V6_R1_2026-11-08.json'
+    candidate_v7=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V7_R1_2026-11-08.json'
+    candidate_v8=repo/'docs/QD_UNSELECTED_CODE_INSTALL_PROPOSAL_V8_R1_2026-11-08.json'
+    if Path(args.proposal).absolute() not in (expected,candidate,candidate_v4,candidate_v5,candidate_v6,candidate_v7,candidate_v8):
+        raise ValueError('EXACT_INSTALL_PROPOSAL_REQUIRED')
+    expected=Path(args.proposal).absolute()
+    raw=source_bytes(repo,str(expected.relative_to(repo)).replace('\\','/'),maximum_bytes=65536)
+    if hashlib.sha256(raw.replace(b'\r\n',b'\n')).hexdigest()!=args.proposal_sha256:
+        raise ValueError('APPROVED_INSTALL_PROPOSAL_HASH_MISMATCH')
+    def unique(pairs):
+        result={}
+        for key,value in pairs:
+            if key in result:raise ValueError('DUPLICATE_INSTALL_PROPOSAL_FIELD')
+            result[key]=value
+        return result
+    proposal=validate_proposal(json.loads(raw,object_pairs_hook=unique))
+    if expected == candidate_v5 and (
+            proposal['source_commit']!='247a4f4e1d78594cdb55ef55f185ef37921bf535'
+            or proposal['archive_sha256']!='35c5b6b623f197f085cbe40bc0ff9e0d16672d5b5c3557ad48eb47e4bc20b437'
+            or proposal['inventory_sha256']!='ff8635bd4f246f49234036b8aad56d9483147bb5cbba28f20f7970aebc47985c'):
+        raise ValueError('EXACT_V5_SELECTED_SOURCE_PIN_REQUIRED')
+    if expected == candidate_v6 and (
+            proposal['source_commit']!='d95b350fa585c2218614c9e5eb459c6edfc91807'
+            or proposal['archive_sha256']!='a5bcdb78a4ab4d84839c56df8908ff86570b510be3504f711b61b381a360e99f'
+            or proposal['inventory_sha256']!='1eb406f598a5154337762a660ac79c565132b7081ded5d4d73210ed4e49d35fa'):
+        raise ValueError('EXACT_V6_SELECTED_SOURCE_PIN_REQUIRED')
+    if expected == candidate_v7 and (
+            proposal['source_commit']!='af96bec0484a8e43f9965610e071a907a0d316bf'
+            or proposal['archive_sha256']!='253798f88386efedc41453169da402c4d09ce24e567687422a7a9c26dae5b631'
+            or proposal['inventory_sha256']!='e57514a84927ae7087302a111683342ef23b162208382a442dada09b9ee364f1'):
+        raise ValueError('EXACT_V7_DUAL_NTP_SELECTED_SOURCE_PIN_REQUIRED')
+    if expected == candidate_v8 and (
+            proposal['source_commit'] != INDEPENDENT_NTP_CODE_INSTALL_V8_SOURCE_COMMIT
+            or proposal['archive_sha256'] != INDEPENDENT_NTP_CODE_INSTALL_V8_ARCHIVE
+            or proposal['inventory_sha256'] != INDEPENDENT_NTP_CODE_INSTALL_V8_INVENTORY
+            or proposal['dependency_sha256'] != INDEPENDENT_NTP_CODE_INSTALL_V8_DEPENDENCY):
+        raise ValueError('EXACT_V8_NATIVE_CODE_INSTALL_SOURCE_PIN_REQUIRED')
+    if set(proposal['adapter_source_sha256'])!={'scripts/install_verified_release.py','scripts/native_install_candidate.py','scripts/native_install_plan.py'}:
+        raise ValueError('EXACT_INSTALL_ADAPTER_SOURCE_SET_REQUIRED')
+    for name,pin in proposal['adapter_source_sha256'].items():
+        actual=source_bytes(repo,name,maximum_bytes=65536).replace(b'\r\n',b'\n')
+        if hashlib.sha256(actual).hexdigest()!=pin:raise ValueError('INSTALL_ADAPTER_SOURCE_CHANGED')
+    runtime_id='qd-unselected-code-install-'+proposal['source_commit']
+    if expected in (candidate_v7,candidate_v8):
+        from scripts.observation_runtime.atlas_independent_ntp_clock import IndependentNtpClock
+        clock=IndependentNtpClock(runtime_id=runtime_id)
+        clock_profile=INDEPENDENT_NTP_CODE_ONLY_PROFILE
+    else:
+        clock_source=('time.cloudflare.com,0x8 time.google.com,0x8'
+                      if expected in (candidate,candidate_v4,candidate_v5,candidate_v6) else 'time.windows.com,0x9')
+        clock=LocalWindowsClock(expected_source=clock_source,runtime_id=runtime_id)
+        clock_profile=LEGACY_WINDOWS_CODE_ONLY_PROFILE
+    try:
+        dependency=json.loads(source_bytes(repo,str(Path(proposal['dependency_receipt']).relative_to(repo)).replace('\\','/'),
+            maximum_bytes=16*1024**2),object_pairs_hook=unique)
+        return install_unselected_release(approved_execution=True,archive=proposal['archive'],
+            archive_sha256=proposal['archive_sha256'],source_commit=proposal['source_commit'],
+            inventory_digest=proposal['inventory_sha256'],dependency_receipt=dependency,
+            dependency_digest=proposal['dependency_sha256'],receipt_path=proposal['receipt_path'],
+            clock=clock,clock_profile=clock_profile)
+    finally:clock.revoke()
+
+
+if __name__=='__main__':main()

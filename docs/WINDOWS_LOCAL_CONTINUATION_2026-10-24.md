@@ -1,0 +1,13 @@
+# Permanent local-only continuation — 2026-10-24
+
+WINDOWS_LOCAL_ARCHITECTURE_V1 completed from21f404228a74f1c56160505b1100f7e61b0a4f16. ATLAS_DEPLOYMENT_POLICY.json permanently records single-userWindowslocal frontend/backend/financialstorage/execution;noVPS/cloudhosting/remoteproductionserver/mandatorypaidhosting. Authorized outbound marketdata architecturallyallowed butnotactivated. State mirrors decision and policySHA. Historical hosted proposals preserved,not currentauthority;alienfrontend unchanged.
+
+See WINDOWS_LOCAL_OPERATIONAL_ARCHITECTURE_2026-10-24.md for actual loopback/refusal source evidence,B1/C1/D1/E1local matrix,smallest component composition,localaccounts/nativehandles/protectedNTFS/separateofflinecustody options,ordered firstsession path and exact permissions. No cloud prerequisite found in selected executionpaths;no actualsecurity requirement waived. Sameuser/admin/coherentrollback limits explicit. No new financial engine/prototype/runtime code was warranted or implemented.
+
+Validation:policyJSON/schema/boundary/sourcebinding/state checks PASS;allguarded frontend/startup/governance resources unchanged;checkpointbackup/readback/outside/prior-managed preservation verified.0newapplicationtests/0pytest/0browser/provider/service/nativefinancialruns. Prior173passed1NOTEXECUTED is retained historical validation,not rerun or added.
+
+ExactlyzeroACTIVE;BLOCKED_WAIT. Next:independentB1account/exclusions/policy and minimumD1localcustody/C1actualprocessresource roster decisions;explicit bounded source-only operational read-composition permission. Then separately approved enrollment/nativeacceptance and supervisedreadonlylaunch;provider-specific rights/connection scope;admittedmanualwriterintegration and operational acceptance;overnight/corporateaction/reconciliation;nativeoneclickcontrols acceptance. No speculative hosting or redundant fixtures. Existing disposablehost cannot be repointed to real accounts;main/startuplocks remainprotected.
+
+B1/C1/D1/E1BLOCKED;all21decisions unchanged. Phase1incomplete;2EvidenceEngine/AFIHOLD0of10accepted;3BLOCKED;4CrossMarketpending;5historicalSaaSdeferred/localonlyconstraint;6institutionalpending;7commercialpending. PAPERstartupNO;productionNO-GO;nolivemoneyauthority;Genesisuntouched. Publishonlyrevieweddocs/state;diagnostics/privatefinancialrecords/credentials excluded.
+
+Additional source finding:docker-compose.yml publishes5432/6379without explicitloopback;configuration unchanged,realreachability unobserved. Explicit separatelyapproved loopbackmapping/nativeacceptance required before futuredependencyactivation;minimalacceptedreadonlyservice neednotuseDocker. No existingstackgate waived.

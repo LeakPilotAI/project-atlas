@@ -1,0 +1,20 @@
+{
+  "schema": "ATLAS_PERSONAL_PAPER_OPERATOR_ACK_V1",
+  "scope": "OPERATOR_PREFERENCES_AND_SCOPED_RISK_ACKNOWLEDGEMENT",
+  "deployment": "D_ONLY_EXISTING_WINDOWS_ACCOUNT",
+  "autonomous_paper": true,
+  "per_trade_confirmation": false,
+  "same_user_custody_limitations_acknowledged": true,
+  "reduced_rollback_protection_acknowledged": true,
+  "normal_shutdown_mode": "SHUTDOWN_FLATTEN",
+  "emergency_stop": "CLOSE_DISPATCH_PRESERVE_POSITIONS",
+  "unfillable_shutdown": "PRESERVE_POSITION_RECORD_INCOMPLETE_ALLOW_ONLY_VERIFIED_OWNED_CLOSE",
+  "automatic_restart_or_deferred_trade": false,
+  "live_money_allowed": false,
+  "independent_acceptance": false,
+  "historical_gate_promotions": 0,
+  "installation_authorized": false,
+  "operational_financial_inception_authorized": false,
+  "provider_connection_authorized": false,
+  "paper_startup_authorized": false
+}

@@ -13,6 +13,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
+from app.services.paper_accounting import is_administrative, recorded_net_r
 from app.analytics.regime import normalize_regime
 from app.services.outcome_research import load_paper_closes, load_shadow_resolved
 from app.services.paper_validation import (
@@ -98,18 +99,8 @@ def _empty_baseline() -> Dict[str, Any]:
 
 
 def _finite_r(row: Dict[str, Any]) -> Optional[float]:
-    """First finite R. Missing / NaN / Inf → None (malformed, not a silent 0)."""
-    for k in ("net_pnl_r", "R_multiple"):
-        if k not in row or row[k] is None:
-            continue
-        try:
-            v = float(row[k])
-        except (TypeError, ValueError):
-            continue
-        if math.isnan(v) or math.isinf(v):
-            continue
-        return v
-    return None
+    """Recorded net, or missing/null legacy fallback; invalid stays unknown."""
+    return recorded_net_r(row)
 
 
 def classify_row(row: Dict[str, Any]) -> str:
@@ -126,6 +117,8 @@ def classify_row(row: Dict[str, Any]) -> str:
     if ev != "close":
         return "ignored"
     if str(row.get("trade_type") or "PAPER").upper() == "TEST":
+        return "ignored"
+    if is_administrative(row):
         return "ignored"
     if _finite_r(row) is None:
         return "malformed"

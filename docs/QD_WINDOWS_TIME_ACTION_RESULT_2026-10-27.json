@@ -1,0 +1,40 @@
+{
+  "schema": "ATLAS_QD_WINDOWS_TIME_ACTION_RESULT_V1",
+  "date": "2026-10-27",
+  "operator_authorized": [
+    "START_EXISTING_W32TIME",
+    "ONE_RESYNC_USING_CURRENT_SOURCE",
+    "READ_ONLY_CLOCK_VERIFICATION"
+  ],
+  "service_started": true,
+  "start_method": "EXACT_net.exe_start_W32Time_WITH_STANDARD_UAC",
+  "startup_type": "Manual",
+  "startup_and_configured_source_unchanged": true,
+  "resync_requests": 1,
+  "resync_exitcode": 0,
+  "resync_semantic_result": "FAILED_NO_TIME_DATA_AVAILABLE",
+  "verification": {
+    "leap_indicator": "3_NOT_SYNCHRONIZED",
+    "stratum": 0,
+    "root_dispersion_seconds": "16.9611029",
+    "last_sync_error": 1
+  },
+  "commissioning_continued": false,
+  "financial_publication_attempted": false,
+  "provider_connection_attempted": false,
+  "pilot_consumed": false,
+  "windows_time_start_authorization_used": true,
+  "single_resync_authorization_used": true,
+  "additional_resync_or_source_changes_authorized": false,
+  "v5_execution": false,
+  "live_orders": false,
+  "genesis_access": false,
+  "local_peer_query": {
+    "exitcode": 0,
+    "peers": 1,
+    "state": "Active",
+    "mode": "3_CLIENT",
+    "stratum": 0,
+    "additional_resync": false
+  }
+}

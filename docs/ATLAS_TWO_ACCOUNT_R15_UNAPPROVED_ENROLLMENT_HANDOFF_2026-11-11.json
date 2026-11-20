@@ -1,0 +1,276 @@
+{
+  "account_enrollment_accepted": false,
+  "accounts": {
+    "HYPERLIQUID": {
+      "account_fee_entitlement_verified": false,
+      "existing_native_root_identity_matched": true,
+      "financial_inception_published": false,
+      "historical_draft_reporting_timezone": "UTC",
+      "opened_at_is_historical_stale_not_new_inception": true,
+      "operational_source_rights_accepted": false,
+      "parameters_structurally_valid_not_current": true,
+      "provisional_fs3_calendar_validated_without_publication": true,
+      "provisional_fs3_reporting_timezone": "UTC",
+      "provisional_inception_digest": "123eb92a6c7980700d0aedd17a1ffa52a544fa72f9add503e394a405b31fee58",
+      "provisional_r15_native_enrollment_unaccepted": {
+        "acceptance_id": null,
+        "account_id": "atlas-personal-hyperliquid",
+        "clock_source": "ATLAS_NTP_V1:time.cloudflare.com+time.google.com",
+        "epoch": "hl-paper-20261108-de437abe-v1",
+        "inception_digest": "123eb92a6c7980700d0aedd17a1ffa52a544fa72f9add503e394a405b31fee58",
+        "policy_digest": "7f2b2f3d5a8c0508eff64f970551fdeea9bfba9136709c95df810af953afd2b4",
+        "profile": "AUTONOMOUS_PAPER_ONLY_V1",
+        "release_digest": "6db8cae881cd0f331b3f0aae78c92f27dbff860c658bb67ab1cfe91a6b8465e6",
+        "resources": {
+          "control": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597465
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\control",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "coordination": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597466
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\coordination",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "custody": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597461
+            ],
+            "path": "D:\\AtlasCustody\\Hyperliquid\\hl-paper-20261108-de437abe-v1",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "projection": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597463
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\projection",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "report": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597464
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\report",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          },
+          "source": {
+            "native_id": [
+              4004218753,
+              196608,
+              1597462
+            ],
+            "path": "D:\\AtlasPaper\\Hyperliquid\\hl-paper-20261108-de437abe-v1\\source",
+            "schema": "PERP_AUTO_NATIVE_ROOT_V1"
+          }
+        },
+        "schema": "PERP_AUTO_NATIVE_ENROLLMENT_V1",
+        "writers": null
+      },
+      "provisional_r15_parameters": {
+        "cost_policy": "PERP_QUOTE_PLUS_CASH_COST_V2",
+        "currency": "USDC",
+        "epoch": "hl-paper-20261108-de437abe-v1",
+        "initial_net_r": "0",
+        "opened_at": 1794132467,
+        "opening_cash": "1000",
+        "perp_policy": {
+          "fee_schedule_id": "PENDING_E1_VERIFIED_FEE_SCHEDULE",
+          "funding_source": "PENDING_E1_VERIFIED_FUNDING_SOURCE",
+          "instrument_cut": "PENDING_E1_VERIFIED_INSTRUMENT_CUT",
+          "maintenance_rate": "0.05",
+          "maker_bps": "1.5",
+          "market_source": "PENDING_E1_VERIFIED_BOOK_SOURCE",
+          "max_leverage": "2",
+          "max_notional": "100",
+          "max_positions": 3,
+          "participation": "0.1",
+          "risk_limit": "1",
+          "session_stop": "-3",
+          "slippage_bps": "2",
+          "symbols": [
+            "BTC",
+            "ETH",
+            "SOL"
+          ],
+          "taker_bps": "4.5"
+        },
+        "provenance": "ACCEPTED_PERP_PAPER_PARAMETERS_V1",
+        "release": "6db8cae881cd0f331b3f0aae78c92f27dbff860c658bb67ab1cfe91a6b8465e6",
+        "schema": "PAPER_EPOCH_PERP_OPERATIONAL_V1",
+        "strategy": "HYPERLIQUID_PAPER",
+        "timezone": "UTC"
+      },
+      "provisional_report_scope_unaccepted": {
+        "account_id": "atlas-personal-hyperliquid",
+        "epoch": "hl-paper-20261108-de437abe-v1",
+        "funding_reporting_policy": "POSTED_CASH_AND_SETTLEMENT_ACCRUAL_V1",
+        "policy_digest": "123eb92a6c7980700d0aedd17a1ffa52a544fa72f9add503e394a405b31fee58",
+        "schema": "FS3_PERP_REPORT_SCOPE_V3",
+        "session_reporting_policy": "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1",
+        "timezone": "UTC"
+      },
+      "real_enrollment_accepted": false,
+      "required_live_commissioning_inputs": [
+        "TRUE_FINANCIAL_INCEPTION_TIME_AND_RECOMPUTED_DIGEST",
+        "ACTUAL_INSTALLED_R15_WRITER_PID_CREATION_FILETIME",
+        "INDEPENDENT_OPERATOR_ACCOUNT_AND_WRITER_ACCEPTANCE",
+        "C1_D1_E1_SOURCE_RIGHTS_AND_RUNTIME_CLOCK_LEASE",
+        "NATIVE_ACTIVATION_AND_DUAL_ACCOUNT_FINANCIAL_READBACK"
+      ],
+      "writer_process_observed_and_leased": false
+    },
+    "QUALITY_DIPS": {
+      "account_fee_entitlement_verified": false,
+      "existing_native_root_identity_matched": true,
+      "financial_inception_published": false,
+      "historical_draft_reporting_timezone": "America/Chicago",
+      "opened_at_is_historical_stale_not_new_inception": true,
+      "operational_source_rights_accepted": false,
+      "parameters_structurally_valid_not_current": true,
+      "provisional_fs3_calendar_validated_without_publication": true,
+      "provisional_fs3_reporting_timezone": "America/New_York",
+      "provisional_inception_digest": "99ede0bad4bd2b7df95804083f97258574380c01fadc64fd673a09a43b6947a9",
+      "provisional_r15_native_enrollment_unaccepted": {
+        "acceptance_id": null,
+        "account_id": "atlas-personal-quality-dips",
+        "clock_source": "ATLAS_NTP_V1:time.cloudflare.com+time.google.com",
+        "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+        "inception_digest": "99ede0bad4bd2b7df95804083f97258574380c01fadc64fd673a09a43b6947a9",
+        "policy_digest": "21d7b375bc71c83b3bbb63687bc65f59f1636d6ff526b8fc737c9a25deef2840",
+        "profile": "AUTONOMOUS_PAPER_ONLY_V1",
+        "release_digest": "6db8cae881cd0f331b3f0aae78c92f27dbff860c658bb67ab1cfe91a6b8465e6",
+        "resources": {
+          "control": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113779
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\control",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "coordination": {
+            "native_id": [
+              4004218753,
+              589824,
+              439232
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\coordination",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "custody": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113782
+            ],
+            "path": "D:\\AtlasCustody\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "projection": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113777
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\projection",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "report": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113778
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\report",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          },
+          "source": {
+            "native_id": [
+              4004218753,
+              65536,
+              1113776
+            ],
+            "path": "D:\\AtlasPaper\\QualityDips\\qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253\\source",
+            "schema": "QD_AUTO_NATIVE_ROOT_V4"
+          }
+        },
+        "schema": "QD_AUTO_NATIVE_ENROLLMENT_V4",
+        "writers": null
+      },
+      "provisional_r15_parameters": {
+        "autonomous_policy": {
+          "max_session_seconds": 3600,
+          "max_spread_bps": "50",
+          "partial_fraction": "0.4",
+          "participation": "0.5",
+          "quantity_step": "0.001",
+          "quote_age_seconds": 5,
+          "schema": "QD_AUTO_RISK_PARTIAL_THESIS_V1"
+        },
+        "cost_policy": "SIDE_NOTIONAL_FEE_SLIPPAGE_V1",
+        "currency": "USD",
+        "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+        "fees_bps": "2",
+        "initial_net_r": "0",
+        "opened_at": 1794132467,
+        "opening_cash": "1000",
+        "provenance": "ACCEPTED_AUTONOMOUS_PAPER_PARAMETERS_V1",
+        "release": "6db8cae881cd0f331b3f0aae78c92f27dbff860c658bb67ab1cfe91a6b8465e6",
+        "schema": "PAPER_EPOCH_AUTONOMOUS_QD_V1",
+        "slippage_bps": "2",
+        "strategy": "QUALITY_DIPS",
+        "timezone": "America/New_York"
+      },
+      "provisional_report_scope_unaccepted": {
+        "account_id": "atlas-personal-quality-dips",
+        "epoch": "qd-paper-20261024-b2cbd50cfe59475fa3726549365cc253",
+        "policy_digest": "99ede0bad4bd2b7df95804083f97258574380c01fadc64fd673a09a43b6947a9",
+        "schema": "FS3_QD_REPORT_SCOPE_V2",
+        "session_reporting_policy": "ACKNOWLEDGED_EVENT_TIME_INCLUSIVE_CUT_V1",
+        "timezone": "America/New_York"
+      },
+      "real_enrollment_accepted": false,
+      "required_live_commissioning_inputs": [
+        "TRUE_FINANCIAL_INCEPTION_TIME_AND_RECOMPUTED_DIGEST",
+        "ACTUAL_INSTALLED_R15_WRITER_PID_CREATION_FILETIME",
+        "INDEPENDENT_OPERATOR_ACCOUNT_AND_WRITER_ACCEPTANCE",
+        "C1_D1_E1_SOURCE_RIGHTS_AND_RUNTIME_CLOCK_LEASE",
+        "NATIVE_ACTIVATION_AND_DUAL_ACCOUNT_FINANCIAL_READBACK"
+      ],
+      "writer_process_observed_and_leased": false
+    }
+  },
+  "both_financial_inceptions_published": false,
+  "filesystem_mutations": 0,
+  "financial_operating_gates_accepted": 0,
+  "historical_unapproved_source_sha256": "d4b439d8b7c4ea8d51cd3a003f1cf68cc22f008b500b4c58acdf357af0cf6800",
+  "live_trading_authorized": false,
+  "native_current_hyperliquid_source_accepted": false,
+  "native_current_quality_dips_source_accepted": false,
+  "native_operator_activation_present": false,
+  "native_root_count_handle_verified": 12,
+  "network_requests": 0,
+  "no_existing_native_root_modified": true,
+  "original_historical_release_digest": "5f5940fdc1e0dbc2cdda7def83b8b138dce3d868655012a34db8e59565832879",
+  "paper_start_authorized": false,
+  "schema": "ATLAS_R15_TWO_ACCOUNT_UNAPPROVED_REBIND_HANDOFF_V1",
+  "selected_native_head": "274f5b00ee0e2f6271c6dd1dc5316f7d9124e932483038a6d93ef62ddbd2cd25",
+  "selected_r15_artifact_digest": "6db8cae881cd0f331b3f0aae78c92f27dbff860c658bb67ab1cfe91a6b8465e6",
+  "selected_r15_record_sha256": "b729ff718fc41d90942400db15fc17e1bcf0cac6ae9ccf18e0492e9c6c4f2eb2",
+  "status": "TWO_LANE_R15_STRUCTURAL_REBIND_ONLY_NEVER_ACCEPTED"
+}

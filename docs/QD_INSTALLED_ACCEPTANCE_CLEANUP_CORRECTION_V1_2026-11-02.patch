@@ -1,0 +1,109 @@
+--- retained/worker.py
++++ reviewed-cleanup/worker.py
+@@ -15,6 +15,7 @@
+ e = Path(__file__).parent
+ sys.path[:0] = [str(r / 'backend'), str(r)]
+ from scripts.installed_nonfinancial_launcher import read_ready
++from scripts.observation_runtime.installed_acceptance_cleanup import AcceptanceController, socket_cleanup
+ from scripts.observation_runtime.disposable_host_owner import observe_pid, observe_handle
+ from scripts.support_deployment import verify_deployment, SupportLease
+ from scripts.release_selection_store import NativeSelectionStore
+@@ -37,6 +38,7 @@
+ result = {'authorization_consumed': True, 'status': 'PREFLIGHT', 'operational_mutations_attempted': False,
+           'cycles': [], 'rollback': 'NOT_NEEDED', 'financial_actions': 0, 'provider_connections': 0}
+ controller = None
++lifecycle = None
+ ready = None
+ selection = None
+ def remaining(): return deadline - time.perf_counter()
+@@ -117,12 +119,14 @@
+     controller_claim = observe_pid(controller.pid)
+     assert controller_claim['created'] == observe_handle(int(controller._handle))
+     result['controller_claim'] = controller_claim
++    lifecycle = AcceptanceController(controller, controller_claim)
+     for cycle in (1, 2):
+         ready = read_line(180)
+         ready_observed=timing('application_ready_observed',cycle)
+         assert ready['mode'] == 'INSTALLED_NONFINANCIAL_ONLY' and ready['release'] == binding['release'] and ready['head'] == binding['head']
+         assert all(ready[k] is False for k in ('providers', 'financial_writers', 'trading', 'automatic_startup'))
+         assert Path(ready['image']) == Path(python)
++        lifecycle.ready(ready['host_id'])
+         port = int(ready['url'].split(':')[-1].rstrip('/'))
+         sample = {'cycle': cycle, 'ready': ready, 'pages': [], 'port': port, 'ready_observed':ready_observed}
+         result['in_progress_cycle']=sample;save()
+@@ -163,24 +167,29 @@
+             sample['browser_ack_observed']=timing('browser_ack_observed',cycle)
+         timing('stop_command_requested',cycle)
+         t = time.perf_counter()
+-        controller.stdin.write(('STOP '+ready['host_id']+'\n').encode()); controller.stdin.flush()
+-        stopped = read_line(10)
++        stopped = lifecycle.stop()
+         observed = time.perf_counter()-t
+         assert stopped['closed'] is True and stopped['financial_actions'] == 0 and stopped['seconds'] <= 8 and observed <= 8
+         timing('stop_acknowledged',cycle,observed_stop_seconds=observed,adapter_seconds=stopped['seconds'])
+-        audit=json.loads(run([ps,'-NoProfile','-NonInteractive','-File',str(e/'resource_audit.ps1'),
++        sample.update(stop=stopped, observed_stop_seconds=observed)
++        ready = None  # Stop ACK is durable in the harness before any audit can raise.
++        save()
++        audit=json.loads(run([ps,'-NoProfile','-NonInteractive','-File',str(r/'scripts/windows/Atlas-Acceptance-Resource-Audit.ps1'),
+             '-OwnedPort',str(port),'-Cycle',str(cycle)],'cycle-'+str(cycle)+'-resource-audit',20))
+-        assert audit['accepted'] and audit['listeners']==0 and audit['non_helpers']==0
++        assessment=socket_cleanup(audit,address='127.0.0.1',port=port,stopped_ns=lifecycle.stopped_ns)
++        sample['socket_assessment']=assessment;save()
++        if not assessment['accepted']: raise ValueError('SOCKET_OR_PROCESS_CLEANUP_UNRESOLVED')
+         sample.update(stop=stopped, observed_stop_seconds=observed, resource_audit=audit)
+         ready = None
+         result['cycles'].append(sample);result.pop('in_progress_cycle',None);save()
+         if cycle == 1:
+-            controller.stdin.write(b'NEXT\n'); controller.stdin.flush()
+-    controller.stdin.close(); controller.stdin = None
+-    out, err = controller.communicate(timeout=10)
+-    (e / 'controller-final-stdout.log').write_bytes(out); (e / 'controller-final-stderr.log').write_bytes(err)
+-    assert controller.returncode == 0 and not out and not err
+-    controller._handle.Close(); controller = None
++            lifecycle.next_cycle(audit,address='127.0.0.1',port=port)
++    drained=lifecycle.finish()
++    (e/'controller-final-stdout.log').write_bytes(drained['stdout'])
++    (e/'controller-final-stderr.log').write_bytes(drained['stderr'])
++    result['controller_exit_code']=drained['exit_code']
++    assert drained['accepted']
++    controller=None
+     result['status'] = 'TWO_INSTALLED_CYCLES_ACCEPTED'
+     save()
+ except Exception as exc:
+@@ -188,19 +197,22 @@
+     save()
+ finally:
+     if controller is not None:
+-        try:
+-            if ready is not None and controller.poll() is None:
+-                controller.stdin.write(('STOP '+ready['host_id']+'\n').encode()); controller.stdin.flush()
+-                result['failure_cleanup_stop'] = read_line(10)
+-                result['failure_cleanup_audit']=json.loads(run([ps,'-NoProfile','-NonInteractive','-File',str(e/'resource_audit.ps1'),
+-                    '-OwnedPort',str(port),'-Cycle','0'],'failure-resource-audit',20))
+-            if controller.stdin is not None:
+-                controller.stdin.close(); controller.stdin = None
+-            out, err = controller.communicate(timeout=12)
+-            (e / 'controller-cleanup-stdout.log').write_bytes(out); (e / 'controller-cleanup-stderr.log').write_bytes(err)
+-            result['controller_cleanup_exit'] = controller.returncode
+-        except Exception as exc: result['cleanup_error'] = str(exc)
+-        finally: controller._handle.Close()
++        if lifecycle is None:
++            result['cleanup_error']='OWNERSHIP_NOT_ESTABLISHED_RETAIN_ORIGINAL_SUPERVISOR_HANDLE'
++        else:
++            try:
++                if lifecycle.host_id is not None and not lifecycle.stop_attempted:
++                    result['failure_cleanup_stop']=lifecycle.stop()
++            except Exception as exc:result['cleanup_stop_error']=str(exc)
++            # An audit/Stop error never skips EOF/reaping. An ambiguous Stop is
++            # never sent again; a drain timeout retains the original handle.
++            try:
++                drained=lifecycle.finish()
++                (e/'controller-cleanup-stdout.log').write_bytes(drained['stdout'])
++                (e/'controller-cleanup-stderr.log').write_bytes(drained['stderr'])
++                result['controller_cleanup_exit']=drained['exit_code']
++                result['controller_cleanup_accepted']=drained['accepted']
++            except Exception as exc:result['cleanup_error']=str(exc)
+     if selection is not None and remaining()>30:
+         try:
+             result['rollback']=json.loads(run([python,'-I','-B',str(e/'restore_known_head.py'),

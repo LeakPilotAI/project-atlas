@@ -5,6 +5,7 @@ from typing import Optional
 from sqlalchemy import select
 
 from app.alerts.discord import send_discord_alert
+from app.services.e48_discord_events import make_event, deliver_attachment_payload
 from app.alerts.chart_generator import generate_candlestick_chart
 from app.analytics.anomaly import AnomalySignal
 from app.analytics.decision_engine import decide_direction
@@ -34,6 +35,11 @@ class OpportunityTracker:
     def __init__(self):
         self._running = False
         self._task: Optional[asyncio.Task] = None
+
+    @property
+    def running(self) -> bool:
+        """Expose the worker state used by read-only runtime health surfaces."""
+        return self._running
 
     async def start(self) -> None:
         if self._running:
@@ -287,7 +293,22 @@ class OpportunityTracker:
                     },
                 )
 
-                await send_discord_alert(signal, chart_bytes=chart_bytes)
+                typed = make_event(
+                    lane="SYSTEM",
+                    event_type="SESSION",
+                    severity="HIGH",
+                    title=signal.title,
+                    body=signal.message,
+                    identity=f"opportunity-recommendation:{opp.symbol}:{decision.recommendation}:{opp.id}",
+                    provenance=["opportunity-tracker", str(opp.id)],
+                    material=True,
+                )
+                await deliver_attachment_payload(
+                    typed,
+                    sender=send_discord_alert,
+                    attachment_bytes=chart_bytes,
+                    attachment_name=f"{opp.symbol}-recommendation.png",
+                )
 
                 logger.info(
                     "Multi-TF + whale recommendation sent",

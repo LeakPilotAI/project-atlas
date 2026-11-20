@@ -1,0 +1,26 @@
+# Atlas Hyperliquid ETH book admission refusal diagnostic — 2026-11-08
+
+**Source-only verified improvement; selected installed V5 r10 remains unchanged. No new Hyperliquid request or financial effect.**
+
+## Exact reason for the change
+
+The actual, selected-V5 Hyperliquid public data campaign from the prior checkpoint reported **BTC and SOL strict public book validation passed**, one BTC hourly public funding-rate record accepted, but **ETH public book REFUSED**. The ETH refusal was grouped under `BOOK_TIME_OR_SHAPE` because the existing `_paper_execution_observation` raised one generic `ValueError("Fresh exact Hyperliquid book/metadata evidence required")` for several materially different reasons.
+
+The prior ETH raw response was **not retained**; therefore it is impossible to determine whether that historic refusal came from a book timestamp in the future, a stale timestamp, request latency greater than ten seconds, wrong instrument, wrong data shape or time type. This source change **does not retroactively establish the cause**.
+
+## Executed source change
+
+- Modified only the first **existing** Hyperliquid strict public book admission gate in `backend/app/adapters/hyperliquid.py`. Added pure `_paper_book_admission_reason(symbol, metadata, book, started, observed)`, which returns exactly one **fixed safe token** identifying the first failed condition or `None` if it passes. No network, persistence, financial writer or provider entitlement is introduced.
+- Added `HyperliquidPublicBookAdmissionRefused(ValueError)`, whose `reason_code` property contains only that fixed token. The **stringified exception remains exactly the old error message**, avoiding disclosure of raw provider response values, time values, credentials or endpoint details.
+- Fail-closed branch conditions preserved: only BTC/ETH/SOL, strict integer observation-clock values (not bool), observation time not before request start, at most **10,000 ms** request duration, exact two-element metadata envelope with expected types, exact `coin,time,levels` public book keys, exact requested coin, strict integer book timestamp, **no future book time**, and book age at most **5,000 ms**. All downstream checks (valid instrument/context, required positive finite mark/oracle, nonzero ordered book levels, no crossed book) are unchanged.
+- Fixed reason codes include `SYMBOL_NOT_ALLOWLISTED`, `OBSERVATION_CLOCK_TYPE`, `OBSERVATION_CLOCK_REVERSED`, `OBSERVATION_DURATION_EXCEEDED`, `METADATA_ENVELOPE`, `METADATA_PART_TYPES`, `BOOK_ENVELOPE`, `BOOK_COIN_MISMATCH`, `BOOK_TIMESTAMP_TYPE`, `BOOK_TIMESTAMP_FUTURE`, `BOOK_TIMESTAMP_STALE`. This avoids conflating possible network timing issues with wrong coin or malformed payloads.
+- **No** automatic retry, clock relaxation, data snapshot promotion, financial session, publisher, exchange-order route or account adoption was added.
+
+## Verification and actual remaining work
+
+- Added `tests/test_hyperliquid_book_admission_reasons.py` to exercise successful strict public book evidence, exact boundary inclusions, each individual first-gate refusal, unaltered original exception text, safe reason codes and nonmutation of provider-shaped inputs, unchanged downstream strict refusals, and evidence recording without raw data.
+- Offline suite covered this new test file plus existing Hyperliquid public book/funding parser, real-provider observational contracts, one-shot SQLite budget admission and old V5 two-account unapproved financial authorization: **103 tests passed, zero failed**, one preexisting Starlette/httpx deprecation warning. Test artifacts remained under Atlas `D:\Work\Project Atlas\logs\diagnostics`.
+- Earlier dedicated V4 r9 and V5 r10 diagnostic request budgets each remain **7/7 consumed**; no new public HTTP, account or wallet request was made in this change. Never reset either campaign or invent another allowance to work around an exhausted ledger.
+- The **selected installed V5** is pinned to source `247a4f4e1d78594cdb55ef55f185ef37921bf535`, artifact `5f5940fdc1e0dbc2cdda7def83b8b138dce3d868655012a34db8e59565832879`, native selector r10 head `cd1c73cd207ab363db53e4ae8713ba381f0f4fba4585729f48c1c6a872b2d66f`. It was **not modified in place**; the new source diagnostic requires future separately verified code package/install/selector selection before a future real observation can use it.
+- **Next material E1 step:** separately approve an appropriate genuinely new provider-data observation purpose only when ready and with a qualified source build; then distinguish ETH public refusal by its safe `reason_code`. Require all three instruments' qualified executable books, accepted historical funding settlement oracle evidence and justified account fee/risk policy. Separately, U.S. equities still require the eligible-market-session fresh IEX quote tied to accepted forward Quality Dips research and a stable Windows clock.
+- Native writer ownership, genuine once-only PAPER account inception and supervised desktop Start/Stop flatten/recovery and soak remain open. Formal full PAPER production acceptance **0/9 operational gates**; no real orders, financial account mutations, OS boot autostart, VPS, Genesis access or shortcut changes.

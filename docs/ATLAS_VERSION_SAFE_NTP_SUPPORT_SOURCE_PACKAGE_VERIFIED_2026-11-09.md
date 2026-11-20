@@ -1,0 +1,28 @@
+# Atlas version-safe NTP support source package — independently verified 2026-11-09
+
+**Completed: new nonfinancial support source ZIP with explicit installed version-safe release/clock/financial-interface identities. Source review only; no native support installation, r12 selection, or financial authority. PAPER production remains NO-GO, 0/9 formally accepted operating prerequisites.**
+
+## New source package and immutability
+
+- Installed application source commit `2d4879878bf58bea5a3ed0a986b809791f638fec`, native application receipt SHA-256 `acdae2f01fb5defdf0e302240dc589eca0f1c99e3fcc15ec319d98260125cbb6`, file-inventory artifact SHA-256 `20d96aa9b8349506eb4c3e725523a59c18eb8386684ddfefd2bffc472302b732`.
+- New create-only source inventory: `logs/diagnostics/atlas-version-safe-ntp-support-source-20261109-r12-review/support-source.zip` SHA-256 **`3bf7ff32eeda8235afaa5f6befe0abb66f09faac0096dc6fadb8e6cc7782a6b2`**. Exactly **10** support files; all packed from specifically reviewed tracked repo sources; no Python/site-packages duplication or account credentials.
+- New complete support `deployment.json` SHA-256 **`d61fd6c9fa18bd819f3328040e6c40581efc8faeef8eca8e6326eb110b919ad8`**; embedded `support-manifest.json` SHA-256 **`6a22a5a7a75150a421cb769aee85e95a8e297b4c0a3457d503bc808c661ff674`**. `review.json` accompanies the source package. The support destination `D:\\AtlasRuntime\\launchers\\6a22a5a7a75150a421cb769aee85e95a8e297b4c0a3457d503bc808c661ff674` and same-name control directory beneath `D:\\AtlasRuntime\\support-installations` are both absent; neither has been created or selected.
+- Support binds **24** exact installed source entries, including dual-peer NTP module SHA `230a35d8b293be0d38ded533bb964d36bc5bf3c80d432a85656bc4c22650979c`, version-safe operator clock SHA `4054239941084707ede0e5d434bb39bb4b572b6eb80bfcee7a94c00b2b2af1d3`, installation-specific activation commissioner SHA `3820434a4f8a4a455a98f1e6a3986726b9d0f06c65c8befde43b62516cf04ad3`, and all six guarded financial authority interfaces by their hashes in the exact installed receipt.
+- New read-only builder/verifier: `scripts/build_version_safe_support_candidate.py` and `tests/test_version_safe_nonfinancial_support_source.py`. It preserves the historical V7/V8 support adapter/installers, previously installed V8 native support receipt and V7 selected r11 predecessor/identity. The package flags `installation_authorized=false`, `promotion_authorized=false`, `providers_authorized=false`, `financial_startup_authorized=false`.
+
+## Explicit clock-integration limitation (DO NOT INSTALL YET)
+
+- The historical `scripts/support_deployment.py` source still returns `WINDOWS_TIME_CODE_SELECTION_V1` for this new application commit, even though the new package explicitly pins `ATLAS_INDEPENDENT_DUAL_NTP_V1_GOOGLE_CLOUDFLARE` with maximum uncertainty 1000ms. The historical operational installer therefore correctly rejects a genuine `IndependentNtpClock` as an unsupported profile **before any native support write**. No fallback to Windows Time, spoofed clock, or duplicate V8 support receipt is permitted.
+- The source verifier expressly requires this historical fallback to remain untrusted, and tests prove no native operation can occur through the older path. This release needs a **separate reviewed version-safe support adapter/bootstrap** that uses the installed application's isolated Python 3.12 interpreter, the genuine two-peer NTP capability, exact installed 24-source dependency receipt and native parent IDs, all after new explicit nonfinancial approval. The review archive is **not** itself installer authorization.
+
+## Actual tests and failures resolved
+
+- `scripts.build_version_safe_support_candidate` built and immediately verified package; the existing `support_deployment.prepare()` independently checked its archive, manifest, hashes, and namespaces without native writes.
+- Focused new V9/V8 package tests passed. A first broad test invocation used the default Windows temp directory and produced **51 fixture-setup errors** because historical support tests intentionally require disposable paths under `logs/diagnostics`; this did not indicate an Atlas support logic failure or native mutation. Re-ran exactly that broad suite with `--basetemp=logs/diagnostics/atlas-support-source-test-temp-20261109`: **111 passed, 8 skipped, 0 failed**. Skips are not operating acceptance.
+- The selected native V7 revision 11 is unchanged, r12 absent, historical V8 support native receipt SHA `85bd24430576a8cfde7735c8412263da4ca6aea8459c55ec3d70c1f6a0c62d60` unchanged. No native support installation or code change to installed immutable application occurred.
+
+## Immediate next execution
+
+Build a **separate version-safe installed-Python support bootstrap and exact NTP profile adapter** rather than patching historical V8 support or permitting Windows Time. Validate its source hash and application/support archive pins, require a one-shot scoped nonfinancial approval and actual unselected native parent readback, then separately run the true NTP preflight/one-shot create-only native support installation and independent ACK/receipt verification. Only after that consider independently reviewed r12 selector handoff. Continue with Alpaca IEX and Hyperliquid source rights, separate PAPER account inception, paper order orchestration, one-click desktop Start/Stop, Discord/dashboard and supervised multi-month financial acceptance.
+
+**No Genesis, financial accounts, simulated/live orders, provider access, Windows Time, OS startup, desktop shortcuts, VPS, release selection or GitHub push.**

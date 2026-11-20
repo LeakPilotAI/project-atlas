@@ -1,0 +1,119 @@
+# Atlas R23 — original native R21 successor source package
+Date: 2026-11-13
+Root: D:\Work\Project Atlas
+Status: **SOURCE REVIEW ONLY — NO FINANCIAL OPERATIONS AUTHORIZED**
+
+## Proven baseline
+
+The genuine selected R21 Windows native revision 20 at release source 119dd8626da32e74bd7f86db9de1c1a8fd2c20ac and original artifact digest 02c5705e586f92415612c70309bd7051ad76629278f6c22905b056558b602b27 were previously verified via original immutable 10,731-file selected installed readback. A fresh native root inspection reports all 12 native financial root identities present and empty, no original FS1/FS3 accounts or selected PAPER issuer. The separate historical V5 approval path is a bounded **native test only** authorization, NOT real local financial account-opening permission. The true first financial action requires a fresh exact original selected-in-process coordination journal permit with real same-release two-account manifests, current Windows SID and an **independently reviewed** 180-second scope; this has not been produced.
+
+## Why R23 exists
+
+The earlier source-only R22 package was frozen before the first real R21 old NTP clock compatibility fix and the later Hyperliquid forward-only original Stop-first risk-reducing integration. Installing historical R22 would omit those corrections. R23 is a new tracked source-only review from the true R21 native predecessor and includes current workspace tested safety components:
+
+- Original independent two-peer NTP UTC sample and precise selected/native wrapper.
+- R21 verified original five-field integer-NTP-clock backward-compatible safe IEX observation, with high precision from any correctly selected successor and no fake IEX NBBO/license or financial source acceptance.
+- Proposed forward-only Hyperliquid PAPER intrahour policy, limiting prospective new entries to a pre-funding bounded window and treating unknown funding/fees as unverified.
+- Exact original accepted Stop owner bound to the HYPERLIQUID-only original Stop-first session. At eight minutes before the next hourly funding boundary it requests a one-shot SHUTDOWN_FLATTEN and verifies the durable native Stop receipt, FLAT/drained financial cuts, verified worker exit, and completion before the five-minute cutoff. Any lost/ambiguous/late Stop, revoked owner or bad/rollback UTC clock fails closed and prevents new entries. New RESTING_ORDER and direct ENTRY are also blocked outside the permitted window; existing reducing cancellations and EXIT retain native custody paths. This **terminates each first-hour pilot**, it does not automatically restart 24/7.
+- Original signed historical settlement oracle requirements and original live-account prohibitions remain intact. The source-only methodology is not yet a financially accepted alternative to historical funding settlement, fees or market-data rights.
+
+## R23 exact independent review
+
+New code-only source package reviewer `scripts/atlas_r23_source_review.py` is separate from historical archived R22. It preserves exact immutable R21 selection revision20, installed receipt and SHA-pinned original R21 baseline; demands a new clean traced Git commit, tracked complete source inventory, no Windows path aliases, bounded source file size and total, native dependency inventory, required runtime document closure, all 12 unchanged empty original native financial roots, and fresh create-only package output solely inside the main project D: root. It cannot create a financial approval or original simulated account, install a native release, select a runtime, start PAPER or contact trading APIs.
+
+It intentionally reports the **missing independently reviewed local operator scope**, rather than producing a signed-looking permission record from this code. Historical V5 source-test-only approval remains absent and irrelevant to financial activation. A separate exact-scope operator decision and original in-process financial account enrollment remain prerequisites.
+
+## Verification
+
+The source-only local supervisor tests (including two newly added rollback/revocation financial-latch regressions) and R23 original release-review boundary tests passed: **32 combined**. The previous broad run across the Stop-first, native account, Quality Dips publisher, public HL, NTP and original historical funding contracts recorded **450 passed** before the two additional no-owner/rollback safety regressions. An updated broad regression should be run after the complete new source tree is committed. No original financial account file was written, and no issuer, live wallet, provider order endpoint, paid data or VPS was accessed.
+
+The user still needs a real and durable simulated-account commissioning/Start/Stop acceptance before Atlas is full PAPER-production ready. No status checker should be cosmetically promoted.
+
+## Actual R23 source bundle (verified, NO native install)
+
+The independently opened R23 reviewer passed against the genuine immutable selected R21 native rev20, selected installed artifact, 12 original empty financial native roots, pinned historical R21 source archive, bounded canonical Windows source list and original dependency inventory. It created and validated the source archive ONLY inside the one D: main project:
+
+- Source commit: `96c6b85f76368a69bfd035cbcf3eb05776c21525`
+- Source archive SHA-256: `8ffd8a429a3a2831a8058e39a234c1b7a8db2caa0e3d4f4bab41a6792021a53e`
+- Source inventory SHA-256: `0d4228333d089094248ea2d871204a630dd41411efa6627006600706d1468e5f`
+- Source review receipt SHA-256: `c97a1e8f44308e061d20c2979e6de5aed62d9ec206cbedc263749abdca2b0c41`
+- Archive path: `D:\Work\Project Atlas\logs\diagnostics\atlas-r23-source-only-20261113-r01\package\atlas-source.zip`
+- 1,197 tracked source files, 9,566 pinned Python dependencies, total **10,763 planned native files**, **915 planned directories**, **265,991,191** native bytes
+- Candidate target: `D:\AtlasRuntime\releases\96c6b85f76368a69bfd035cbcf3eb05776c21525`, MUST NOT exist before separate approval
+- Status: `AUDITED_R23_SOURCE_ONLY_NOT_INSTALLED`, with `native_code_installed=false`, `new_release_selected=false`, `paper_start_authorized=false`, `live_trading_authorized=false`
+
+## Actual original one-shot R23 code-only installer now separately prepared
+
+Added external workspace install controller `scripts/atlas_r23_code_only_install.py`, derived from the actual original R21 low-resource Windows native approved-copy contract, not from a generic copy command. It pins the exact R23 frozen review/archive/manifest, original selected immutable R21 predecessor, native file counts, D: target and receipt; retains Windows-native original writer/account-root checks; a <=2 CPU budget, a bounded low-impact 180s dual-peer NTP qualification, native create-only file materialization and full installed readback, one-way pending journal refusal/preserve-on-uncertainty, and **separate, source-hash-bound Windows operator decision**. No code selection or account inception is in this installer.
+
+Its genuine desktop native `--inspect` passed: `R23_FULL_NATIVE_CODE_ONLY_FROZEN_PLAN_NOT_INSTALLED`, `native_files=10763`, `approval_pin_present=false`, `financial_authority=false`, `paper_start_authorized=false`. The 15 combined installer/source-review tests passed including real historical pin validation and refusal to run a native install without an exact independently reviewed SID- and source-bound operator decision. A global ChatGPT user instruction, old V5 test approval, arbitrary JSON or console argument cannot replace the required one-shot operator decision. The installer intentionally has `APPROVAL_PIN=None`; it has **not been executed**. The installer controller was written after the frozen R23 archive and is not claimed to be a file inside that already-pinned archive.
+
+No original native copy, release selection, account genesis, provider session or order was attempted. To proceed to native install, the sole Windows operator must independently approve the exact **code-only / no financial / no selection** scope with current SID and reviewed source hash, then PIN that approval as required by the code. Installation remains a separate operation; any original financial startup/inception is independently approved later.
+
+## Final independent safety checks (same desktop execution)
+
+The actual source-only R23 installer controller is presently **unselected/unapproved** and is intentionally absent from the already frozen source archive (it is a separately reviewed external workspace-side installer, not a member of installed R23). Its current unpinned canonical source hash (before any future independent approval PIN change) is:
+`c227afa1fd71980e3d294c03a0f50f0a3bc8bd31f99cd4f96988ad054684742a`
+
+The genuine ORIGINAL Windows source package/installer `--inspect` checked all 10,763 planned native files, 915 planned native directories, 265,991,191 planned bytes and a still-empty financial native account state, then exited successfully **without starting the 180s clock/install**. Its returned `approval_pin_present=false` is a real blocker, not an inconvenience to be bypassed.
+
+The updated broad selected R21 original-Python regression passed **467 tests** (zero failures), covering current R23 source review, new guarded install controller, upgraded fail-closed clock and Stop supervisor, previous HL intrahour policy, original two-account journal and simulated inception validators, original operation/Stop-first, Quality Dips source discipline and unchanged original signed-consensus settlement requirements. No original financial files were written.
+
+**Next user-local decision required, not auto-inferred:** the separate R23 code-only scope `APPROVE_ONE_R23_CODE_ONLY_NATIVE_INSTALL_NO_FINANCIAL_START`, tied to the exact above source, archive, review digest, Windows SID and source-hashed unmodified installer. Even after a later approved code-only install/selection, the genuine independently authorized account-opening operator scope and accepted market-data rights remain separate financial prerequisites. No PAPER or LIVE operations are authorized by this file.
+
+## Resumed continuation after conversation rollover — 2026-11-13
+
+The external R23 one-shot code-only installer remains a **separate, unexecuted controller** requiring a genuinely independent, local, source/SID-bound operator decision. Its immutable R23 source archive `96c6b85f...` has not been rebuilt or silently replaced, and installed original R21 selection remains the deployment predecessor. There is no R23 native install, successor selection, financial activation, simulated-account inception, or real PAPER trading.
+
+Resumed verification: 86 focused R23/Hyperliquid tests passed. The broad original financial/Stop/source/NTP/QD tests initially hit one stale test assertion restricting append-only native selector history to revisions 15/16; replaced that assertion with real current-chain SELECT/revision verification, preserving the existing installed-origin and no-writer-grant checks. The first corrected broad run produced 497 passing, 6 skipped and 27 QD publisher setup failures exclusively due to a missing `ATLAS_PUBLISHER_TEST_ROOT` disposable root. A correctly isolated run of that publisher suite passed 33/33. The final full 21-file, correctly D:-isolated broad regression then **PASSED 524, skipped 6, failed 0, warnings 1** in 17.83 seconds. No skip was converted into a pass.
+
+This continuation verifies offline software integrity but does not satisfy the original real financial gate. Next actual production-critical operation remains separate original Windows operator approval for the bounded code-only native installation, followed by verified selection, new local financial authorization, genuine two-account inception/Stop-flat reconciliation, accepted source policy and a supervised first intrahour PAPER run. Never use these regression counts as financial or provider authority. Source-only and protected native root restrictions remain unchanged.
+
+## Same-day execution: local Windows R23 code-only operator handoff
+
+The remotely started GUI review timed out (EXPIRED_NO_APPROVAL, 180 seconds). Independent Win32 window inspection found the form existed but was NOT displayed as a visible top-level window. No operator decision was made and no approval/PIN was written. The remote GUI approach was abandoned rather than pretending it authorized installation.
+
+A minimal code-only operator action now lives entirely in the D: Atlas project:
+- Human double-click launcher: D:\Work\Project Atlas\ATLAS-R23-Approve-And-Install.cmd
+- Local console reviewer/installer: scripts/atlas_r23_local_operator_consent.py
+- The human must type the exact scope APPROVE_ONE_R23_CODE_ONLY_NATIVE_INSTALL_NO_FINANCIAL_START in a visible LOCAL Windows console. Remote/headless input refuses. Before accepting, the helper requires the pristine source-hash-bound unapproved R23 installer, original R21 selected installed predecessor, all 12 empty financial native roots, frozen 10,763-file copy plan, absent target/receipt/journal, and actual Windows SID. The exclusive create-only operator decision has financial, provider, account, PAPER and LIVE authority all false. The decision digest is atomically pinned in the external installer controller, verified, then the original CPU-bounded, 180-second two-peer-clock R23 code-only installer is invoked.
+- The resulting native package remains UNSELECTED. This action DOES NOT select a successor, create simulated accounts, connect providers, or authorize PAPER. Separately approved financial source and methodology, genuine two-journal/account inception and original Stop-flat acceptance remain necessary.
+- Read-only local review passed under original isolated -I -B -S R21 installed Python with source pins and 10,763 files intact. Ruff clean. Focused R23 local-consent/installer/reviewer tests passed 19/19; no code installation was attempted.
+- No desktop shortcut was added. Launcher and helper reside only under the main D: Atlas project. Never delete any original native partial journal, installed release identity or financial evidence during cleanup.
+
+Required next operator action: LOCALLY double-click ATLAS-R23-Approve-And-Install.cmd, review the source, then type the exact code-only scope only if approving this one native copy. The script conducts the complete qualified code-only native installation and displays its final receipt or refusal in the locally visible Windows console. Until this separate action occurs, keep R21 selected and PAPER/LIVE disabled.
+
+## Execution continuation — prepare exact R23 selection without a new release package
+
+A read-only native preflight at 12:22 America/Chicago confirmed Git head be5b3a20 clean, no R23 approval, native target, install receipt or pending journal. Therefore no code installation or native selection was run: the original Windows-local one-shot operator decision is absent.
+
+Prepared an external workspace R23 original native selector under scripts/atlas_r23_code_only_select.py. It is a distinct original R21 native revision-20 successor, with future code-only revision-21 operation, no financial authority, exact R23 10,763-file/915-directory receipt and strict two-line install ACK validation, original installed R21 predecessor hash, exact native selector records and append-only original NTFS selection store. It refuses uninstalled/partial R23, foreign receipts, altered source, pending revisions, unapproved code-only selection, bad clock, changed native roots, financial ledger effects or unknown current history. Actual selection requires a separate local operator decision bound to exact source/SID/receipt/record, 180-second qualified independent two-peer NTP, installed full native readback and source-specific final ACK.
+
+Updated ATLAS-R23-Approve-And-Install.cmd to offer TWO SEPARATE TYPED decisions in a locally visible Windows console. First, if explicitly approved, it executes the original R23 code-only install with no selection. Only if the original native copy returns exact verified success does it display the second, DIFFERENT scope APPROVE_ONE_R23_CODE_ONLY_NATIVE_SELECTION_NO_FINANCIAL_START. It refuses selection if the second scope is blank/wrong or if the first install was unverified. Both approval receipts are independently source-hash- and original Windows-SID-bound; neither authorizes simulated account inception, financial authority, provider trading, PAPER startup or live orders. A refusal after installation leaves the fully installed candidate unselected without rollback/overwrite. No desktop shortcut, temporary C: storage, VPS or live broker access was added.
+
+Ruff passed and the 32-test focused R23 selection/local-consent/installer/source review suite PASSED. The genuine offline --review then passed on the original selected R21 isolated installed Python with the unchanged R23 frozen source, 10,763 exact planned files and the verified separate native selector source hash. No original native protected financial root has been written to, and no financial PAPER run is claimed.
+
+Actual current next action: the sole local operator must launch the one existing D: project CMD file interactively on the Windows desktop and independently review/type each operation-specific scope, declining either if not intended. After the real installed R23 revision-21 state is independently read back, proceed to a genuinely separate financial source-methodology and two-simulated-account original authorization. The operator cannot be replaced by remote GUI that was hidden, generic chat permission, fabricated consent, or source-only tests.
+
+### Final post-change integrated validation
+
+The final 23-file selected source-only R23 selector / installer / exact-local-consent / original native account + Stop / Hyperliquid intrahour / Quality Dips / NTP regression passed 541 tests, skipped 6, failed 0 (1 warning), 20.35 seconds. D:-project isolated disposable QD publisher root was used; no operational original financial root created. The installed R21 immutable code and selector remain unchanged. The two requested code-only human approvals remain absent, and no PAPER/financial order was started.
+
+## November 16 execution checkpoint: explicit operator hold preserved
+
+Fresh native read-only R23 preflight passed against original immutable selected R21 revision20 and all twelve distinct empty financial roots (103.125s). Frozen R23 package/source/controller pins unchanged; both local approvals absent, target/receipt/journal absent. The operator explicitly chose to keep R23 unapproved and provider checks held; no repeated approval request or consent fabrication. Existing code-only install/select launcher preserved, no replacement release. Additional nonoverlapping offline tests807passed/1skipped/0failed plus80Nodepassed;139ms read-only two-peer NTP sample revoked afterward; no financial execution. See docs/ATLAS_FINAL_PAPER_EXECUTION_2026-11-16.md for exact evidence, cleanup, current funding-method review and remaining original financial/Stop-first acceptance.
+
+
+## November 16 original R23 installer refusal and separate create-missing-only recovery
+
+The user legitimately typed the one-shot INSTALL consent on the visible Windows terminal at 10:00:21 Central. Its SHA256 was pinned to 517e67ef1e12df92829e57b5b203539b2cd7891dd1316e172fd615045532e1a6. This consent was NOT permission for recovery, selection or simulated financial account inception. The original installer passed initial clock requirements but then reached R13_LOW_IMPACT_INSTALL_DEADLINE_PRESERVE_PARTIAL while copying. Its original two-line pending journal contains exact R23 code-only intent followed by REFUSED_PRESERVE_PARTIAL_NO_RETRY. The original native R23 target remains partial; full install receipt absent; original selected native R21 rev20 unchanged; all PAPER and LIVE remain unauthorized.
+
+A separate read-only native R23 original-prefix audit completed successfully under the original selected R21 Python and two-CPU guard. It verified exactly 7,910 native files with original SID/ACL, unique NTFS identities, link counts, sizes, SHA256 and exact sequential source/dependency manifest order; all 915 expected directories were verified. Preserved native bytes = 230,882,119; missing files = 2,853. Audit path: logs/diagnostics/atlas-r23-native-partial-readonly-audit-20261116.json; SHA256 30d4a475a56d40527fc9478595dc84de26ffeb7a32f299575f111d6139008096. Its original refusal journal was unchanged. This proves verified partial source, NOT completed installation.
+
+A new original Windows code-only recovery controller, scripts/atlas_r23_native_recovery.py, was prepared from the historical verified R21 native recovery path with exact R23 prefix/bytes, new audit, frozen package, original R21 rev20, 180s two-peer clock, at-most-two-CPU, 575s bounded recovery, original NTFS create-only handling for ONLY missing files, full independent installed readback, separate create-only recovery journal and receipt and third terminal ACK appended to preserved original refused install journal. It cannot run without a NEW independent original Windows-local SID/source/audit-bound one-shot recovery approval. No financial accounts, provider authority, PAPER or LIVE orders can be granted by this path. A new partial recovery refusal would be preserved and cannot be retried blindly.
+
+The external R23 code-only selector now requires the original successful two-line journal OR the exact three-line refused-and-recovered history AND genuine independent recovery approval/receipt/journal and original frozen audit binding, plus the distinct R23 code-only selector decision. The selected application/archive is unchanged. The original approval helper's expected external selector hash was updated; no original installer rerun is permitted.
+
+New human-local recovery console launcher: D:\Work\Project Atlas\ATLAS-R23-Recover-And-Select.cmd . This is NOT the failed original INSTALL launcher. It first requests separate scope APPROVE_ONE_R23_ORIGINAL_NATIVE_PARTIAL_CODE_RECOVERY_NO_FINANCE; only after genuinely complete native recovery it asks for a different scope APPROVE_ONE_R23_CODE_ONLY_NATIVE_SELECTION_NO_FINANCIAL_START. Declining either leaves R21 selected and no financial effects. Never run the original failed installer again.
+
+Verified read-only recovery --inspect: 7,910 original files, 2,853 new create-only files, approval absent. Human-local recovery --review passed on original installed R21 Python (-I -B -S) and rejected all financial authority. Ruff clean; 54 focused R23 code-only installation, recovery, selector, consent and source review tests passed without failures. No recovery write, native release selection, PAPER or LIVE activation has occurred. The original user's pinned installer approval and original refusal are protected local operational evidence, intentionally not committed to Git.
