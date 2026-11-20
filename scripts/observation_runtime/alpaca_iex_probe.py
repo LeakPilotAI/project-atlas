@@ -8,6 +8,7 @@ a websocket handshake or a positive research catalog.
 """
 import argparse
 import asyncio
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -30,10 +31,89 @@ R22_HEAD = "86649902c02cfe99be2e5714091d8d4e6ff9b483df6cfa645566e44d40e7f92b"
 R23_SOURCE_COMMIT = "8463f1da3786647677629ae10da5e95c8940e688"
 R23_ARTIFACT_DIGEST = "b7b21a66cd6487f7f2e5de05b3135c47338186d3ae621e0ef2afc50a0c3d5766"
 R23_HEAD = "90ccd9a9b700c553deaf2c16ce2c3469fd986512c19abbb5815ce47c10dde39e"
+R26_ORIGINAL_FINANCIAL_RECEIPT = Path(
+    "D:/Work/Project Atlas/logs/diagnostics/"
+    "atlas-r26-first-financial-attempt-native-reconciliation-20261119-r01.json"
+)
+R26_ORIGINAL_FINANCIAL_RECEIPT_SHA256 = (
+    "8938224d670bfc852469c93d0538233f49be0e5d322d8225c8a6aff436a09e06"
+)
 NATIVE_SELECTED_RELEASES = {
     22: (R22_SOURCE_COMMIT, R22_ARTIFACT_DIGEST, R22_HEAD, 10773),
     23: (R23_SOURCE_COMMIT, R23_ARTIFACT_DIGEST, R23_HEAD, 10802),
 }
+
+
+def admit_original_roots_for_data_only(roots, *, selected_revision):
+    """Recognize a preserved R26 postjournal state, not an empty fake epoch.
+
+    A bounded Alpaca IEX quote *observation* can take place after original
+    financial journals exist. Historical native roots are never adopted for
+    trading, finance or the current R30 account; no PAPER permission follows.
+    """
+    if (type(roots) is not dict
+            or type(selected_revision) is not int
+            or roots.get("native_root_total") != 12
+            or roots.get("native_root_ids_verified") != 12):
+        raise IEXRefused("IEX_ORIGINAL_NATIVE_ROOTS_NOT_IDENTITY_VERIFIED")
+    if roots.get("all_twelve_distinct_and_empty") is True:
+        return True
+    if (selected_revision < 26
+            or roots.get("existing_empty_root_namespaces") != 10):
+        raise IEXRefused("IEX_POSTJOURNAL_ORIGINAL_ROOT_PHASE_REFUSED")
+    lanes = roots.get("lanes")
+    if type(lanes) is not dict or set(lanes) != {"QUALITY_DIPS", "HYPERLIQUID"}:
+        raise IEXRefused("IEX_POSTJOURNAL_ORIGINAL_NATIVE_LANES_REFUSED")
+    ids = set()
+    for lane in ("QUALITY_DIPS", "HYPERLIQUID"):
+        record = lanes[lane]
+        if type(record) is not dict or type(record.get("roots")) is not dict:
+            raise IEXRefused("IEX_POSTJOURNAL_ORIGINAL_NATIVE_ROLES_REFUSED")
+        roles = record["roots"]
+        if set(roles) != {"source", "projection", "report",
+                          "control", "coordination", "custody"}:
+            raise IEXRefused("IEX_POSTJOURNAL_ORIGINAL_NATIVE_ROLES_REFUSED")
+        for role, item in roles.items():
+            if (type(item) is not dict
+                    or item.get("native_identity_verified") is not True
+                    or item.get("existing_empty_namespace_verified")
+                       is not (role != "coordination")
+                    or type(item.get("native_id")) is not list
+                    or len(item["native_id"]) != 3
+                    or any(type(v) is not int or v < 0
+                           for v in item["native_id"])):
+                raise IEXRefused("IEX_POSTJOURNAL_ORIGINAL_ROOT_PHASE_REFUSED")
+            identity = tuple(item["native_id"])
+            if identity in ids:
+                raise IEXRefused("IEX_POSTJOURNAL_ORIGINAL_NATIVE_ALIAS_REFUSED")
+            ids.add(identity)
+    path = R26_ORIGINAL_FINANCIAL_RECEIPT
+    try:
+        data = path.read_bytes()
+        if (path.is_symlink() or
+                hashlib.sha256(data).hexdigest() !=
+                    R26_ORIGINAL_FINANCIAL_RECEIPT_SHA256):
+            raise IEXRefused("IEX_R26_ORIGINAL_TERMINAL_RECEIPT_CHANGED")
+        historical = json.loads(data)
+    except (OSError, ValueError) as exc:
+        raise IEXRefused("IEX_R26_ORIGINAL_TERMINAL_RECEIPT_UNAVAILABLE") from exc
+    if (historical.get("schema") !=
+             "ATLAS_R26_INDEPENDENT_FIRST_ATTEMPT_NATIVE_FINANCIAL_READBACK_V1"
+            or historical.get("status") !=
+             "TWO_ORIGINAL_JOURNALS_VERIFIED_ACTIVATION_PRESENT_ZERO_ACCOUNT_PUBLICATIONS"
+            or historical.get("selected_revision") != 26
+            or historical.get("total_original_financial_roots") != 12
+            or historical.get("empty_original_financial_roots") != 10
+            or historical.get("original_journals_verified") != 2
+            or historical.get("original_account_publications_observed") != 0
+            or historical.get("original_initialization_attempt_durable_and_non_replayable")
+               is not True
+            or historical.get("native_custody_accounts_empty") is not True
+            or historical.get("source_providers_connected") is not False
+            or historical.get("paper_start_authorized") is not False
+            or historical.get("live_money_trading_authorized") is not False):
+        raise IEXRefused("IEX_R26_ORIGINAL_TERMINAL_RECEIPT_NOT_ACCEPTED")
+    return True
 
 
 def _inspect_current_native_source():
@@ -120,9 +200,7 @@ def _inspect_current_native_source():
                 raise IEXRefused("IEX_SELECTED_NATIVE_INSTALLED_IMAGE_REQUIRED")
         cpu.pulse()
         roots = inspect_two_lane_native_roots()
-        if (roots["all_twelve_distinct_and_empty"] is not True
-                or roots["native_root_total"] != 12):
-            raise IEXRefused("IEX_SELECTED_NATIVE_ORIGINAL_ACCOUNT_ROOTS_UNCERTAIN")
+        admit_original_roots_for_data_only(roots, selected_revision=revision)
         research = inspect_research_roster()
         if (research["catalog_count"] <= 0
                 or research["paper_execution_authorized"] is not False
